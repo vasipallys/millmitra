@@ -1,58 +1,116 @@
 version: '3.8'
 
 services:
-  frontend:
-    build: ./frontend
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    environment:
-      - REACT_APP_API_URL=http://localhost:5000
-    depends_on:
-      - backend
-
+  # Backend API
   backend:
     build: ./backend
     ports:
       - "5000:5000"
-    volumes:
-      - ./backend:/app
     environment:
-      - FLASK_ENV=development
-      - DATABASE_URL=postgresql://user:password@db:5432/ricemill
-      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=mysql://root:password@db:3306/rice_mill_erp
+      - REDIS_URL=redis://redis:6379/0
+      - JWT_SECRET_KEY=your-secret-key-change-in-production
+      - GOOGLE_AI_API_KEY=your-google-ai-api-key
     depends_on:
       - db
       - redis
-      - ai-services
+    volumes:
+      - ./backend/uploads:/app/uploads
+      - ./backend/logs:/app/logs
+    restart: unless-stopped
 
+  # AI Services
   ai-services:
     build: ./ai-services
     ports:
       - "8000:8000"
-    volumes:
-      - ./ai-services:/app
     environment:
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GOOGLE_AI_API_KEY=your-google-ai-api-key
+      - BACKEND_URL=http://backend:5000
+    depends_on:
+      - backend
+    restart: unless-stopped
 
+  # Database
   db:
-    image: postgres:15
+    image: mysql:8.0
     environment:
-      - POSTGRES_DB=ricemill
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_DATABASE=rice_mill_erp
+      - MYSQL_USER=rice_mill_user
+      - MYSQL_PASSWORD=rice_mill_password
     ports:
-      - "5432:5432"
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
 
+  # Redis for caching and background tasks
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+  # Celery worker for background tasks
+  celery-worker:
+    build: ./backend
+    command: celery -A app.celery worker --loglevel=info
+    environment:
+      - DATABASE_URL=mysql://root:password@db:3306/rice_mill_erp
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./backend/uploads:/app/uploads
+      - ./backend/logs:/app/logs
+    restart: unless-stopped
+
+  # Celery beat for scheduled tasks
+  celery-beat:
+    build: ./backend
+    command: celery -A app.celery beat --loglevel=info
+    environment:
+      - DATABASE_URL=mysql://root:password@db:3306/rice_mill_erp
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./backend/logs:/app/logs
+    restart: unless-stopped
+
+  # Frontend (if using React/Vue)
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000/api
+      - REACT_APP_AI_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - backend
+      - frontend
+      - ai-services
+    restart: unless-stopped
 
 volumes:
-  postgres_data:
+  mysql_data:
+  redis_data:
