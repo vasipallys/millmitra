@@ -1,17 +1,17 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models.production import ProductionBatch, QualityTest, ProductionStep, ProductionSchedule, MaintenanceLog
-from models.inventory import PaddyStock, ProductStock
-from models.user import User
-from services.production_service import ProductionService
-from services.ai_production_service import AIProductionService
+from models import ProductionBatch, QualityTest, PaddyStock, ProductStock, User
+# Temporarily disabled until services are fixed
+# from services.production_service import ProductionService
+# from services.ai_production_service import AIProductionService
 from extensions import db
 from datetime import datetime, timedelta
 import json
 
 production_bp = Blueprint('production', __name__)
-production_service = ProductionService()
-ai_production = AIProductionService()
+# Temporarily disabled until services are fixed
+# production_service = ProductionService()
+# ai_production = AIProductionService()
 
 @production_bp.route('/batches', methods=['GET'])
 @jwt_required()

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="SQL Performance Analyzer - Optimize your SQL queries with AI-powered analysis and recommendations" />
+    <meta name="keywords" content="SQL, performance, analyzer, optimization, database, AI, analysis" />
+    <meta name="author" content="SQL Analyzer Team" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/database-icon.svg" />
+
+    <!-- Preconnect to external domains for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Optional: Google Fonts for better typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <title>SQL Performance Analyzer</title>
+
+    <style>
+      /* Prevent flash of unstyled content */
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        margin: 0;
+        padding: 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+      }
+
+      /* Loading spinner styles */
+      .loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      }
+
+      .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: #fff;
+        animation: spin 1s ease-in-out infinite;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      .loading-text {
+        color: white;
+        margin-top: 16px;
+        font-size: 16px;
+        font-weight: 500;
+      }
+
+      /* Hide loading once React mounts */
+      #root:not(:empty) + .loading-container {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- React app will mount here -->
+    <div id="root"></div>
+
+    <!-- Loading fallback (shown while React loads) -->
+    <div class="loading-container">
+      <div>
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading SQL Analyzer...</div>
+      </div>
+    </div>
+
+    <!-- Vite will inject the script tag here -->
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

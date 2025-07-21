@@ -309,4 +309,14 @@ const Farmers = () => {
       <TabPanel value={tabValue} index={2}>
         <Card>
           <CardContent>
-            <Typography variant="h6" gutterBottom
+            <Typography variant="h6" gutterBottom>
+              Farmer Analytics
+            </Typography>
+          </CardContent>
+        </Card>
+      </Grid>
+    </Box>
+  );
+};
+
+export default Farmers;

@@ -1,9 +1,6 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models.user import User
-from models.production import ProductionBatch, QualityTest
-from models.inventory import PaddyStock, ProductStock
-from models.sales import SalesOrder
+from models import User, ProductionBatch, QualityTest, PaddyStock, ProductStock, SalesOrder
 from services.dashboard_service import SmartDashboardService
 from services.ai_insights_service import AIInsightsService
 from datetime import datetime, timedelta

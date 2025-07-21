@@ -1,17 +1,17 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models.customer import Customer, CustomerInteraction, CustomerSegment, CustomerContract
-from models.sales import SalesOrder, SalesQuote
-from models.user import User
-from services.customer_service import CustomerService
-from services.ai_customer_service import AICustomerService
+from models import Customer, SalesOrder, User
+# Temporarily disabled until services are fixed
+# from services.customer_service import CustomerService
+# from services.ai_customer_service import AICustomerService
 from extensions import db
 from datetime import datetime, timedelta
 import json
 
 customers_bp = Blueprint('customers', __name__)
-customer_service = CustomerService()
-ai_customer = AICustomerService()
+# Temporarily disabled until services are fixed
+# customer_service = CustomerService()
+# ai_customer = AICustomerService()
 
 @customers_bp.route('/', methods=['GET'])
 @jwt_required()

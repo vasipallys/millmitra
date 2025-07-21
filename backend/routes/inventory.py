@@ -1,16 +1,17 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models.inventory import PaddyStock, ProductStock, InventoryTransaction, StockAlert
-from models.user import User
-from services.inventory_service import InventoryService
-from services.ai_inventory_service import AIInventoryService
+from models import PaddyStock, ProductStock, User
+# Temporarily disabled until services are fixed
+# from services.inventory_service import InventoryService
+# from services.ai_inventory_service import AIInventoryService
 from extensions import db
 from datetime import datetime
 import json
 
 inventory_bp = Blueprint('inventory', __name__)
-inventory_service = InventoryService()
-ai_inventory = AIInventoryService()
+# Temporarily disabled until services are fixed
+# inventory_service = InventoryService()
+# ai_inventory = AIInventoryService()
 
 # Paddy Stock Management
 @inventory_bp.route('/paddy-stock', methods=['GET'])
@@ -292,7 +293,7 @@ def create_supplier():
 # AI-Powered Features
 @inventory_bp.route('/ai/demand-forecast', methods=['POST'])
 @jwt_required()
-def get_demand_forecast():
+def get_ai_demand_forecast():
     data = request.get_json()
     forecast = ai_inventory.generate_demand_forecast(data)
     

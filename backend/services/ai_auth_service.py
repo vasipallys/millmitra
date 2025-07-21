@@ -2,19 +2,19 @@ import re
 import hashlib
 import numpy as np
 from datetime import datetime, timedelta
-from models.user import User, AuthLog
-from models.otp import OTP
+from models import User, AuthLog
 from extensions import db
 import requests
 import json
 from typing import Dict, Any
-import speech_recognition as sr
+# Temporarily disabled until dependencies are installed
+# import speech_recognition as sr
 from io import BytesIO
 
 class AIAuthService:
     def __init__(self):
         self.ai_service_url = "http://ai-services:8000"
-        self.recognizer = sr.Recognizer()
+        # self.recognizer = sr.Recognizer()  # Temporarily disabled
     
     def normalize_username(self, username: str) -> str:
         """AI-powered username normalization and typo correction"""
@@ -102,21 +102,8 @@ class AIAuthService:
         return 0.5
     
     def verify_voice_print(self, user_id: int, voice_data: bytes) -> bool:
-        """Verify user's voice print using AI"""
-        try:
-            # Send voice data to AI service for verification
-            files = {'audio': voice_data}
-            data = {'user_id': user_id}
-            
-            response = requests.post(f"{self.ai_service_url}/verify-voice", 
-                                   files=files, data=data)
-            
-            if response.status_code == 200:
-                result = response.json()
-                return result.get('verified', False) and result.get('confidence', 0) > 0.8
-        except Exception as e:
-            print(f"Voice verification error: {e}")
-        
+        """Verify user's voice print using AI - TEMPORARILY DISABLED"""
+        # TODO: Re-enable after speech_recognition is installed
         return False
     
     def verify_biometric(self, user_id: int, biometric_data: Dict) -> bool:
@@ -139,64 +126,13 @@ class AIAuthService:
         return False
     
     def process_voice_login(self, audio_file, device_info: str) -> Dict:
-        """Process voice login with speech-to-text and voice verification"""
-        try:
-            # Convert audio to text for username extraction
-            audio_data = audio_file.read()
-            
-            # Speech to text
-            text_result = self._speech_to_text(audio_data)
-            if not text_result['success']:
-                return {'success': False, 'error': 'Could not understand speech'}
-            
-            spoken_text = text_result['text'].lower()
-            
-            # Extract username from speech
-            username = self._extract_username_from_speech(spoken_text)
-            if not username:
-                return {'success': False, 'error': 'Could not identify username from speech'}
-            
-            # Find user
-            user = User.query.filter(
-                (User.username == username) | 
-                (User.email == username)
-            ).first()
-            
-            if not user:
-                return {'success': False, 'error': 'User not found'}
-            
-            # Verify voice print
-            if not self.verify_voice_print(user.id, audio_data):
-                return {'success': False, 'error': 'Voice verification failed'}
-            
-            # Check if additional verification needed
-            device_info_dict = json.loads(device_info) if isinstance(device_info, str) else device_info
-            risk_score = self.assess_login_risk(user, device_info_dict)
-            
-            return {
-                'success': True,
-                'user_id': user.id,
-                'username': user.username,
-                'risk_score': risk_score,
-                'requires_2fa': risk_score > 0.7
-            }
-            
-        except Exception as e:
-            return {'success': False, 'error': f'Voice processing error: {str(e)}'}
+        """Process voice login with speech-to-text and voice verification - TEMPORARILY DISABLED"""
+        # TODO: Re-enable after speech_recognition is installed
+        return {'success': False, 'error': 'Voice login temporarily disabled'}
     
     def _speech_to_text(self, audio_data: bytes) -> Dict:
-        """Convert speech to text"""
-        try:
-            # Send to AI service for processing
-            files = {'audio': BytesIO(audio_data)}
-            response = requests.post(f"{self.ai_service_url}/speech-to-text", files=files)
-            
-            if response.status_code == 200:
-                return response.json()
-            
-            return {'success': False, 'error': 'Speech processing failed'}
-        except Exception as e:
-            return {'success': False, 'error': str(e)}
+        """Convert speech to text - TEMPORARILY DISABLED"""
+        return {'success': False, 'error': 'Speech recognition temporarily disabled'}
     
     def _extract_username_from_speech(self, text: str) -> str:
         """Extract username from spoken text using NLP"""

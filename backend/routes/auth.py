@@ -1,8 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from werkzeug.security import check_password_hash
-from models.user import User
-from models.auth_log import AuthLog
+from models import User, AuthLog
 from services.ai_auth_service import AIAuthService
 from extensions import db
 import re

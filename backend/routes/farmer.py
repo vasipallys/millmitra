@@ -1,12 +1,14 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models.user import User
-from services.farmer_service import FarmerService
-from services.ai_farmer_service import AIFarmerService
+from models import User, Farmer, FarmerContract
+# Temporarily disabled until services are fixed
+# from services.farmer_service import FarmerService
+# from services.ai_farmer_service import AIFarmerService
 
 farmer_bp = Blueprint('farmer', __name__)
-farmer_service = FarmerService()
-ai_farmer = AIFarmerService()
+# Temporarily disabled until services are fixed
+# farmer_service = FarmerService()
+# ai_farmer = AIFarmerService()
 
 @farmer_bp.route('/register', methods=['POST'])
 @jwt_required()

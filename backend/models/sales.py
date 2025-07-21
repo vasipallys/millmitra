@@ -1,317 +1,398 @@
+"""
+Sales and Customer Management Models
+"""
+
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, Text, ForeignKey, JSON
+import json
+from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, Text, ForeignKey
 from sqlalchemy.orm import relationship
-from database import db
+from extensions import db
 
 class Customer(db.Model):
     __tablename__ = 'customers'
     
     id = db.Column(db.Integer, primary_key=True)
     customer_code = db.Column(db.String(20), unique=True, nullable=False)
-    
-    # Basic Information
     name = db.Column(db.String(100), nullable=False)
-    company_name = db.Column(db.String(100))
-    customer_type = db.Column(db.String(20), default='retail')  # retail, wholesale, distributor, export
+    customer_type = db.Column(db.String(50))  # retailer, wholesaler, distributor, export
     
-    # Contact Information
-    email = db.Column(db.String(100))
-    phone = db.Column(db.String(20))
+    # Contact information
+    phone = db.Column(db.String(15), nullable=False)
+    email = db.Column(db.String(120))
+    contact_person = db.Column(db.String(100))
+    
+    # Address information
     address = db.Column(db.Text)
-    city = db.Column(db.String(50))
-    state = db.Column(db.String(50))
+    city = db.Column(db.String(100))
+    state = db.Column(db.String(100))
     pincode = db.Column(db.String(10))
     country = db.Column(db.String(50), default='India')
     
-    # Business Information
-    gst_number = db.Column(db.String(15))
-    pan_number = db.Column(db.String(10))
-    credit_limit = db.Column(db.Float, default=0)
-    payment_terms = db.Column(db.String(50), default='cash')  # cash, credit_30, credit_60, etc.
+    # Business information
+    business_name = db.Column(db.String(150))
+    gst_number = db.Column(db.String(20))
+    pan_number = db.Column(db.String(15))
+    trade_license = db.Column(db.String(50))
     
-    # Customer Metrics
+    # Banking information
+    bank_account = db.Column(db.String(50))
+    ifsc_code = db.Column(db.String(15))
+    bank_name = db.Column(db.String(100))
+    
+    # Business metrics
+    credit_limit = db.Column(db.Float, default=0.0)
+    outstanding_amount = db.Column(db.Float, default=0.0)
     total_orders = db.Column(db.Integer, default=0)
-    total_value = db.Column(db.Float, default=0)
-    average_order_value = db.Column(db.Float, default=0)
-    last_order_date = db.Column(db.DateTime)
+    total_order_value = db.Column(db.Float, default=0.0)
+    average_order_value = db.Column(db.Float, default=0.0)
     
-    # AI Insights
-    customer_score = db.Column(db.Float)  # AI calculated customer value score
-    risk_rating = db.Column(db.String(10))  # low, medium, high
-    preferred_products = db.Column(JSON)
-    buying_patterns = db.Column(JSON)
+    # Customer behavior
+    payment_terms = db.Column(db.String(50), default='immediate')  # immediate, 15_days, 30_days, 45_days
+    preferred_products = db.Column(db.Text)  # JSON string
+    seasonal_pattern = db.Column(db.Text)  # JSON string
+    price_sensitivity = db.Column(db.Float)  # AI-calculated
+    loyalty_score = db.Column(db.Float)  # AI-calculated
+    
+    # Risk assessment
+    credit_rating = db.Column(db.String(10))  # AAA, AA, A, BBB, BB, B, CCC, CC, C, D
+    risk_category = db.Column(db.String(20))  # low, medium, high
+    payment_behavior_score = db.Column(db.Float)  # AI-calculated
     
     # Status and tracking
-    status = db.Column(db.String(20), default='active')  # active, inactive, blocked
+    is_active = db.Column(db.Boolean, default=True)
+    is_verified = db.Column(db.Boolean, default=False)
+    verification_date = db.Column(db.DateTime)
+    last_order_date = db.Column(db.DateTime)
+    registration_date = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # AI insights
+    churn_probability = db.Column(db.Float)  # AI-predicted churn probability
+    lifetime_value = db.Column(db.Float)  # AI-calculated customer lifetime value
+    next_order_prediction = db.Column(db.DateTime)  # AI-predicted next order date
+    recommended_products = db.Column(db.Text)  # JSON string with AI recommendations
+    
+    # Audit fields
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    orders = db.relationship('SalesOrder', backref='customer', lazy='dynamic')
-    quotations = db.relationship('Quotation', backref='customer', lazy='dynamic')
-    
+    created_by_user = relationship("User")
+
+    def get_preferred_products(self):
+        if self.preferred_products:
+            try:
+                return json.loads(self.preferred_products)
+            except:
+                return []
+        return []
+
+    def set_preferred_products(self, products):
+        self.preferred_products = json.dumps(products)
+
+    def get_seasonal_pattern(self):
+        if self.seasonal_pattern:
+            try:
+                return json.loads(self.seasonal_pattern)
+            except:
+                return {}
+        return {}
+
+    def set_seasonal_pattern(self, pattern):
+        self.seasonal_pattern = json.dumps(pattern)
+
+    def get_recommended_products(self):
+        if self.recommended_products:
+            try:
+                return json.loads(self.recommended_products)
+            except:
+                return []
+        return []
+
+    def set_recommended_products(self, products):
+        self.recommended_products = json.dumps(products)
+
+    def calculate_average_order_value(self):
+        """Calculate average order value"""
+        if self.total_orders and self.total_orders > 0:
+            return self.total_order_value / self.total_orders
+        return 0.0
+
+    def update_business_metrics(self, new_order_value):
+        """Update business metrics after a new order"""
+        self.total_orders = (self.total_orders or 0) + 1
+        self.total_order_value = (self.total_order_value or 0) + new_order_value
+        self.average_order_value = self.calculate_average_order_value()
+        self.last_order_date = datetime.utcnow()
+
+    def get_credit_status(self):
+        """Get current credit status"""
+        available_credit = self.credit_limit - (self.outstanding_amount or 0)
+        utilization = 0
+        if self.credit_limit > 0:
+            utilization = ((self.outstanding_amount or 0) / self.credit_limit) * 100
+        
+        return {
+            'credit_limit': self.credit_limit,
+            'outstanding_amount': self.outstanding_amount or 0,
+            'available_credit': available_credit,
+            'utilization_percentage': utilization,
+            'status': 'good' if utilization < 80 else 'warning' if utilization < 95 else 'critical'
+        }
+
+    def get_customer_insights(self):
+        """Get AI-powered customer insights"""
+        insights = []
+        
+        # Churn risk analysis
+        if self.churn_probability and self.churn_probability > 0.7:
+            insights.append({
+                'type': 'churn_risk',
+                'message': f'High churn risk ({self.churn_probability*100:.1f}%)',
+                'priority': 'high',
+                'recommendation': 'Consider retention strategies'
+            })
+        
+        # Credit utilization
+        credit_status = self.get_credit_status()
+        if credit_status['utilization_percentage'] > 90:
+            insights.append({
+                'type': 'credit_risk',
+                'message': f'High credit utilization ({credit_status["utilization_percentage"]:.1f}%)',
+                'priority': 'high',
+                'recommendation': 'Review credit terms'
+            })
+        
+        # Order frequency
+        if self.last_order_date:
+            days_since_last_order = (datetime.utcnow() - self.last_order_date).days
+            if days_since_last_order > 60:
+                insights.append({
+                    'type': 'inactive_customer',
+                    'message': f'No orders for {days_since_last_order} days',
+                    'priority': 'medium',
+                    'recommendation': 'Reach out to customer'
+                })
+        
+        return insights
+
     def to_dict(self):
         return {
             'id': self.id,
             'customer_code': self.customer_code,
             'name': self.name,
-            'company_name': self.company_name,
             'customer_type': self.customer_type,
-            'email': self.email,
             'phone': self.phone,
+            'email': self.email,
+            'contact_person': self.contact_person,
             'address': self.address,
             'city': self.city,
             'state': self.state,
             'pincode': self.pincode,
+            'country': self.country,
+            'business_name': self.business_name,
             'gst_number': self.gst_number,
+            'pan_number': self.pan_number,
+            'trade_license': self.trade_license,
+            'bank_account': self.bank_account,
+            'ifsc_code': self.ifsc_code,
+            'bank_name': self.bank_name,
             'credit_limit': self.credit_limit,
-            'payment_terms': self.payment_terms,
+            'outstanding_amount': self.outstanding_amount,
             'total_orders': self.total_orders,
-            'total_value': self.total_value,
+            'total_order_value': self.total_order_value,
             'average_order_value': self.average_order_value,
+            'payment_terms': self.payment_terms,
+            'preferred_products': self.get_preferred_products(),
+            'seasonal_pattern': self.get_seasonal_pattern(),
+            'price_sensitivity': self.price_sensitivity,
+            'loyalty_score': self.loyalty_score,
+            'credit_rating': self.credit_rating,
+            'risk_category': self.risk_category,
+            'payment_behavior_score': self.payment_behavior_score,
+            'is_active': self.is_active,
+            'is_verified': self.is_verified,
+            'verification_date': self.verification_date.isoformat() if self.verification_date else None,
             'last_order_date': self.last_order_date.isoformat() if self.last_order_date else None,
-            'customer_score': self.customer_score,
-            'risk_rating': self.risk_rating,
-            'status': self.status,
-            'created_at': self.created_at.isoformat()
+            'registration_date': self.registration_date.isoformat() if self.registration_date else None,
+            'churn_probability': self.churn_probability,
+            'lifetime_value': self.lifetime_value,
+            'next_order_prediction': self.next_order_prediction.isoformat() if self.next_order_prediction else None,
+            'recommended_products': self.get_recommended_products(),
+            'credit_status': self.get_credit_status(),
+            'customer_insights': self.get_customer_insights(),
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
 
 class SalesOrder(db.Model):
     __tablename__ = 'sales_orders'
     
     id = db.Column(db.Integer, primary_key=True)
-    order_number = db.Column(db.String(20), unique=True, nullable=False)
-    
-    # Customer and reference
+    order_number = db.Column(db.String(50), unique=True, nullable=False)
     customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
-    quotation_id = db.Column(db.Integer, db.ForeignKey('quotations.id'))
     
     # Order details
-    order_date = db.Column(db.DateTime, default=datetime.utcnow)
+    order_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     delivery_date = db.Column(db.DateTime)
-    order_type = db.Column(db.String(20), default='standard')  # standard, urgent, export
+    expected_delivery_date = db.Column(db.DateTime)
     
-    # Financial details
-    subtotal = db.Column(db.Float, default=0)
-    tax_amount = db.Column(db.Float, default=0)
-    discount_amount = db.Column(db.Float, default=0)
-    total_amount = db.Column(db.Float, default=0)
+    # Products and quantities
+    order_items = db.Column(db.Text)  # JSON string with product details
+    total_quantity = db.Column(db.Float, nullable=False)
+    total_amount = db.Column(db.Float, nullable=False)
     
-    # Payment and delivery
+    # Pricing and discounts
+    base_amount = db.Column(db.Float)
+    discount_percentage = db.Column(db.Float, default=0.0)
+    discount_amount = db.Column(db.Float, default=0.0)
+    tax_amount = db.Column(db.Float, default=0.0)
+    
+    # Payment terms
     payment_terms = db.Column(db.String(50))
-    payment_status = db.Column(db.String(20), default='pending')  # pending, partial, paid
+    payment_status = db.Column(db.String(20), default='pending')  # pending, partial, paid, overdue
+    advance_amount = db.Column(db.Float, default=0.0)
+    balance_amount = db.Column(db.Float)
+    
+    # Delivery information
     delivery_address = db.Column(db.Text)
-    delivery_status = db.Column(db.String(20), default='pending')  # pending, dispatched, delivered
+    delivery_method = db.Column(db.String(50))  # pickup, delivery, courier
+    transport_cost = db.Column(db.Float, default=0.0)
+    
+    # Status tracking
+    status = db.Column(db.String(20), default='pending')  # pending, confirmed, processing, shipped, delivered, cancelled
+    priority = db.Column(db.String(20), default='normal')  # low, normal, high, urgent
     
     # AI insights
-    fulfillment_prediction = db.Column(JSON)
-    risk_assessment = db.Column(JSON)
+    profit_margin = db.Column(db.Float)
+    delivery_risk_score = db.Column(db.Float)  # AI-calculated delivery risk
+    customer_satisfaction_prediction = db.Column(db.Float)
     
-    # Status and tracking
-    status = db.Column(db.String(20), default='draft')  # draft, confirmed, processing, completed, cancelled
+    # Audit fields
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    confirmed_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    items = db.relationship('SalesOrderItem', backref='order', lazy='dynamic', cascade='all, delete-orphan')
-    
+    customer = relationship("Customer")
+    created_by_user = relationship("User", foreign_keys=[created_by])
+    confirmed_by_user = relationship("User", foreign_keys=[confirmed_by])
+
+    def get_order_items(self):
+        if self.order_items:
+            try:
+                return json.loads(self.order_items)
+            except:
+                return []
+        return []
+
+    def set_order_items(self, items):
+        self.order_items = json.dumps(items)
+
+    def calculate_totals(self):
+        """Calculate order totals"""
+        items = self.get_order_items()
+        
+        self.total_quantity = sum(item.get('quantity', 0) for item in items)
+        self.base_amount = sum(item.get('quantity', 0) * item.get('unit_price', 0) for item in items)
+        
+        self.discount_amount = (self.base_amount * (self.discount_percentage or 0)) / 100
+        subtotal = self.base_amount - self.discount_amount
+        
+        # Calculate tax (assuming 5% GST for rice)
+        self.tax_amount = subtotal * 0.05
+        
+        self.total_amount = subtotal + self.tax_amount + (self.transport_cost or 0)
+        self.balance_amount = self.total_amount - (self.advance_amount or 0)
+
+    def get_delivery_timeline(self):
+        """Get delivery timeline analysis"""
+        if not self.expected_delivery_date:
+            return None
+        
+        days_to_delivery = (self.expected_delivery_date - datetime.utcnow()).days
+        
+        timeline = {
+            'days_remaining': days_to_delivery,
+            'status': 'on_time'
+        }
+        
+        if days_to_delivery < 0:
+            timeline['status'] = 'overdue'
+        elif days_to_delivery <= 1:
+            timeline['status'] = 'urgent'
+        elif days_to_delivery <= 3:
+            timeline['status'] = 'due_soon'
+        
+        return timeline
+
+    def get_order_insights(self):
+        """Get AI-powered order insights"""
+        insights = []
+        
+        # Delivery timeline
+        timeline = self.get_delivery_timeline()
+        if timeline and timeline['status'] == 'overdue':
+            insights.append({
+                'type': 'delivery_overdue',
+                'message': f'Order is {abs(timeline["days_remaining"])} days overdue',
+                'priority': 'critical'
+            })
+        elif timeline and timeline['status'] == 'urgent':
+            insights.append({
+                'type': 'delivery_urgent',
+                'message': 'Order delivery is due within 24 hours',
+                'priority': 'high'
+            })
+        
+        # Payment status
+        if self.payment_status == 'overdue':
+            insights.append({
+                'type': 'payment_overdue',
+                'message': f'Payment overdue: ₹{self.balance_amount:,.0f}',
+                'priority': 'high'
+            })
+        
+        # Profit margin analysis
+        if self.profit_margin and self.profit_margin < 10:
+            insights.append({
+                'type': 'low_margin',
+                'message': f'Low profit margin ({self.profit_margin:.1f}%)',
+                'priority': 'medium'
+            })
+        
+        return insights
+
     def to_dict(self):
         return {
             'id': self.id,
             'order_number': self.order_number,
             'customer_id': self.customer_id,
-            'customer_name': self.customer.name if self.customer else None,
-            'order_date': self.order_date.isoformat(),
+            'order_date': self.order_date.isoformat() if self.order_date else None,
             'delivery_date': self.delivery_date.isoformat() if self.delivery_date else None,
-            'order_type': self.order_type,
-            'subtotal': self.subtotal,
-            'tax_amount': self.tax_amount,
-            'discount_amount': self.discount_amount,
+            'expected_delivery_date': self.expected_delivery_date.isoformat() if self.expected_delivery_date else None,
+            'order_items': self.get_order_items(),
+            'total_quantity': self.total_quantity,
             'total_amount': self.total_amount,
+            'base_amount': self.base_amount,
+            'discount_percentage': self.discount_percentage,
+            'discount_amount': self.discount_amount,
+            'tax_amount': self.tax_amount,
             'payment_terms': self.payment_terms,
             'payment_status': self.payment_status,
-            'delivery_status': self.delivery_status,
+            'advance_amount': self.advance_amount,
+            'balance_amount': self.balance_amount,
+            'delivery_address': self.delivery_address,
+            'delivery_method': self.delivery_method,
+            'transport_cost': self.transport_cost,
             'status': self.status,
-            'items': [item.to_dict() for item in self.items],
-            'created_at': self.created_at.isoformat()
-        }
-
-class SalesOrderItem(db.Model):
-    __tablename__ = 'sales_order_items'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    order_id = db.Column(db.Integer, db.ForeignKey('sales_orders.id'), nullable=False)
-    
-    # Product details
-    product_name = db.Column(db.String(100), nullable=False)
-    product_variety = db.Column(db.String(50))
-    product_grade = db.Column(db.String(10))
-    
-    # Quantity and pricing
-    quantity = db.Column(db.Float, nullable=False)
-    unit = db.Column(db.String(20), default='quintal')
-    unit_price = db.Column(db.Float, nullable=False)
-    total_price = db.Column(db.Float, nullable=False)
-    
-    # Fulfillment
-    allocated_quantity = db.Column(db.Float, default=0)
-    delivered_quantity = db.Column(db.Float, default=0)
-    
-    # Source tracking
-    source_type = db.Column(db.String(20))  # production, inventory
-    source_reference_id = db.Column(db.Integer)
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'product_name': self.product_name,
-            'product_variety': self.product_variety,
-            'product_grade': self.product_grade,
-            'quantity': self.quantity,
-            'unit': self.unit,
-            'unit_price': self.unit_price,
-            'total_price': self.total_price,
-            'allocated_quantity': self.allocated_quantity,
-            'delivered_quantity': self.delivered_quantity
-        }
-
-class Quotation(db.Model):
-    __tablename__ = 'quotations'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    quotation_number = db.Column(db.String(20), unique=True, nullable=False)
-    
-    # Customer and reference
-    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
-    
-    # Quotation details
-    quotation_date = db.Column(db.DateTime, default=datetime.utcnow)
-    valid_until = db.Column(db.DateTime)
-    
-    # Financial details
-    subtotal = db.Column(db.Float, default=0)
-    tax_amount = db.Column(db.Float, default=0)
-    discount_amount = db.Column(db.Float, default=0)
-    total_amount = db.Column(db.Float, default=0)
-    
-    # Terms and conditions
-    payment_terms = db.Column(db.String(50))
-    delivery_terms = db.Column(db.Text)
-    notes = db.Column(db.Text)
-    
-    # AI insights
-    conversion_probability = db.Column(db.Float)  # AI predicted conversion rate
-    competitive_analysis = db.Column(JSON)
-    
-    # Status and tracking
-    status = db.Column(db.String(20), default='draft')  # draft, sent, accepted, rejected, expired
-    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # Relationships
-    items = db.relationship('QuotationItem', backref='quotation', lazy='dynamic', cascade='all, delete-orphan')
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'quotation_number': self.quotation_number,
-            'customer_id': self.customer_id,
-            'customer_name': self.customer.name if self.customer else None,
-            'quotation_date': self.quotation_date.isoformat(),
-            'valid_until': self.valid_until.isoformat() if self.valid_until else None,
-            'subtotal': self.subtotal,
-            'tax_amount': self.tax_amount,
-            'total_amount': self.total_amount,
-            'payment_terms': self.payment_terms,
-            'conversion_probability': self.conversion_probability,
-            'status': self.status,
-            'items': [item.to_dict() for item in self.items],
-            'created_at': self.created_at.isoformat()
-        }
-
-class QuotationItem(db.Model):
-    __tablename__ = 'quotation_items'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    quotation_id = db.Column(db.Integer, db.ForeignKey('quotations.id'), nullable=False)
-    
-    # Product details
-    product_name = db.Column(db.String(100), nullable=False)
-    product_variety = db.Column(db.String(50))
-    product_grade = db.Column(db.String(10))
-    
-    # Quantity and pricing
-    quantity = db.Column(db.Float, nullable=False)
-    unit = db.Column(db.String(20), default='quintal')
-    unit_price = db.Column(db.Float, nullable=False)
-    total_price = db.Column(db.Float, nullable=False)
-    
-    # Additional details
-    specifications = db.Column(db.Text)
-    delivery_timeline = db.Column(db.String(50))
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'product_name': self.product_name,
-            'product_variety': self.product_variety,
-            'product_grade': self.product_grade,
-            'quantity': self.quantity,
-            'unit': self.unit,
-            'unit_price': self.unit_price,
-            'total_price': self.total_price,
-            'specifications': self.specifications,
-            'delivery_timeline': self.delivery_timeline
-        }
-
-class SalesLead(db.Model):
-    __tablename__ = 'sales_leads'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    lead_number = db.Column(db.String(20), unique=True, nullable=False)
-    
-    # Lead information
-    name = db.Column(db.String(100), nullable=False)
-    company_name = db.Column(db.String(100))
-    email = db.Column(db.String(100))
-    phone = db.Column(db.String(20))
-    
-    # Lead details
-    source = db.Column(db.String(50))  # website, referral, cold_call, exhibition
-    product_interest = db.Column(db.String(100))
-    estimated_value = db.Column(db.Float)
-    expected_closure_date = db.Column(db.DateTime)
-    
-    # AI scoring
-    lead_score = db.Column(db.Float)  # AI calculated lead score
-    qualification_status = db.Column(db.String(20))  # unqualified, qualified, hot, cold
-    next_action = db.Column(db.String(100))  # AI recommended next action
-    
-    # Status and tracking
-    status = db.Column(db.String(20), default='new')  # new, contacted, qualified, proposal, negotiation, won, lost
-    assigned_to = db.Column(db.Integer, db.ForeignKey('users.id'))
-    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'lead_number': self.lead_number,
-            'name': self.name,
-            'company_name': self.company_name,
-            'email': self.email,
-            'phone': self.phone,
-            'source': self.source,
-            'product_interest': self.product_interest,
-            'estimated_value': self.estimated_value,
-            'expected_closure_date': self.expected_closure_date.isoformat() if self.expected_closure_date else None,
-            'lead_score': self.lead_score,
-            'qualification_status': self.qualification_status,
-            'next_action': self.next_action,
-            'status': self.status,
-            'created_at': self.created_at.isoformat()
+            'priority': self.priority,
+            'profit_margin': self.profit_margin,
+            'delivery_risk_score': self.delivery_risk_score,
+            'customer_satisfaction_prediction': self.customer_satisfaction_prediction,
+            'delivery_timeline': self.get_delivery_timeline(),
+            'order_insights': self.get_order_insights(),
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }

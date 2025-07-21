@@ -1,14 +1,14 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models.user import User
-from models.sales import Customer, SalesOrder, Quotation, SalesLead
-from services.sales_service import SalesService
-from ai.sales_ai import SalesAI
-from database import db
+from models import User, Customer, SalesOrder
+# Temporarily disabled until services are fixed
+# from services.sales_service import SalesService
+from extensions import db
 
 sales_bp = Blueprint('sales', __name__)
-sales_service = SalesService()
-ai_sales = SalesAI()
+# Temporarily disabled until services are fixed
+# sales_service = SalesService()
+# ai_sales = SalesAI()
 
 # Dashboard
 @sales_bp.route('/dashboard', methods=['GET'])

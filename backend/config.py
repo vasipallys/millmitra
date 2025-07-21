@@ -5,8 +5,8 @@ class Config:
     # Basic Flask configuration
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
     
-    # Database configuration
-    DATABASE_URL = os.environ.get('DATABASE_URL') or 'mysql://root:password@localhost/rice_mill_erp'
+    # Database configuration - Using SQLite for development
+    DATABASE_URL = os.environ.get('DATABASE_URL') or 'sqlite:///rice_mill.db'
     SQLALCHEMY_DATABASE_URI = DATABASE_URL
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
@@ -135,3 +135,4 @@ config = {
     'production': ProductionConfig,
     'default': DevelopmentConfig
 }
+

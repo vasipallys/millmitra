@@ -3,7 +3,11 @@ from .dashboard import dashboard_bp
 from .inventory import inventory_bp
 from .production import production_bp
 from .sales import sales_bp
-from .ai import ai_bp
+from .farmer import farmer_bp
+from .finance import finance_bp
+from .customers import customers_bp
+# TODO: Re-enable after implementation
+# from .ai import ai_bp
 
 def register_blueprints(app):
     app.register_blueprint(auth_bp, url_prefix='/api/auth')

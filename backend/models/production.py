@@ -1,326 +1,420 @@
-from extensions import db
+"""
+Production Management Models
+"""
+
 from datetime import datetime
-from sqlalchemy.dialects.postgresql import JSON
-import uuid
+import json
+from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, Text, ForeignKey
+from sqlalchemy.orm import relationship
+from extensions import db
 
 class ProductionBatch(db.Model):
     __tablename__ = 'production_batches'
     
     id = db.Column(db.Integer, primary_key=True)
     batch_number = db.Column(db.String(50), unique=True, nullable=False)
+    paddy_stock_id = db.Column(db.Integer, db.ForeignKey('paddy_stock.id'), nullable=False)
     
-    # Input details
-    paddy_variety = db.Column(db.String(50), nullable=False)
-    input_quantity = db.Column(db.Float, nullable=False)  # in quintals
-    input_source = db.Column(db.String(20), default='procurement')  # procurement, inventory
-    source_reference_id = db.Column(db.Integer)  # procurement_id or stock_id
-    
-    # Production planning
-    planned_start_time = db.Column(db.DateTime)
-    planned_end_time = db.Column(db.DateTime)
-    planned_output_quantity = db.Column(db.Float)
-    target_rice_variety = db.Column(db.String(50))
-    
-    # Machine settings (AI optimized)
-    machine_settings = db.Column(JSON)
-    
-    # Actual production
-    start_time = db.Column(db.DateTime)
+    # Production details
+    start_time = db.Column(db.DateTime, nullable=False)
     end_time = db.Column(db.DateTime)
-    output_quantity = db.Column(db.Float)  # actual output
-    waste_quantity = db.Column(db.Float, default=0)
-    byproduct_quantity = db.Column(db.Float, default=0)  # husk, bran
+    machine_id = db.Column(db.String(20))
+    operator_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    shift = db.Column(db.String(20))  # morning, afternoon, night
     
-    # Quality and efficiency
-    efficiency_score = db.Column(db.Float)  # AI calculated
-    quality_grade = db.Column(db.String(5))
-    yield_percentage = db.Column(db.Float)
+    # Input quantities
+    paddy_input_quantity = db.Column(db.Float, nullable=False)  # in kg
+    paddy_variety = db.Column(db.String(50))
+    paddy_quality_grade = db.Column(db.String(10))
+    
+    # Output quantities
+    rice_output = db.Column(db.Float, default=0.0)
+    broken_rice_output = db.Column(db.Float, default=0.0)
+    bran_output = db.Column(db.Float, default=0.0)
+    husk_output = db.Column(db.Float, default=0.0)
+    total_output = db.Column(db.Float, default=0.0)
+    
+    # Efficiency metrics
+    yield_percentage = db.Column(db.Float)  # rice output / paddy input
+    efficiency_percentage = db.Column(db.Float)  # overall efficiency
+    wastage_percentage = db.Column(db.Float)
+    
+    # Quality parameters
+    output_quality_grade = db.Column(db.String(10))
+    moisture_content_output = db.Column(db.Float)
+    broken_percentage_output = db.Column(db.Float)
+    foreign_matter_output = db.Column(db.Float)
+    
+    # Machine parameters
+    machine_settings = db.Column(db.Text)  # JSON string
+    machine_performance = db.Column(db.Text)  # JSON string
+    maintenance_alerts = db.Column(db.Text)  # JSON string
     
     # Status and tracking
-    status = db.Column(db.String(20), default='planned')  # planned, in_progress, completed, cancelled
-    priority = db.Column(db.String(10), default='normal')  # low, normal, high, urgent
+    status = db.Column(db.String(20), default='in_progress')  # in_progress, completed, paused, cancelled
+    completion_percentage = db.Column(db.Float, default=0.0)
     
-    # Personnel
+    # AI insights
+    predicted_yield = db.Column(db.Float)  # AI prediction before processing
+    actual_vs_predicted = db.Column(db.Float)  # variance analysis
+    optimization_suggestions = db.Column(db.Text)  # JSON string
+    anomaly_flags = db.Column(db.Text)  # JSON string
+    
+    # Cost tracking
+    labor_cost = db.Column(db.Float, default=0.0)
+    energy_cost = db.Column(db.Float, default=0.0)
+    maintenance_cost = db.Column(db.Float, default=0.0)
+    total_production_cost = db.Column(db.Float, default=0.0)
+    
+    # Audit fields
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
-    started_by = db.Column(db.Integer, db.ForeignKey('users.id'))
-    completed_by = db.Column(db.Integer, db.ForeignKey('users.id'))
-    supervisor_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    
-    # Notes and observations
-    production_notes = db.Column(db.Text)
-    completion_notes = db.Column(db.Text)
-    ai_recommendations = db.Column(JSON)
-    
-    # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    steps = db.relationship('ProductionStep', backref='batch', lazy='dynamic', cascade='all, delete-orphan')
-    quality_tests = db.relationship('QualityTest', backref='batch', lazy='dynamic', cascade='all, delete-orphan')
-    
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        if not self.batch_number:
-            self.batch_number = self._generate_batch_number()
-    
-    def _generate_batch_number(self):
-        prefix = f"B{datetime.now().strftime('%Y%m')}"
-        count = ProductionBatch.query.filter(
-            ProductionBatch.batch_number.like(f"{prefix}%")
-        ).count() + 1
-        return f"{prefix}{count:04d}"
-    
+    paddy_stock = relationship("PaddyStock")
+    operator = relationship("User", foreign_keys=[operator_id])
+    created_by_user = relationship("User", foreign_keys=[created_by])
+
+    def get_machine_settings(self):
+        if self.machine_settings:
+            try:
+                return json.loads(self.machine_settings)
+            except:
+                return {}
+        return {}
+
+    def set_machine_settings(self, settings):
+        self.machine_settings = json.dumps(settings)
+
+    def get_machine_performance(self):
+        if self.machine_performance:
+            try:
+                return json.loads(self.machine_performance)
+            except:
+                return {}
+        return {}
+
+    def set_machine_performance(self, performance):
+        self.machine_performance = json.dumps(performance)
+
+    def get_optimization_suggestions(self):
+        if self.optimization_suggestions:
+            try:
+                return json.loads(self.optimization_suggestions)
+            except:
+                return []
+        return []
+
+    def set_optimization_suggestions(self, suggestions):
+        self.optimization_suggestions = json.dumps(suggestions)
+
+    def get_anomaly_flags(self):
+        if self.anomaly_flags:
+            try:
+                return json.loads(self.anomaly_flags)
+            except:
+                return []
+        return []
+
+    def set_anomaly_flags(self, flags):
+        self.anomaly_flags = json.dumps(flags)
+
+    def calculate_yield_percentage(self):
+        """Calculate rice yield percentage"""
+        if self.paddy_input_quantity and self.rice_output:
+            return (self.rice_output / self.paddy_input_quantity) * 100
+        return 0.0
+
+    def calculate_efficiency_percentage(self):
+        """Calculate overall production efficiency"""
+        if self.paddy_input_quantity and self.total_output:
+            return (self.total_output / self.paddy_input_quantity) * 100
+        return 0.0
+
+    def calculate_wastage_percentage(self):
+        """Calculate wastage percentage"""
+        if self.paddy_input_quantity and self.total_output:
+            wastage = self.paddy_input_quantity - self.total_output
+            return (wastage / self.paddy_input_quantity) * 100
+        return 0.0
+
+    def get_duration_hours(self):
+        """Get production duration in hours"""
+        if self.start_time and self.end_time:
+            return (self.end_time - self.start_time).total_seconds() / 3600
+        return 0.0
+
+    def get_production_rate(self):
+        """Get production rate in kg/hour"""
+        duration = self.get_duration_hours()
+        if duration > 0:
+            return self.total_output / duration
+        return 0.0
+
+    def analyze_performance(self):
+        """AI-powered performance analysis"""
+        analysis = {
+            'efficiency_rating': 'good',
+            'yield_rating': 'good',
+            'quality_rating': 'good',
+            'recommendations': []
+        }
+        
+        # Efficiency analysis
+        efficiency = self.calculate_efficiency_percentage()
+        if efficiency < 85:
+            analysis['efficiency_rating'] = 'poor'
+            analysis['recommendations'].append({
+                'type': 'efficiency',
+                'message': f'Low efficiency ({efficiency:.1f}%). Check machine settings.',
+                'priority': 'high'
+            })
+        elif efficiency < 90:
+            analysis['efficiency_rating'] = 'average'
+        
+        # Yield analysis
+        yield_pct = self.calculate_yield_percentage()
+        if yield_pct < 65:
+            analysis['yield_rating'] = 'poor'
+            analysis['recommendations'].append({
+                'type': 'yield',
+                'message': f'Low yield ({yield_pct:.1f}%). Check paddy quality.',
+                'priority': 'high'
+            })
+        elif yield_pct < 70:
+            analysis['yield_rating'] = 'average'
+        
+        # Quality analysis
+        if self.broken_percentage_output and self.broken_percentage_output > 10:
+            analysis['quality_rating'] = 'poor'
+            analysis['recommendations'].append({
+                'type': 'quality',
+                'message': f'High broken rice ({self.broken_percentage_output:.1f}%).',
+                'priority': 'medium'
+            })
+        
+        return analysis
+
+    def update_totals(self):
+        """Update calculated fields"""
+        self.total_output = (self.rice_output or 0) + (self.broken_rice_output or 0) + \
+                           (self.bran_output or 0) + (self.husk_output or 0)
+        self.yield_percentage = self.calculate_yield_percentage()
+        self.efficiency_percentage = self.calculate_efficiency_percentage()
+        self.wastage_percentage = self.calculate_wastage_percentage()
+        
+        # Calculate total production cost
+        self.total_production_cost = (self.labor_cost or 0) + (self.energy_cost or 0) + \
+                                   (self.maintenance_cost or 0)
+
     def to_dict(self):
         return {
             'id': self.id,
             'batch_number': self.batch_number,
+            'paddy_stock_id': self.paddy_stock_id,
+            'start_time': self.start_time.isoformat() if self.start_time else None,
+            'end_time': self.end_time.isoformat() if self.end_time else None,
+            'machine_id': self.machine_id,
+            'operator_id': self.operator_id,
+            'shift': self.shift,
+            'paddy_input_quantity': self.paddy_input_quantity,
             'paddy_variety': self.paddy_variety,
-            'input_quantity': self.input_quantity,
-            'output_quantity': self.output_quantity,
-            'waste_quantity': self.waste_quantity,
-            'efficiency_score': self.efficiency_score,
-            'quality_grade': self.quality_grade,
+            'paddy_quality_grade': self.paddy_quality_grade,
+            'rice_output': self.rice_output,
+            'broken_rice_output': self.broken_rice_output,
+            'bran_output': self.bran_output,
+            'husk_output': self.husk_output,
+            'total_output': self.total_output,
             'yield_percentage': self.yield_percentage,
+            'efficiency_percentage': self.efficiency_percentage,
+            'wastage_percentage': self.wastage_percentage,
+            'output_quality_grade': self.output_quality_grade,
+            'moisture_content_output': self.moisture_content_output,
+            'broken_percentage_output': self.broken_percentage_output,
+            'foreign_matter_output': self.foreign_matter_output,
+            'machine_settings': self.get_machine_settings(),
+            'machine_performance': self.get_machine_performance(),
             'status': self.status,
-            'priority': self.priority,
-            'start_time': self.start_time.isoformat() if self.start_time else None,
-            'end_time': self.end_time.isoformat() if self.end_time else None,
-            'created_at': self.created_at.isoformat(),
-            'machine_settings': self.machine_settings,
-            'ai_recommendations': self.ai_recommendations
-        }
-
-class ProductionStep(db.Model):
-    __tablename__ = 'production_steps'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    batch_id = db.Column(db.Integer, db.ForeignKey('production_batches.id'), nullable=False)
-    
-    # Step details
-    step_name = db.Column(db.String(50), nullable=False)  # cleaning, dehusking, polishing, sorting
-    step_order = db.Column(db.Integer, default=1)
-    
-    # Timing
-    start_time = db.Column(db.DateTime)
-    end_time = db.Column(db.DateTime)
-    expected_duration = db.Column(db.Integer)  # minutes
-    actual_duration = db.Column(db.Integer)  # calculated
-    
-    # Parameters and settings
-    parameters = db.Column(JSON)  # step-specific parameters
-    machine_id = db.Column(db.String(50))
-    operator_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    
-    # Quality and output
-    input_quantity = db.Column(db.Float)
-    output_quantity = db.Column(db.Float)
-    waste_quantity = db.Column(db.Float, default=0)
-    step_efficiency = db.Column(db.Float)
-    
-    # Status and notes
-    status = db.Column(db.String(20), default='pending')  # pending, in_progress, completed, failed
-    notes = db.Column(db.Text)
-    issues = db.Column(JSON)  # any issues encountered
-    
-    # AI insights
-    ai_optimization = db.Column(JSON)
-    performance_score = db.Column(db.Float)
-    
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'batch_id': self.batch_id,
-            'step_name': self.step_name,
-            'step_order': self.step_order,
-            'start_time': self.start_time.isoformat() if self.start_time else None,
-            'end_time': self.end_time.isoformat() if self.end_time else None,
-            'expected_duration': self.expected_duration,
-            'actual_duration': self.actual_duration,
-            'input_quantity': self.input_quantity,
-            'output_quantity': self.output_quantity,
-            'step_efficiency': self.step_efficiency,
-            'status': self.status,
-            'parameters': self.parameters,
-            'performance_score': self.performance_score
+            'completion_percentage': self.completion_percentage,
+            'predicted_yield': self.predicted_yield,
+            'actual_vs_predicted': self.actual_vs_predicted,
+            'optimization_suggestions': self.get_optimization_suggestions(),
+            'anomaly_flags': self.get_anomaly_flags(),
+            'labor_cost': self.labor_cost,
+            'energy_cost': self.energy_cost,
+            'maintenance_cost': self.maintenance_cost,
+            'total_production_cost': self.total_production_cost,
+            'duration_hours': self.get_duration_hours(),
+            'production_rate': self.get_production_rate(),
+            'performance_analysis': self.analyze_performance(),
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
 
 class QualityTest(db.Model):
     __tablename__ = 'quality_tests'
     
     id = db.Column(db.Integer, primary_key=True)
-    batch_id = db.Column(db.Integer, db.ForeignKey('production_batches.id'), nullable=False)
-    test_number = db.Column(db.String(50), unique=True)
+    test_id = db.Column(db.String(50), unique=True, nullable=False)
+    batch_id = db.Column(db.Integer, db.ForeignKey('production_batches.id'))
+    sample_type = db.Column(db.String(20))  # input_paddy, output_rice, final_product
     
     # Test details
-    test_type = db.Column(db.String(30), nullable=False)  # input, intermediate, final
-    test_stage = db.Column(db.String(30))  # cleaning, polishing, packaging
-    sample_size = db.Column(db.Float)  # kg
+    test_date = db.Column(db.DateTime, nullable=False)
+    tested_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    test_method = db.Column(db.String(50))  # manual, automated, ai_vision
     
     # Quality parameters
     moisture_content = db.Column(db.Float)
-    broken_grains = db.Column(db.Float)
     foreign_matter = db.Column(db.Float)
-    chalky_grains = db.Column(db.Float)
-    head_rice_recovery = db.Column(db.Float)
-    milling_degree = db.Column(db.Float)
-    
-    # Color and appearance
-    whiteness_index = db.Column(db.Float)
-    transparency = db.Column(db.Float)
+    broken_percentage = db.Column(db.Float)
+    chalky_percentage = db.Column(db.Float)
     grain_length = db.Column(db.Float)
     grain_width = db.Column(db.Float)
+    head_rice_percentage = db.Column(db.Float)
     
-    # Overall assessment
-    overall_grade = db.Column(db.String(5))  # A, B, C, D
-    quality_score = db.Column(db.Float)  # 0-100
-    pass_fail = db.Column(db.Boolean, default=True)
-    
-    # Test execution
-    tested_by = db.Column(db.Integer, db.ForeignKey('users.id'))
-    test_date = db.Column(db.DateTime, default=datetime.utcnow)
-    test_method = db.Column(db.String(20), default='manual')  # manual, automated, ai
+    # Grading
+    grade = db.Column(db.String(10))  # A, B, C, D, E
+    grade_confidence = db.Column(db.Float)  # AI confidence in grading
     
     # AI analysis
-    ai_analysis = db.Column(JSON)
-    confidence_score = db.Column(db.Float)
-    
-    # Notes and recommendations
-    notes = db.Column(db.Text)
-    recommendations = db.Column(JSON)
-    
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        if not self.test_number:
-            self.test_number = self._generate_test_number()
-    
-    def _generate_test_number(self):
-        prefix = f"QT{datetime.now().strftime('%Y%m%d')}"
-        count = QualityTest.query.filter(
-            QualityTest.test_number.like(f"{prefix}%")
-        ).count() + 1
-        return f"{prefix}{count:03d}"
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'batch_id': self.batch_id,
-            'test_number': self.test_number,
-            'test_type': self.test_type,
-            'test_stage': self.test_stage,
-            'moisture_content': self.moisture_content,
-            'broken_grains': self.broken_grains,
-            'foreign_matter': self.foreign_matter,
-            'head_rice_recovery': self.head_rice_recovery,
-            'overall_grade': self.overall_grade,
-            'quality_score': self.quality_score,
-            'pass_fail': self.pass_fail,
-            'test_date': self.test_date.isoformat(),
-            'ai_analysis': self.ai_analysis,
-            'confidence_score': self.confidence_score
-        }
-
-class ProductionSchedule(db.Model):
-    __tablename__ = 'production_schedules'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    schedule_date = db.Column(db.Date, nullable=False)
-    shift = db.Column(db.String(10), nullable=False)  # morning, afternoon, night
-    
-    # Capacity planning
-    planned_batches = db.Column(db.Integer, default=0)
-    planned_quantity = db.Column(db.Float, default=0)  # total input quantity
-    available_capacity = db.Column(db.Float)  # machine capacity
-    utilization_target = db.Column(db.Float, default=85)  # percentage
-    
-    # Resource allocation
-    assigned_operators = db.Column(JSON)  # list of operator IDs
-    machine_allocation = db.Column(JSON)  # machine assignments
-    
-    # AI optimization
-    ai_optimized = db.Column(db.Boolean, default=False)
-    optimization_score = db.Column(db.Float)
-    efficiency_prediction = db.Column(db.Float)
+    ai_analysis_results = db.Column(db.Text)  # JSON string
+    image_analysis_data = db.Column(db.Text)  # JSON string for computer vision results
     
     # Status
-    status = db.Column(db.String(20), default='draft')  # draft, confirmed, in_progress, completed
+    status = db.Column(db.String(20), default='completed')  # pending, completed, verified
+    verified_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    verification_date = db.Column(db.DateTime)
     
+    # Audit fields
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'schedule_date': self.schedule_date.isoformat(),
-            'shift': self.shift,
-            'planned_batches': self.planned_batches,
-            'planned_quantity': self.planned_quantity,
-            'available_capacity': self.available_capacity,
-            'utilization_target': self.utilization_target,
-            'ai_optimized': self.ai_optimized,
-            'optimization_score': self.optimization_score,
-            'status': self.status
-        }
+    # Relationships
+    production_batch = relationship("ProductionBatch")
+    tested_by_user = relationship("User", foreign_keys=[tested_by])
+    verified_by_user = relationship("User", foreign_keys=[verified_by])
+    created_by_user = relationship("User", foreign_keys=[created_by])
 
-class MaintenanceLog(db.Model):
-    __tablename__ = 'maintenance_logs'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    machine_id = db.Column(db.String(50), nullable=False)
-    machine_name = db.Column(db.String(100))
-    
-    # Maintenance details
-    maintenance_type = db.Column(db.String(20), nullable=False)  # preventive, corrective, emergency
-    description = db.Column(db.Text, nullable=False)
-    
-    # Scheduling
-    scheduled_date = db.Column(db.DateTime)
-    start_time = db.Column(db.DateTime)
-    end_time = db.Column(db.DateTime)
-    duration_hours = db.Column(db.Float)
-    
-    # Personnel and costs
-    technician_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    supervisor_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    cost = db.Column(db.Float, default=0)
-    parts_used = db.Column(JSON)
-    
-    # Status and impact
-    status = db.Column(db.String(20), default='scheduled')  # scheduled, in_progress, completed, cancelled
-    impact_on_production = db.Column(db.String(20))  # none, low, medium, high
-    downtime_hours = db.Column(db.Float, default=0)
-    
-    # AI predictions
-    ai_predicted = db.Column(db.Boolean, default=False)
-    failure_probability = db.Column(db.Float)
-    recommended_action = db.Column(db.String(100))
-    
-    # Notes and follow-up
-    notes = db.Column(db.Text)
-    follow_up_required = db.Column(db.Boolean, default=False)
-    next_maintenance_date = db.Column(db.DateTime)
-    
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+    def get_ai_analysis_results(self):
+        if self.ai_analysis_results:
+            try:
+                return json.loads(self.ai_analysis_results)
+            except:
+                return {}
+        return {}
+
+    def set_ai_analysis_results(self, results):
+        self.ai_analysis_results = json.dumps(results)
+
+    def get_image_analysis_data(self):
+        if self.image_analysis_data:
+            try:
+                return json.loads(self.image_analysis_data)
+            except:
+                return {}
+        return {}
+
+    def set_image_analysis_data(self, data):
+        self.image_analysis_data = json.dumps(data)
+
+    def calculate_quality_score(self):
+        """Calculate overall quality score"""
+        scores = {}
+        
+        # Moisture content score (optimal: 14%)
+        if self.moisture_content:
+            scores['moisture'] = max(0, 100 - abs(self.moisture_content - 14) * 5)
+        
+        # Foreign matter score (lower is better)
+        if self.foreign_matter:
+            scores['foreign_matter'] = max(0, 100 - self.foreign_matter * 20)
+        
+        # Broken percentage score (lower is better)
+        if self.broken_percentage:
+            scores['broken'] = max(0, 100 - self.broken_percentage * 2)
+        
+        # Chalky percentage score (lower is better)
+        if self.chalky_percentage:
+            scores['chalky'] = max(0, 100 - self.chalky_percentage * 3)
+        
+        # Head rice percentage score (higher is better)
+        if self.head_rice_percentage:
+            scores['head_rice'] = min(100, self.head_rice_percentage)
+        
+        if scores:
+            return sum(scores.values()) / len(scores)
+        return 0.0
+
+    def determine_grade(self):
+        """AI-powered grade determination"""
+        quality_score = self.calculate_quality_score()
+        
+        if quality_score >= 90:
+            return 'A'
+        elif quality_score >= 80:
+            return 'B'
+        elif quality_score >= 70:
+            return 'C'
+        elif quality_score >= 60:
+            return 'D'
+        else:
+            return 'E'
+
+    def get_quality_recommendations(self):
+        """Get quality improvement recommendations"""
+        recommendations = []
+        
+        if self.moisture_content and self.moisture_content > 14:
+            recommendations.append({
+                'parameter': 'moisture_content',
+                'message': f'Moisture content ({self.moisture_content}%) is high. Improve drying.',
+                'priority': 'high'
+            })
+        
+        if self.foreign_matter and self.foreign_matter > 2:
+            recommendations.append({
+                'parameter': 'foreign_matter',
+                'message': f'Foreign matter ({self.foreign_matter}%) exceeds limit. Improve cleaning.',
+                'priority': 'medium'
+            })
+        
+        if self.broken_percentage and self.broken_percentage > 10:
+            recommendations.append({
+                'parameter': 'broken_percentage',
+                'message': f'High broken rice ({self.broken_percentage}%). Check milling settings.',
+                'priority': 'medium'
+            })
+        
+        return recommendations
+
     def to_dict(self):
         return {
             'id': self.id,
-            'machine_id': self.machine_id,
-            'machine_name': self.machine_name,
-            'maintenance_type': self.maintenance_type,
-            'description': self.description,
-            'scheduled_date': self.scheduled_date.isoformat() if self.scheduled_date else None,
-            'start_time': self.start_time.isoformat() if self.start_time else None,
-            'end_time': self.end_time.isoformat() if self.end_time else None,
+            'test_id': self.test_id,
+            'batch_id': self.batch_id,
+            'sample_type': self.sample_type,
+            'test_date': self.test_date.isoformat() if self.test_date else None,
+            'tested_by': self.tested_by,
+            'test_method': self.test_method,
+            'moisture_content': self.moisture_content,
+            'foreign_matter': self.foreign_matter,
+            'broken_percentage': self.broken_percentage,
+            'chalky_percentage': self.chalky_percentage,
+            'grain_length': self.grain_length,
+            'grain_width': self.grain_width,
+            'head_rice_percentage': self.head_rice_percentage,
+            'grade': self.grade or self.determine_grade(),
+            'grade_confidence': self.grade_confidence,
+            'quality_score': self.calculate_quality_score(),
+            'ai_analysis_results': self.get_ai_analysis_results(),
+            'image_analysis_data': self.get_image_analysis_data(),
             'status': self.status,
-            'cost': self.cost,
-            'downtime_hours': self.downtime_hours,
-            'ai_predicted': self.ai_predicted,
-            'failure_probability': self.failure_probability
+            'verified_by': self.verified_by,
+            'verification_date': self.verification_date.isoformat() if self.verification_date else None,
+            'quality_recommendations': self.get_quality_recommendations(),
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }

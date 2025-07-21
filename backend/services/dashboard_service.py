@@ -1,8 +1,4 @@
-from models.user import User
-from models.production import ProductionBatch, QualityTest
-from models.inventory import PaddyStock, ProductStock
-from models.sales import SalesOrder, Customer
-from models.farmer import Farmer
+from models import User, ProductionBatch, QualityTest, PaddyStock, ProductStock, SalesOrder, Customer, Farmer
 from extensions import db
 from datetime import datetime, timedelta
 from sqlalchemy import func, and_

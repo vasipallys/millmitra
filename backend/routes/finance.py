@@ -1,12 +1,14 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models.user import User
-from services.finance_service import FinanceService
-from services.ai_finance_service import AIFinanceService
+from models import User, Payment, Expense, Budget
+# Temporarily disabled until services are fixed
+# from services.finance_service import FinanceService
+# from services.ai_finance_service import AIFinanceService
 
 finance_bp = Blueprint('finance', __name__)
-finance_service = FinanceService()
-ai_finance = AIFinanceService()
+# Temporarily disabled until services are fixed
+# finance_service = FinanceService()
+# ai_finance = AIFinanceService()
 
 @finance_bp.route('/accounts', methods=['POST'])
 @jwt_required()

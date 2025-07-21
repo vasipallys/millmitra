@@ -1,6 +1,12 @@
+"""
+Farmer Management Models
+"""
+
 from datetime import datetime
+import json
+from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, Text, ForeignKey
+from sqlalchemy.orm import relationship
 from extensions import db
-from sqlalchemy.dialects.postgresql import JSON
 
 class Farmer(db.Model):
     __tablename__ = 'farmers'
@@ -8,51 +14,134 @@ class Farmer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     farmer_code = db.Column(db.String(20), unique=True, nullable=False)
     name = db.Column(db.String(100), nullable=False)
-    father_name = db.Column(db.String(100))
     phone = db.Column(db.String(15), nullable=False)
-    alternate_phone = db.Column(db.String(15))
-    email = db.Column(db.String(100))
-    aadhar_number = db.Column(db.String(12), unique=True)
-    pan_number = db.Column(db.String(10))
-    bank_account_number = db.Column(db.String(20))
-    bank_ifsc = db.Column(db.String(11))
+    email = db.Column(db.String(120))
+    
+    # Address information
+    address = db.Column(db.Text)
+    village = db.Column(db.String(100))
+    district = db.Column(db.String(100))
+    state = db.Column(db.String(100))
+    pincode = db.Column(db.String(10))
+    
+    # Banking information
+    bank_account = db.Column(db.String(50))
+    ifsc_code = db.Column(db.String(15))
     bank_name = db.Column(db.String(100))
+    branch_name = db.Column(db.String(100))
     
-    # Address
-    village = db.Column(db.String(100), nullable=False)
-    district = db.Column(db.String(100), nullable=False)
-    state = db.Column(db.String(100), nullable=False)
-    pincode = db.Column(db.String(6))
+    # Identity information
+    pan_number = db.Column(db.String(15))
+    aadhar_number = db.Column(db.String(15))
     
-    # Farm details
-    total_land_area = db.Column(db.Numeric(10, 2))  # in acres
-    irrigated_area = db.Column(db.Numeric(10, 2))
-    farming_experience = db.Column(db.Integer)  # years
-    primary_crop = db.Column(db.String(50), default='paddy')
+    # Farming information
+    land_area = db.Column(db.Float)  # in acres
+    farming_experience = db.Column(db.Integer)  # in years
+    preferred_varieties = db.Column(db.Text)  # JSON string
+    farming_type = db.Column(db.String(50))  # organic, conventional, mixed
+    irrigation_type = db.Column(db.String(50))  # bore_well, canal, rain_fed
     
-    # Status and verification
-    status = db.Column(db.String(20), default='active')  # active, inactive, suspended
-    verification_status = db.Column(db.String(20), default='pending')  # pending, verified, rejected
-    kyc_completed = db.Column(db.Boolean, default=False)
+    # Business metrics
+    quality_rating = db.Column(db.Float, default=0.0)
+    reliability_score = db.Column(db.Float, default=0.0)
+    total_transactions = db.Column(db.Integer, default=0)
+    total_quantity_supplied = db.Column(db.Float, default=0.0)  # in kg
+    average_quality_grade = db.Column(db.String(10))
     
-    # Ratings and scores
-    quality_rating = db.Column(db.Numeric(3, 2), default=0.0)  # 0-5 scale
-    reliability_score = db.Column(db.Numeric(3, 2), default=0.0)  # 0-5 scale
-    payment_score = db.Column(db.Numeric(3, 2), default=0.0)  # 0-5 scale
+    # Payment and terms
+    payment_terms = db.Column(db.String(50), default='immediate')
+    credit_limit = db.Column(db.Float, default=0.0)
+    outstanding_amount = db.Column(db.Float, default=0.0)
     
-    # Metadata
-    registration_date = db.Column(db.Date, default=datetime.utcnow().date)
-    last_transaction_date = db.Column(db.Date)
-    notes = db.Column(db.Text)
+    # Status and tracking
+    is_active = db.Column(db.Boolean, default=True)
+    is_verified = db.Column(db.Boolean, default=False)
+    verification_date = db.Column(db.DateTime)
+    last_transaction_date = db.Column(db.DateTime)
+    
+    # AI insights
+    risk_category = db.Column(db.String(20))  # low, medium, high
+    seasonal_pattern = db.Column(db.Text)  # JSON string with seasonal data
+    price_sensitivity = db.Column(db.Float)  # AI-calculated price sensitivity
+    loyalty_score = db.Column(db.Float)  # AI-calculated loyalty score
+    
+    # Audit fields
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    contracts = db.relationship('FarmerContract', backref='farmer', lazy='dynamic')
-    procurements = db.relationship('PaddyProcurement', backref='farmer', lazy='dynamic')
-    payments = db.relationship('FarmerPayment', backref='farmer', lazy='dynamic')
-    
+    created_by_user = relationship("User")
+
+    def get_preferred_varieties(self):
+        if self.preferred_varieties:
+            try:
+                return json.loads(self.preferred_varieties)
+            except:
+                return []
+        return []
+
+    def set_preferred_varieties(self, varieties):
+        self.preferred_varieties = json.dumps(varieties)
+
+    def get_seasonal_pattern(self):
+        if self.seasonal_pattern:
+            try:
+                return json.loads(self.seasonal_pattern)
+            except:
+                return {}
+        return {}
+
+    def set_seasonal_pattern(self, pattern):
+        self.seasonal_pattern = json.dumps(pattern)
+
+    def calculate_quality_rating(self):
+        """Calculate quality rating based on recent transactions"""
+        # This would be implemented with actual transaction data
+        # For now, return current rating
+        return self.quality_rating or 0.0
+
+    def update_business_metrics(self, new_transaction_data):
+        """Update business metrics after a new transaction"""
+        self.total_transactions = (self.total_transactions or 0) + 1
+        self.total_quantity_supplied = (self.total_quantity_supplied or 0) + new_transaction_data.get('quantity', 0)
+        self.last_transaction_date = datetime.utcnow()
+        
+        # Update quality rating (simplified logic)
+        current_grade = new_transaction_data.get('quality_grade', 'C')
+        grade_scores = {'A': 5, 'B': 4, 'C': 3, 'D': 2, 'E': 1}
+        new_score = grade_scores.get(current_grade, 3)
+        
+        if self.quality_rating:
+            # Weighted average with more weight to recent transactions
+            self.quality_rating = (self.quality_rating * 0.8) + (new_score * 0.2)
+        else:
+            self.quality_rating = new_score
+
+    def get_risk_assessment(self):
+        """Get AI-powered risk assessment"""
+        factors = {
+            'payment_history': 0.3,
+            'quality_consistency': 0.25,
+            'quantity_reliability': 0.2,
+            'seasonal_availability': 0.15,
+            'market_reputation': 0.1
+        }
+        
+        # Simplified risk calculation
+        risk_score = 0.0
+        if self.reliability_score:
+            risk_score += self.reliability_score * factors['payment_history']
+        if self.quality_rating:
+            risk_score += (self.quality_rating / 5.0) * factors['quality_consistency']
+        
+        if risk_score >= 0.8:
+            return 'low'
+        elif risk_score >= 0.6:
+            return 'medium'
+        else:
+            return 'high'
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -60,15 +149,40 @@ class Farmer(db.Model):
             'name': self.name,
             'phone': self.phone,
             'email': self.email,
+            'address': self.address,
             'village': self.village,
             'district': self.district,
             'state': self.state,
-            'total_land_area': float(self.total_land_area) if self.total_land_area else None,
-            'status': self.status,
-            'verification_status': self.verification_status,
-            'quality_rating': float(self.quality_rating),
-            'reliability_score': float(self.reliability_score),
-            'registration_date': self.registration_date.isoformat() if self.registration_date else None
+            'pincode': self.pincode,
+            'bank_account': self.bank_account,
+            'ifsc_code': self.ifsc_code,
+            'bank_name': self.bank_name,
+            'branch_name': self.branch_name,
+            'pan_number': self.pan_number,
+            'aadhar_number': self.aadhar_number,
+            'land_area': self.land_area,
+            'farming_experience': self.farming_experience,
+            'preferred_varieties': self.get_preferred_varieties(),
+            'farming_type': self.farming_type,
+            'irrigation_type': self.irrigation_type,
+            'quality_rating': self.quality_rating,
+            'reliability_score': self.reliability_score,
+            'total_transactions': self.total_transactions,
+            'total_quantity_supplied': self.total_quantity_supplied,
+            'average_quality_grade': self.average_quality_grade,
+            'payment_terms': self.payment_terms,
+            'credit_limit': self.credit_limit,
+            'outstanding_amount': self.outstanding_amount,
+            'is_active': self.is_active,
+            'is_verified': self.is_verified,
+            'verification_date': self.verification_date.isoformat() if self.verification_date else None,
+            'last_transaction_date': self.last_transaction_date.isoformat() if self.last_transaction_date else None,
+            'risk_category': self.risk_category or self.get_risk_assessment(),
+            'seasonal_pattern': self.get_seasonal_pattern(),
+            'price_sensitivity': self.price_sensitivity,
+            'loyalty_score': self.loyalty_score,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
 
 class FarmerContract(db.Model):
@@ -77,169 +191,55 @@ class FarmerContract(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     contract_number = db.Column(db.String(50), unique=True, nullable=False)
     farmer_id = db.Column(db.Integer, db.ForeignKey('farmers.id'), nullable=False)
-    season = db.Column(db.String(20), nullable=False)  # kharif, rabi
-    year = db.Column(db.Integer, nullable=False)
     
-    # Contract terms
-    paddy_variety = db.Column(db.String(50), nullable=False)
-    expected_quantity = db.Column(db.Numeric(10, 2), nullable=False)  # in quintals
-    base_price = db.Column(db.Numeric(10, 2), nullable=False)  # per quintal
-    quality_bonus = db.Column(db.Numeric(10, 2), default=0)  # bonus per quintal for quality
-    advance_amount = db.Column(db.Numeric(15, 2), default=0)
+    # Contract details
+    contract_type = db.Column(db.String(50))  # seasonal, annual, spot
+    variety = db.Column(db.String(50))
+    quantity_committed = db.Column(db.Float)  # in kg
+    price_per_kg = db.Column(db.Float)
+    quality_specifications = db.Column(db.Text)  # JSON string
     
-    # Dates
-    contract_date = db.Column(db.Date, nullable=False)
-    expected_delivery_start = db.Column(db.Date)
-    expected_delivery_end = db.Column(db.Date)
+    # Timeline
+    start_date = db.Column(db.DateTime, nullable=False)
+    end_date = db.Column(db.DateTime, nullable=False)
+    delivery_schedule = db.Column(db.Text)  # JSON string
     
     # Status
     status = db.Column(db.String(20), default='active')  # active, completed, cancelled
-    actual_quantity_delivered = db.Column(db.Numeric(10, 2), default=0)
-    total_amount_paid = db.Column(db.Numeric(15, 2), default=0)
+    completion_percentage = db.Column(db.Float, default=0.0)
     
     # Terms and conditions
-    terms_conditions = db.Column(db.Text)
-    special_instructions = db.Column(db.Text)
+    payment_terms = db.Column(db.String(100))
+    penalty_clauses = db.Column(db.Text)
+    bonus_clauses = db.Column(db.Text)
     
+    # Audit fields
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    # Relationships
+    farmer = relationship("Farmer")
+    created_by_user = relationship("User")
+
     def to_dict(self):
         return {
             'id': self.id,
             'contract_number': self.contract_number,
             'farmer_id': self.farmer_id,
-            'season': self.season,
-            'year': self.year,
-            'paddy_variety': self.paddy_variety,
-            'expected_quantity': float(self.expected_quantity),
-            'base_price': float(self.base_price),
+            'contract_type': self.contract_type,
+            'variety': self.variety,
+            'quantity_committed': self.quantity_committed,
+            'price_per_kg': self.price_per_kg,
+            'quality_specifications': json.loads(self.quality_specifications) if self.quality_specifications else {},
+            'start_date': self.start_date.isoformat() if self.start_date else None,
+            'end_date': self.end_date.isoformat() if self.end_date else None,
+            'delivery_schedule': json.loads(self.delivery_schedule) if self.delivery_schedule else {},
             'status': self.status,
-            'contract_date': self.contract_date.isoformat(),
-            'actual_quantity_delivered': float(self.actual_quantity_delivered)
+            'completion_percentage': self.completion_percentage,
+            'payment_terms': self.payment_terms,
+            'penalty_clauses': self.penalty_clauses,
+            'bonus_clauses': self.bonus_clauses,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
-
-class PaddyProcurement(db.Model):
-    __tablename__ = 'paddy_procurements'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    procurement_number = db.Column(db.String(50), unique=True, nullable=False)
-    farmer_id = db.Column(db.Integer, db.ForeignKey('farmers.id'), nullable=False)
-    contract_id = db.Column(db.Integer, db.ForeignKey('farmer_contracts.id'))
-    
-    # Procurement details
-    procurement_date = db.Column(db.Date, nullable=False)
-    paddy_variety = db.Column(db.String(50), nullable=False)
-    quantity = db.Column(db.Numeric(10, 2), nullable=False)  # in quintals
-    moisture_content = db.Column(db.Numeric(5, 2))  # percentage
-    foreign_matter = db.Column(db.Numeric(5, 2))  # percentage
-    broken_grains = db.Column(db.Numeric(5, 2))  # percentage
-    
-    # Quality assessment
-    quality_grade = db.Column(db.String(10))  # A, B, C, D
-    quality_score = db.Column(db.Numeric(5, 2))  # 0-100
-    quality_bonus_rate = db.Column(db.Numeric(10, 2), default=0)
-    quality_penalty_rate = db.Column(db.Numeric(10, 2), default=0)
-    
-    # Pricing
-    base_price = db.Column(db.Numeric(10, 2), nullable=False)
-    final_price = db.Column(db.Numeric(10, 2), nullable=False)
-    total_amount = db.Column(db.Numeric(15, 2), nullable=False)
-    
-    # Storage and logistics
-    vehicle_number = db.Column(db.String(20))
-    driver_name = db.Column(db.String(100))
-    storage_location = db.Column(db.String(100))
-    
-    # Status
-    status = db.Column(db.String(20), default='received')  # received, quality_tested, stored, processed
-    payment_status = db.Column(db.String(20), default='pending')  # pending, partial, completed
-    
-    # Quality test results
-    test_results = db.Column(JSON)
-    inspector_notes = db.Column(db.Text)
-    
-    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relationships
-    contract = db.relationship('FarmerContract', backref='procurements')
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'procurement_number': self.procurement_number,
-            'farmer_id': self.farmer_id,
-            'procurement_date': self.procurement_date.isoformat(),
-            'paddy_variety': self.paddy_variety,
-            'quantity': float(self.quantity),
-            'quality_grade': self.quality_grade,
-            'quality_score': float(self.quality_score) if self.quality_score else None,
-            'final_price': float(self.final_price),
-            'total_amount': float(self.total_amount),
-            'status': self.status,
-            'payment_status': self.payment_status
-        }
-
-class FarmerPayment(db.Model):
-    __tablename__ = 'farmer_payments'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    payment_number = db.Column(db.String(50), unique=True, nullable=False)
-    farmer_id = db.Column(db.Integer, db.ForeignKey('farmers.id'), nullable=False)
-    procurement_id = db.Column(db.Integer, db.ForeignKey('paddy_procurements.id'))
-    contract_id = db.Column(db.Integer, db.ForeignKey('farmer_contracts.id'))
-    
-    # Payment details
-    payment_type = db.Column(db.String(20), nullable=False)  # advance, procurement, bonus, final
-    amount = db.Column(db.Numeric(15, 2), nullable=False)
-    payment_method = db.Column(db.String(20), nullable=False)  # bank_transfer, cash, cheque
-    payment_date = db.Column(db.Date, nullable=False)
-    
-    # Bank details
-    transaction_reference = db.Column(db.String(100))
-    bank_account_number = db.Column(db.String(20))
-    bank_ifsc = db.Column(db.String(11))
-    
-    # Status
-    status = db.Column(db.String(20), default='completed')  # pending, completed, failed
-    
-    # Additional info
-    description = db.Column(db.Text)
-    notes = db.Column(db.Text)
-    
-    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relationships
-    procurement = db.relationship('PaddyProcurement', backref='payments')
-    contract = db.relationship('FarmerContract', backref='payments')
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'payment_number': self.payment_number,
-            'farmer_id': self.farmer_id,
-            'payment_type': self.payment_type,
-            'amount': float(self.amount),
-            'payment_method': self.payment_method,
-            'payment_date': self.payment_date.isoformat(),
-            'status': self.status,
-            'description': self.description
-        }
-
-class FarmerDocument(db.Model):
-    __tablename__ = 'farmer_documents'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    farmer_id = db.Column(db.Integer, db.ForeignKey('farmers.id'), nullable=False)
-    document_type = db.Column(db.String(50), nullable=False)  # aadhar, pan, bank_passbook, land_record
-    document_number = db.Column(db.String(100))
-    file_path = db.Column(db.String(500))
-    verification_status = db.Column(db.String(20), default='pending')  # pending, verified, rejected
-    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
-    verified_at = db.Column(db.DateTime)
-    verified_by = db.Column(db.Integer, db.ForeignKey('users.id'))
-    
-    # Relationships
-    farmer = db.relationship('Farmer', backref='documents')

@@ -1,5 +1,4 @@
-from models.inventory import PaddyStock, ProductStock, StockMovement, Supplier, ReorderRule
-from models.user import User
+from models import PaddyStock, ProductStock, User
 from extensions import db
 from datetime import datetime, timedelta
 from sqlalchemy import func, and_, or_

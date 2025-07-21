@@ -1,322 +1,325 @@
-from extensions import db
-from datetime import datetime
+"""
+Inventory Management Models
+"""
+
+from datetime import datetime, timedelta
 import json
+from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, Text, ForeignKey
+from sqlalchemy.orm import relationship
+from extensions import db
 
 class PaddyStock(db.Model):
     __tablename__ = 'paddy_stock'
     
     id = db.Column(db.Integer, primary_key=True)
-    stock_code = db.Column(db.String(20), unique=True, nullable=False)
+    stock_id = db.Column(db.String(50), unique=True, nullable=False)
+    farmer_id = db.Column(db.Integer, db.ForeignKey('farmers.id'), nullable=False)
     
-    # Paddy details
+    # Purchase details
+    purchase_date = db.Column(db.DateTime, nullable=False)
     variety = db.Column(db.String(50), nullable=False)
-    grade = db.Column(db.String(10), default='A')
     quantity = db.Column(db.Float, nullable=False)  # in kg
-    unit_price = db.Column(db.Float)
-    total_value = db.Column(db.Float)
+    purchase_price = db.Column(db.Float, nullable=False)  # per kg
+    total_amount = db.Column(db.Float, nullable=False)
     
     # Quality parameters
     moisture_content = db.Column(db.Float)
-    foreign_matter_percentage = db.Column(db.Float)
+    foreign_matter = db.Column(db.Float)
     broken_percentage = db.Column(db.Float)
     chalky_percentage = db.Column(db.Float)
+    grain_length = db.Column(db.Float)
+    grain_width = db.Column(db.Float)
+    quality_grade = db.Column(db.String(10))
     
-    # AI quality assessment
-    ai_quality_score = db.Column(db.Float)
-    ai_quality_grade = db.Column(db.String(10))
-    quality_factors = db.Column(db.Text)  # JSON
+    # Storage information
+    warehouse_id = db.Column(db.String(20))
+    bin_number = db.Column(db.String(20))
+    storage_conditions = db.Column(db.Text)  # JSON string
     
-    # Storage details
-    storage_location = db.Column(db.String(50))
-    storage_type = db.Column(db.String(20))  # bulk, bagged
-    storage_conditions = db.Column(db.Text)  # JSON
-    
-    # Supplier information
-    supplier_id = db.Column(db.Integer, db.ForeignKey('suppliers.id'))
-    purchase_date = db.Column(db.Date)
-    lot_number = db.Column(db.String(30))
-    
-    # Status
-    status = db.Column(db.String(20), default='available')  # available, reserved, processing
-    reserved_quantity = db.Column(db.Float, default=0)
-    available_quantity = db.Column(db.Float)
+    # Processing status
+    status = db.Column(db.String(20), default='stored')  # stored, processing, processed, sold
+    processed_quantity = db.Column(db.Float, default=0.0)
+    remaining_quantity = db.Column(db.Float)
     
     # AI predictions
-    predicted_processing_yield = db.Column(db.Float)
-    predicted_quality_degradation = db.Column(db.Float)
-    optimal_processing_date = db.Column(db.Date)
+    predicted_yield = db.Column(db.Float)  # AI-predicted rice yield
+    quality_degradation_rate = db.Column(db.Float)  # AI-predicted degradation
+    optimal_processing_date = db.Column(db.DateTime)  # AI-suggested processing date
+    market_value_prediction = db.Column(db.Float)  # AI-predicted market value
     
-    # Timestamps
-    received_date = db.Column(db.Date, default=datetime.utcnow)
-    last_inspection_date = db.Column(db.Date)
+    # Audit fields
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
-    
+    farmer = relationship("Farmer")
+    created_by_user = relationship("User")
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if not self.remaining_quantity:
+            self.remaining_quantity = self.quantity
+
+    def get_storage_conditions(self):
+        if self.storage_conditions:
+            try:
+                return json.loads(self.storage_conditions)
+            except:
+                return {}
+        return {}
+
+    def set_storage_conditions(self, conditions):
+        self.storage_conditions = json.dumps(conditions)
+
+    def get_age_days(self):
+        """Get age of stock in days"""
+        return (datetime.utcnow() - self.purchase_date).days
+
+    def is_aging(self, threshold_days=30):
+        """Check if stock is aging beyond threshold"""
+        return self.get_age_days() > threshold_days
+
+    def get_quality_score(self):
+        """Calculate overall quality score"""
+        scores = {
+            'moisture': max(0, 100 - abs((self.moisture_content or 14) - 14) * 5),
+            'foreign_matter': max(0, 100 - (self.foreign_matter or 0) * 20),
+            'broken': max(0, 100 - (self.broken_percentage or 0) * 2),
+            'chalky': max(0, 100 - (self.chalky_percentage or 0) * 3)
+        }
+        return sum(scores.values()) / len(scores)
+
+    def predict_quality_degradation(self):
+        """AI-powered quality degradation prediction"""
+        base_degradation = 0.1  # 0.1% per day base rate
+        
+        # Factors affecting degradation
+        moisture_factor = max(1.0, (self.moisture_content or 14) / 14)
+        age_factor = 1 + (self.get_age_days() / 365) * 0.5
+        storage_factor = 1.0  # Would be calculated from storage conditions
+        
+        daily_degradation = base_degradation * moisture_factor * age_factor * storage_factor
+        return daily_degradation
+
+    def get_storage_recommendations(self):
+        """AI-powered storage recommendations"""
+        recommendations = []
+        
+        if self.moisture_content and self.moisture_content > 14:
+            recommendations.append({
+                'type': 'warning',
+                'message': f'High moisture content ({self.moisture_content}%). Consider drying.',
+                'priority': 'high'
+            })
+        
+        if self.is_aging(30):
+            recommendations.append({
+                'type': 'alert',
+                'message': f'Stock is {self.get_age_days()} days old. Consider processing soon.',
+                'priority': 'medium'
+            })
+        
+        if self.foreign_matter and self.foreign_matter > 2:
+            recommendations.append({
+                'type': 'info',
+                'message': f'High foreign matter ({self.foreign_matter}%). Clean before processing.',
+                'priority': 'low'
+            })
+        
+        return recommendations
+
     def to_dict(self):
         return {
             'id': self.id,
-            'stock_code': self.stock_code,
+            'stock_id': self.stock_id,
+            'farmer_id': self.farmer_id,
+            'purchase_date': self.purchase_date.isoformat() if self.purchase_date else None,
             'variety': self.variety,
-            'grade': self.grade,
             'quantity': self.quantity,
-            'unit_price': self.unit_price,
-            'total_value': self.total_value,
+            'purchase_price': self.purchase_price,
+            'total_amount': self.total_amount,
             'moisture_content': self.moisture_content,
-            'foreign_matter_percentage': self.foreign_matter_percentage,
+            'foreign_matter': self.foreign_matter,
             'broken_percentage': self.broken_percentage,
             'chalky_percentage': self.chalky_percentage,
-            'ai_quality_score': self.ai_quality_score,
-            'ai_quality_grade': self.ai_quality_grade,
-            'quality_factors': json.loads(self.quality_factors) if self.quality_factors else [],
-            'storage_location': self.storage_location,
-            'storage_type': self.storage_type,
-            'storage_conditions': json.loads(self.storage_conditions) if self.storage_conditions else [],
-            'supplier_id': self.supplier_id,
-            'purchase_date': self.purchase_date.isoformat() if self.purchase_date else None,
-            'lot_number': self.lot_number,
+            'grain_length': self.grain_length,
+            'grain_width': self.grain_width,
+            'quality_grade': self.quality_grade,
+            'warehouse_id': self.warehouse_id,
+            'bin_number': self.bin_number,
+            'storage_conditions': self.get_storage_conditions(),
             'status': self.status,
-            'reserved_quantity': self.reserved_quantity,
-            'available_quantity': self.available_quantity,
-            'predicted_processing_yield': self.predicted_processing_yield,
-            'predicted_quality_degradation': self.predicted_quality_degradation,
+            'processed_quantity': self.processed_quantity,
+            'remaining_quantity': self.remaining_quantity,
+            'predicted_yield': self.predicted_yield,
+            'quality_degradation_rate': self.quality_degradation_rate,
             'optimal_processing_date': self.optimal_processing_date.isoformat() if self.optimal_processing_date else None,
-            'received_date': self.received_date.isoformat() if self.received_date else None,
-            'last_inspection_date': self.last_inspection_date.isoformat() if self.last_inspection_date else None,
+            'market_value_prediction': self.market_value_prediction,
+            'age_days': self.get_age_days(),
+            'quality_score': self.get_quality_score(),
+            'storage_recommendations': self.get_storage_recommendations(),
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
-            'age_days': (datetime.now().date() - self.received_date).days if self.received_date else 0
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
 
 class ProductStock(db.Model):
     __tablename__ = 'product_stock'
     
     id = db.Column(db.Integer, primary_key=True)
-    stock_code = db.Column(db.String(20), unique=True, nullable=False)
-    
-    # Product details
-    product_type = db.Column(db.String(50), nullable=False)  # rice, bran, husk
+    product_id = db.Column(db.String(50), unique=True, nullable=False)
     product_name = db.Column(db.String(100), nullable=False)
-    grade = db.Column(db.String(10), default='A')
-    packaging = db.Column(db.String(30))  # 25kg, 50kg, bulk
+    product_type = db.Column(db.String(50), nullable=False)  # rice, broken_rice, bran, husk
+    variety = db.Column(db.String(50))
+    grade = db.Column(db.String(10))
     
-    # Quantity and pricing
+    # Stock details
     quantity = db.Column(db.Float, nullable=False)  # in kg
-    unit_price = db.Column(db.Float)
-    total_value = db.Column(db.Float)
-    
-    # Production details
-    production_batch_id = db.Column(db.Integer, db.ForeignKey('production_batches.id'))
-    production_date = db.Column(db.Date)
-    expiry_date = db.Column(db.Date)
-    
-    # Quality parameters
-    broken_percentage = db.Column(db.Float)
-    head_rice_percentage = db.Column(db.Float)
-    moisture_content = db.Column(db.Float)
-    
-    # AI quality assessment
-    ai_quality_score = db.Column(db.Float)
-    predicted_shelf_life = db.Column(db.Integer)  # days
-    quality_trend = db.Column(db.String(20))  # improving, stable, declining
-    
-    # Storage details
-    storage_location = db.Column(db.String(50))
-    storage_conditions = db.Column(db.Text)  # JSON
+    unit_cost = db.Column(db.Float)  # production cost per kg
+    market_price = db.Column(db.Float)  # current market price per kg
     
     # Inventory management
-    reorder_point = db.Column(db.Float)
-    max_stock_level = db.Column(db.Float)
-    reserved_quantity = db.Column(db.Float, default=0)
-    available_quantity = db.Column(db.Float)
+    minimum_stock_level = db.Column(db.Float, default=0.0)
+    maximum_stock_level = db.Column(db.Float, default=0.0)
+    reorder_point = db.Column(db.Float, default=0.0)
     
-    # AI predictions
-    predicted_demand = db.Column(db.Float)
-    sales_velocity = db.Column(db.Float)  # units per day
-    stockout_risk = db.Column(db.String(20))  # low, medium, high
+    # Storage information
+    warehouse_id = db.Column(db.String(20))
+    storage_location = db.Column(db.String(50))
+    packaging_type = db.Column(db.String(50))  # bulk, 25kg_bag, 50kg_bag
+    
+    # Quality and expiry
+    production_date = db.Column(db.DateTime)
+    expiry_date = db.Column(db.DateTime)
+    quality_parameters = db.Column(db.Text)  # JSON string
+    
+    # AI insights
+    demand_forecast = db.Column(db.Float)  # AI-predicted demand
+    optimal_price = db.Column(db.Float)  # AI-suggested optimal price
+    turnover_prediction = db.Column(db.Float)  # AI-predicted turnover rate
     
     # Status
-    status = db.Column(db.String(20), default='available')  # available, reserved, sold, damaged
+    status = db.Column(db.String(20), default='available')  # available, reserved, sold, expired
     
-    # Timestamps
+    # Audit fields
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
-    
+    created_by_user = relationship("User")
+
+    def get_quality_parameters(self):
+        if self.quality_parameters:
+            try:
+                return json.loads(self.quality_parameters)
+            except:
+                return {}
+        return {}
+
+    def set_quality_parameters(self, parameters):
+        self.quality_parameters = json.dumps(parameters)
+
+    def is_low_stock(self):
+        """Check if stock is below minimum level"""
+        return self.quantity <= self.minimum_stock_level
+
+    def is_near_expiry(self, days_threshold=30):
+        """Check if product is near expiry"""
+        if not self.expiry_date:
+            return False
+        days_to_expiry = (self.expiry_date - datetime.utcnow()).days
+        return days_to_expiry <= days_threshold
+
+    def get_stock_status(self):
+        """Get comprehensive stock status"""
+        status = {
+            'level': 'normal',
+            'alerts': []
+        }
+        
+        if self.is_low_stock():
+            status['level'] = 'low'
+            status['alerts'].append({
+                'type': 'stock_low',
+                'message': f'Stock below minimum level ({self.minimum_stock_level} kg)',
+                'priority': 'high'
+            })
+        
+        if self.is_near_expiry():
+            status['alerts'].append({
+                'type': 'near_expiry',
+                'message': f'Product expires on {self.expiry_date.strftime("%Y-%m-%d")}',
+                'priority': 'medium'
+            })
+        
+        if self.quantity == 0:
+            status['level'] = 'out_of_stock'
+            status['alerts'].append({
+                'type': 'out_of_stock',
+                'message': 'Product is out of stock',
+                'priority': 'critical'
+            })
+        
+        return status
+
+    def calculate_turnover_rate(self):
+        """Calculate inventory turnover rate"""
+        # This would be calculated based on sales history
+        # For now, return a placeholder
+        return self.turnover_prediction or 0.0
+
+    def get_pricing_recommendations(self):
+        """AI-powered pricing recommendations"""
+        recommendations = []
+        
+        if self.market_price and self.unit_cost:
+            margin = ((self.market_price - self.unit_cost) / self.unit_cost) * 100
+            
+            if margin < 10:
+                recommendations.append({
+                    'type': 'pricing',
+                    'message': f'Low margin ({margin:.1f}%). Consider price adjustment.',
+                    'suggested_price': self.unit_cost * 1.15,
+                    'priority': 'medium'
+                })
+        
+        if self.is_near_expiry():
+            recommendations.append({
+                'type': 'clearance',
+                'message': 'Consider clearance pricing due to approaching expiry.',
+                'suggested_discount': 15,
+                'priority': 'high'
+            })
+        
+        return recommendations
+
     def to_dict(self):
         return {
             'id': self.id,
-            'stock_code': self.stock_code,
-            'product_type': self.product_type,
+            'product_id': self.product_id,
             'product_name': self.product_name,
+            'product_type': self.product_type,
+            'variety': self.variety,
             'grade': self.grade,
-            'packaging': self.packaging,
             'quantity': self.quantity,
-            'unit_price': self.unit_price,
-            'total_value': self.total_value,
-            'production_batch_id': self.production_batch_id,
+            'unit_cost': self.unit_cost,
+            'market_price': self.market_price,
+            'minimum_stock_level': self.minimum_stock_level,
+            'maximum_stock_level': self.maximum_stock_level,
+            'reorder_point': self.reorder_point,
+            'warehouse_id': self.warehouse_id,
+            'storage_location': self.storage_location,
+            'packaging_type': self.packaging_type,
             'production_date': self.production_date.isoformat() if self.production_date else None,
             'expiry_date': self.expiry_date.isoformat() if self.expiry_date else None,
-            'broken_percentage': self.broken_percentage,
-            'head_rice_percentage': self.head_rice_percentage,
-            'moisture_content': self.moisture_content,
-            'ai_quality_score': self.ai_quality_score,
-            'predicted_shelf_life': self.predicted_shelf_life,
-            'quality_trend': self.quality_trend,
-            'storage_location': self.storage_location,
-            'storage_conditions': json.loads(self.storage_conditions) if self.storage_conditions else [],
-            'reorder_point': self.reorder_point,
-            'max_stock_level': self.max_stock_level,
-            'reserved_quantity': self.reserved_quantity,
-            'available_quantity': self.available_quantity,
-            'predicted_demand': self.predicted_demand,
-            'sales_velocity': self.sales_velocity,
-            'stockout_risk': self.stockout_risk,
+            'quality_parameters': self.get_quality_parameters(),
+            'demand_forecast': self.demand_forecast,
+            'optimal_price': self.optimal_price,
+            'turnover_prediction': self.turnover_prediction,
             'status': self.status,
+            'stock_status': self.get_stock_status(),
+            'pricing_recommendations': self.get_pricing_recommendations(),
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
-            'age_days': (datetime.now().date() - self.production_date).days if self.production_date else 0
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
-
-class InventoryTransaction(db.Model):
-    __tablename__ = 'inventory_transactions'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    transaction_code = db.Column(db.String(20), unique=True, nullable=False)
-    
-    # Transaction details
-    transaction_type = db.Column(db.String(30), nullable=False)  # purchase, sale, transfer, adjustment
-    transaction_subtype = db.Column(db.String(30))  # inbound, outbound, internal
-    
-    # Item details
-    item_type = db.Column(db.String(20), nullable=False)  # paddy, product
-    item_id = db.Column(db.Integer, nullable=False)  # paddy_stock_id or product_stock_id
-    item_name = db.Column(db.String(100))
-    
-    # Quantity and pricing
-    quantity = db.Column(db.Float, nullable=False)
-    unit_price = db.Column(db.Float)
-    total_value = db.Column(db.Float)
-    
-    # Before/after quantities
-    quantity_before = db.Column(db.Float)
-    quantity_after = db.Column(db.Float)
-    
-    # Reference information
-    reference_type = db.Column(db.String(30))  # sales_order, purchase_order, production_batch
-    reference_id = db.Column(db.Integer)
-    reference_number = db.Column(db.String(50))
-    
-    # Location details
-    from_location = db.Column(db.String(50))
-    to_location = db.Column(db.String(50))
-    
-    # AI analysis
-    ai_validated = db.Column(db.Boolean, default=False)
-    fraud_risk_score = db.Column(db.Float)
-    anomaly_flags = db.Column(db.Text)  # JSON
-    
-    # Additional details
-    notes = db.Column(db.Text)
-    batch_number = db.Column(db.String(30))
-    
-    # Timestamps
-    transaction_date = db.Column(db.DateTime, default=datetime.utcnow)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relationships
-    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
-    approved_by = db.Column(db.Integer, db.ForeignKey('users.id'))
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'transaction_code': self.transaction_code,
-            'transaction_type': self.transaction_type,
-            'transaction_subtype': self.transaction_subtype,
-            'item_type': self.item_type,
-            'item_id': self.item_id,
-            'item_name': self.item_name,
-            'quantity': self.quantity,
-            'unit_price': self.unit_price,
-            'total_value': self.total_value,
-            'quantity_before': self.quantity_before,
-            'quantity_after': self.quantity_after,
-            'reference_type': self.reference_type,
-            'reference_id': self.reference_id,
-            'reference_number': self.reference_number,
-            'from_location': self.from_location,
-            'to_location': self.to_location,
-            'ai_validated': self.ai_validated,
-            'fraud_risk_score': self.fraud_risk_score,
-            'anomaly_flags': json.loads(self.anomaly_flags) if self.anomaly_flags else [],
-            'notes': self.notes,
-            'batch_number': self.batch_number,
-            'transaction_date': self.transaction_date.isoformat() if self.transaction_date else None,
-            'created_at': self.created_at.isoformat() if self.created_at else None
-        }
-
-class StockAlert(db.Model):
-    __tablename__ = 'stock_alerts'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    
-    # Alert details
-    alert_type = db.Column(db.String(30), nullable=False)  # low_stock, overstock, expiry, quality
-    alert_level = db.Column(db.String(20), default='medium')  # low, medium, high, critical
-    title = db.Column(db.String(200), nullable=False)
-    message = db.Column(db.Text)
-    
-    # Item reference
-    item_type = db.Column(db.String(20))  # paddy, product
-    item_id = db.Column(db.Integer)
-    item_name = db.Column(db.String(100))
-    
-    # Alert thresholds
-    threshold_value = db.Column(db.Float)
-    current_value = db.Column(db.Float)
-    
-    # AI enhancement
-    ai_generated = db.Column(db.Boolean, default=False)
-    ai_priority_score = db.Column(db.Float)
-    predicted_impact = db.Column(db.Text)  # JSON
-    
-    # Status and resolution
-    status = db.Column(db.String(20), default='active')  # active, acknowledged, resolved, dismissed
-    resolution_notes = db.Column(db.Text)
-    
-    # Timestamps
-    triggered_at = db.Column(db.DateTime, default=datetime.utcnow)
-    acknowledged_at = db.Column(db.DateTime)
-    resolved_at = db.Column(db.DateTime)
-    
-    # Relationships
-    acknowledged_by = db.Column(db.Integer, db.ForeignKey('users.id'))
-    resolved_by = db.Column(db.Integer, db.ForeignKey('users.id'))
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'alert_type': self.alert_type,
-            'alert_level': self.alert_level,
-            'title': self.title,
-            'message': self.message,
-            'item_type': self.item_type,
-            'item_id': self.item_id,
-            'item_name': self.item_name,
-            'threshold_value': self.threshold_value,
-            'current_value': self.current_value,
-            'ai_generated': self.ai_generated,
-            'ai_priority_score': self.ai_priority_score,
-            'predicted_impact': json.loads(self.predicted_impact) if self.predicted_impact else {},
-            'status': self.status,
-            'resolution_notes': self.resolution_notes,
-            'triggered_at': self.triggered_at.isoformat() if self.triggered_at else None,
-            'acknowledged_at': self.acknowledged_at.isoformat() if self.acknowledged_at else None,
-            'resolved_at': self.resolved_at.isoformat() if self.resolved_at else None
-        }
-

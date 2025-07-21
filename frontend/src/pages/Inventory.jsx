@@ -7,7 +7,7 @@ import {
   Tabs, Tab, IconButton, Tooltip, Paper
 } from '@mui/material';
 import {
-  Add, Inventory, TrendingDown, Warning, Assessment,
+  Add, Inventory as InventoryIcon, TrendingDown, Warning, Assessment,
   LocalShipping, Store, Analytics, Refresh
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
@@ -158,7 +158,7 @@ const Inventory = () => {
                     {valuation ? formatCurrency(valuation.paddy_valuation) : '₹0'}
                   </Typography>
                 </Box>
-                <Inventory color="success" sx={{ fontSize: 40 }} />
+                <InventoryIcon color="success" sx={{ fontSize: 40 }} />
               </Box>
             </CardContent>
           </Card>
@@ -224,7 +224,7 @@ const Inventory = () => {
           {paddyStock?.stocks?.length === 0 && (
             <Grid item xs={12}>
               <Paper sx={{ p: 4, textAlign: 'center' }}>
-                <Inventory sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
+                <InventoryIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
                 <Typography variant="h6" color="text.secondary">
                   No paddy stock available
                 </Typography>
