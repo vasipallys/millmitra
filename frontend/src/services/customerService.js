@@ -62,12 +62,12 @@ export const customerService = {
 
   // Analytics
   async getCustomerAnalytics() {
-    const response = await api.get('/analytics/overview');
+    const response = await api.get('/customers/analytics/overview');
     return response.data;
   },
 
   async getCustomerSegments() {
-    const response = await api.get('/analytics/segments');
+    const response = await api.get('/customers/analytics/segments');
     return response.data;
   },
 

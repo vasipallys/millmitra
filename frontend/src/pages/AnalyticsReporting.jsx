@@ -1,0 +1,772 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Grid,
+  Card,
+  CardContent,
+  Typography,
+  Button,
+  Paper,
+  Tabs,
+  Tab,
+  Alert,
+  CircularProgress,
+  Chip,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  FormControl,
+  InputLabel,
+  Select,
+  FormControlLabel,
+  Checkbox,
+} from '@mui/material';
+import {
+  Analytics,
+  TrendingUp,
+  Assessment,
+  PictureAsPdf,
+  GetApp,
+  Insights,
+  AutoGraph,
+  SmartToy,
+  ExpandMore,
+  Visibility,
+  Timeline,
+  BarChart,
+  ShowChart,
+  PieChart,
+} from '@mui/icons-material';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart as RechartsBarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, AreaChart, Area } from 'recharts';
+
+const AnalyticsReporting = () => {
+  const [activeTab, setActiveTab] = useState(0);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [reports, setReports] = useState([]);
+  const [insights, setInsights] = useState([]);
+  const [kpis, setKpis] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [showReportDialog, setShowReportDialog] = useState(false);
+  const [showPredictiveDialog, setShowPredictiveDialog] = useState(false);
+  const [reportForm, setReportForm] = useState({
+    report_type: 'production_summary',
+    start_date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    end_date: new Date().toISOString().split('T')[0],
+    language: 'english'
+  });
+  const [predictiveForm, setPredictiveForm] = useState({
+    analysis_type: 'production_forecast',
+    forecast_period: 30
+  });
+
+  // Mock data for demonstration
+  const mockDashboardData = {
+    overview: {
+      total_production_30d: 125000,
+      average_quality_score: 87.5,
+      revenue_30d: 2500000,
+      profit_30d: 450000,
+      production_batches: 45,
+      quality_tests: 120
+    },
+    trends: {
+      production_trend: 'increasing',
+      quality_trend: 'stable',
+      financial_trend: 'positive'
+    },
+    alerts: [
+      {
+        type: 'info',
+        message: 'Production efficiency improved by 5% this month',
+        category: 'production'
+      }
+    ]
+  };
+
+  const mockKPIs = {
+    production: {
+      total_output: 125000,
+      efficiency_rate: 92.5,
+      downtime_hours: 8,
+      yield_percentage: 78.5,
+      batches_completed: 45
+    },
+    quality: {
+      average_grade: 'B+',
+      defect_rate: 2.3,
+      grade_a_percentage: 65.0,
+      quality_score: 87.5,
+      tests_conducted: 120
+    },
+    financial: {
+      revenue: 2500000,
+      profit_margin: 18.5,
+      cost_per_kg: 35.50,
+      roi: 22.3,
+      cash_flow: 450000
+    }
+  };
+
+  const mockTrendData = [
+    { date: '2024-01-01', production: 2800, quality: 85, revenue: 52000 },
+    { date: '2024-01-02', production: 2950, quality: 87, revenue: 54000 },
+    { date: '2024-01-03', production: 2750, quality: 86, revenue: 51000 },
+    { date: '2024-01-04', production: 3100, quality: 89, revenue: 56000 },
+    { date: '2024-01-05', production: 3200, quality: 88, revenue: 58000 },
+    { date: '2024-01-06', production: 3050, quality: 90, revenue: 55000 },
+    { date: '2024-01-07', production: 3300, quality: 91, revenue: 60000 },
+  ];
+
+  const mockInsights = [
+    {
+      category: 'production_efficiency',
+      insight: 'Total production volume indicates high operational capacity',
+      confidence: 0.85,
+      priority_level: 'high'
+    },
+    {
+      category: 'quality_performance',
+      insight: 'Quality consistency is excellent with 91% average score',
+      confidence: 0.90,
+      priority_level: 'high'
+    },
+    {
+      category: 'financial_health',
+      insight: 'Revenue generation shows strong performance with 18.5% profit margin',
+      confidence: 0.88,
+      priority_level: 'medium'
+    }
+  ];
+
+  useEffect(() => {
+    loadDashboardData();
+    loadKPIs();
+    loadInsights();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      
+      // Simulate API calls
+      setTimeout(() => {
+        setDashboardData(mockDashboardData);
+        setLoading(false);
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Failed to load dashboard data:', error);
+      setLoading(false);
+    }
+  };
+
+  const loadKPIs = async () => {
+    try {
+      setKpis(mockKPIs);
+    } catch (error) {
+      console.error('Failed to load KPIs:', error);
+    }
+  };
+
+  const loadInsights = async () => {
+    try {
+      setInsights(mockInsights);
+    } catch (error) {
+      console.error('Failed to load insights:', error);
+    }
+  };
+
+  const generateReport = async () => {
+    try {
+      const response = await fetch('/api/analytics/reports/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          report_type: reportForm.report_type,
+          period: {
+            start_date: reportForm.start_date,
+            end_date: reportForm.end_date
+          },
+          language: reportForm.language
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert('Report generated successfully!');
+        setShowReportDialog(false);
+        // Add to reports list
+        setReports(prev => [result.report, ...prev]);
+      } else {
+        alert('Report generation failed: ' + result.error);
+      }
+    } catch (error) {
+      alert('Network error during report generation');
+    }
+  };
+
+  const runPredictiveAnalysis = async () => {
+    try {
+      const response = await fetch('/api/analytics/predictive/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(predictiveForm)
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert('Predictive analysis completed successfully!');
+        setShowPredictiveDialog(false);
+        console.log('Predictive analysis result:', result);
+      } else {
+        alert('Predictive analysis failed: ' + result.error);
+      }
+    } catch (error) {
+      alert('Network error during predictive analysis');
+    }
+  };
+
+  const getInsightIcon = (category) => {
+    switch (category) {
+      case 'production_efficiency': return <BarChart color="primary" />;
+      case 'quality_performance': return <Assessment color="success" />;
+      case 'financial_health': return <TrendingUp color="info" />;
+      default: return <Insights color="secondary" />;
+    }
+  };
+
+  const getInsightColor = (priority) => {
+    switch (priority) {
+      case 'high': return 'error';
+      case 'medium': return 'warning';
+      case 'low': return 'info';
+      default: return 'default';
+    }
+  };
+
+  const TabPanel = ({ children, value, index }) => (
+    <div hidden={value !== index}>
+      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+    </div>
+  );
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+        <CircularProgress size={60} />
+        <Typography variant="h6" sx={{ ml: 2 }}>
+          Loading Analytics...
+        </Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <Box>
+      {/* Header */}
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h4" component="h1" fontWeight="bold">
+          Analytics & Reporting
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          Natural language reports and predictive analytics powered by AI
+        </Typography>
+      </Box>
+
+      {/* Quick Actions */}
+      <Box sx={{ mb: 3 }}>
+        <Button
+          variant="contained"
+          startIcon={<PictureAsPdf />}
+          onClick={() => setShowReportDialog(true)}
+          sx={{ mr: 2 }}
+        >
+          Generate Report
+        </Button>
+        <Button
+          variant="outlined"
+          startIcon={<AutoGraph />}
+          onClick={() => setShowPredictiveDialog(true)}
+          sx={{ mr: 2 }}
+        >
+          Predictive Analysis
+        </Button>
+        <Button
+          variant="outlined"
+          startIcon={<SmartToy />}
+        >
+          AI Insights
+        </Button>
+      </Box>
+
+      {/* Analytics Tabs */}
+      <Paper sx={{ mb: 3 }}>
+        <Tabs
+          value={activeTab}
+          onChange={(e, newValue) => setActiveTab(newValue)}
+          variant="fullWidth"
+        >
+          <Tab icon={<Analytics />} label="Dashboard" />
+          <Tab icon={<Assessment />} label="KPIs" />
+          <Tab icon={<Timeline />} label="Trends" />
+          <Tab icon={<Insights />} label="AI Insights" />
+          <Tab icon={<PictureAsPdf />} label="Reports" />
+        </Tabs>
+      </Paper>
+
+      {/* Dashboard Tab */}
+      <TabPanel value={activeTab} index={0}>
+        <Grid container spacing={3}>
+          {/* Key Metrics Cards */}
+          <Grid item xs={12} sm={6} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="textSecondary" gutterBottom variant="body2">
+                  Total Production (30d)
+                </Typography>
+                <Typography variant="h4" component="div" color="primary.main">
+                  {dashboardData?.overview?.total_production_30d?.toLocaleString()} kg
+                </Typography>
+                <Chip 
+                  label={dashboardData?.trends?.production_trend} 
+                  color="success" 
+                  size="small" 
+                  sx={{ mt: 1 }}
+                />
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} sm={6} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="textSecondary" gutterBottom variant="body2">
+                  Quality Score
+                </Typography>
+                <Typography variant="h4" component="div" color="success.main">
+                  {dashboardData?.overview?.average_quality_score}%
+                </Typography>
+                <Chip 
+                  label={dashboardData?.trends?.quality_trend} 
+                  color="info" 
+                  size="small" 
+                  sx={{ mt: 1 }}
+                />
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} sm={6} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="textSecondary" gutterBottom variant="body2">
+                  Revenue (30d)
+                </Typography>
+                <Typography variant="h4" component="div" color="info.main">
+                  ₹{(dashboardData?.overview?.revenue_30d / 100000)?.toFixed(1)}L
+                </Typography>
+                <Chip 
+                  label={dashboardData?.trends?.financial_trend} 
+                  color="success" 
+                  size="small" 
+                  sx={{ mt: 1 }}
+                />
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} sm={6} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="textSecondary" gutterBottom variant="body2">
+                  Profit (30d)
+                </Typography>
+                <Typography variant="h4" component="div" color="warning.main">
+                  ₹{(dashboardData?.overview?.profit_30d / 100000)?.toFixed(1)}L
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {((dashboardData?.overview?.profit_30d / dashboardData?.overview?.revenue_30d) * 100)?.toFixed(1)}% margin
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Trend Chart */}
+          <Grid item xs={12} md={8}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Performance Trends
+                </Typography>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={mockTrendData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip />
+                    <Line type="monotone" dataKey="production" stroke="#2196F3" strokeWidth={2} name="Production" />
+                    <Line type="monotone" dataKey="quality" stroke="#4CAF50" strokeWidth={2} name="Quality" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Quick Stats */}
+          <Grid item xs={12} md={4}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Quick Stats
+                </Typography>
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Production Batches
+                  </Typography>
+                  <Typography variant="h6">
+                    {dashboardData?.overview?.production_batches}
+                  </Typography>
+                </Box>
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Quality Tests
+                  </Typography>
+                  <Typography variant="h6">
+                    {dashboardData?.overview?.quality_tests}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="body2" color="text.secondary">
+                    Efficiency Rate
+                  </Typography>
+                  <Typography variant="h6" color="success.main">
+                    92.5%
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      </TabPanel>
+
+      {/* KPIs Tab */}
+      <TabPanel value={activeTab} index={1}>
+        <Grid container spacing={3}>
+          {/* Production KPIs */}
+          <Grid item xs={12} md={4}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom color="primary.main">
+                  Production KPIs
+                </Typography>
+                {Object.entries(kpis.production || {}).map(([key, value]) => (
+                  <Box key={key} sx={{ mb: 1 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ textTransform: 'capitalize' }}>
+                      {key.replace('_', ' ')}
+                    </Typography>
+                    <Typography variant="h6">
+                      {typeof value === 'number' ? 
+                        (key.includes('percentage') || key.includes('rate') ? `${value}%` : 
+                         key.includes('hours') ? `${value}h` : 
+                         value.toLocaleString()) : 
+                        value}
+                    </Typography>
+                  </Box>
+                ))}
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Quality KPIs */}
+          <Grid item xs={12} md={4}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom color="success.main">
+                  Quality KPIs
+                </Typography>
+                {Object.entries(kpis.quality || {}).map(([key, value]) => (
+                  <Box key={key} sx={{ mb: 1 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ textTransform: 'capitalize' }}>
+                      {key.replace('_', ' ')}
+                    </Typography>
+                    <Typography variant="h6">
+                      {typeof value === 'number' ? 
+                        (key.includes('percentage') || key.includes('rate') || key.includes('score') ? `${value}%` : 
+                         value.toLocaleString()) : 
+                        value}
+                    </Typography>
+                  </Box>
+                ))}
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Financial KPIs */}
+          <Grid item xs={12} md={4}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom color="info.main">
+                  Financial KPIs
+                </Typography>
+                {Object.entries(kpis.financial || {}).map(([key, value]) => (
+                  <Box key={key} sx={{ mb: 1 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ textTransform: 'capitalize' }}>
+                      {key.replace('_', ' ')}
+                    </Typography>
+                    <Typography variant="h6">
+                      {typeof value === 'number' ? 
+                        (key.includes('percentage') || key.includes('margin') || key.includes('roi') ? `${value}%` : 
+                         key.includes('revenue') || key.includes('cash') ? `₹${(value / 100000).toFixed(1)}L` :
+                         key.includes('cost') ? `₹${value}` :
+                         value.toLocaleString()) : 
+                        value}
+                    </Typography>
+                  </Box>
+                ))}
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      </TabPanel>
+
+      {/* Trends Tab */}
+      <TabPanel value={activeTab} index={2}>
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Multi-Metric Trend Analysis
+                </Typography>
+                <ResponsiveContainer width="100%" height={400}>
+                  <AreaChart data={mockTrendData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip />
+                    <Area type="monotone" dataKey="production" stackId="1" stroke="#2196F3" fill="#2196F3" fillOpacity={0.3} />
+                    <Area type="monotone" dataKey="quality" stackId="2" stroke="#4CAF50" fill="#4CAF50" fillOpacity={0.3} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      </TabPanel>
+
+      {/* AI Insights Tab */}
+      <TabPanel value={activeTab} index={3}>
+        <Grid container spacing={3}>
+          {insights.map((insight, index) => (
+            <Grid item xs={12} md={6} key={index}>
+              <Card>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+                    {getInsightIcon(insight.category)}
+                    <Box sx={{ ml: 2, flexGrow: 1 }}>
+                      <Typography variant="h6" gutterBottom>
+                        {insight.category.replace('_', ' ').toUpperCase()}
+                      </Typography>
+                      <Chip 
+                        label={insight.priority_level} 
+                        color={getInsightColor(insight.priority_level)} 
+                        size="small" 
+                      />
+                    </Box>
+                    <Typography variant="body2" color="text.secondary">
+                      {(insight.confidence * 100).toFixed(0)}% confidence
+                    </Typography>
+                  </Box>
+                  
+                  <Typography variant="body1" sx={{ mb: 2 }}>
+                    {insight.insight}
+                  </Typography>
+                  
+                  <Button size="small" variant="outlined">
+                    View Details
+                  </Button>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      </TabPanel>
+
+      {/* Reports Tab */}
+      <TabPanel value={activeTab} index={4}>
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Generated Reports
+                </Typography>
+                <TableContainer>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Report ID</TableCell>
+                        <TableCell>Type</TableCell>
+                        <TableCell>Generated</TableCell>
+                        <TableCell>Language</TableCell>
+                        <TableCell>Confidence</TableCell>
+                        <TableCell>Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {reports.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} align="center">
+                            <Typography variant="body2" color="text.secondary">
+                              No reports generated yet. Click "Generate Report" to create your first report.
+                            </Typography>
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        reports.map((report) => (
+                          <TableRow key={report.report_id}>
+                            <TableCell>{report.report_id}</TableCell>
+                            <TableCell>{report.title}</TableCell>
+                            <TableCell>{new Date(report.generated_at).toLocaleDateString()}</TableCell>
+                            <TableCell>{report.language}</TableCell>
+                            <TableCell>{report.confidence_score}%</TableCell>
+                            <TableCell>
+                              <Button size="small" startIcon={<Visibility />} sx={{ mr: 1 }}>
+                                View
+                              </Button>
+                              <Button size="small" startIcon={<GetApp />}>
+                                Download
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      </TabPanel>
+
+      {/* Generate Report Dialog */}
+      <Dialog open={showReportDialog} onClose={() => setShowReportDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Generate Natural Language Report</DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            select
+            label="Report Type"
+            value={reportForm.report_type}
+            onChange={(e) => setReportForm({ ...reportForm, report_type: e.target.value })}
+            margin="normal"
+          >
+            <MenuItem value="production_summary">Production Summary</MenuItem>
+            <MenuItem value="financial_performance">Financial Performance</MenuItem>
+            <MenuItem value="quality_analysis">Quality Analysis</MenuItem>
+            <MenuItem value="sales_performance">Sales Performance</MenuItem>
+            <MenuItem value="operational_efficiency">Operational Efficiency</MenuItem>
+          </TextField>
+          
+          <TextField
+            fullWidth
+            label="Start Date"
+            type="date"
+            value={reportForm.start_date}
+            onChange={(e) => setReportForm({ ...reportForm, start_date: e.target.value })}
+            margin="normal"
+            InputLabelProps={{ shrink: true }}
+          />
+          
+          <TextField
+            fullWidth
+            label="End Date"
+            type="date"
+            value={reportForm.end_date}
+            onChange={(e) => setReportForm({ ...reportForm, end_date: e.target.value })}
+            margin="normal"
+            InputLabelProps={{ shrink: true }}
+          />
+          
+          <TextField
+            fullWidth
+            select
+            label="Language"
+            value={reportForm.language}
+            onChange={(e) => setReportForm({ ...reportForm, language: e.target.value })}
+            margin="normal"
+          >
+            <MenuItem value="english">English</MenuItem>
+            <MenuItem value="hindi">Hindi</MenuItem>
+          </TextField>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowReportDialog(false)}>Cancel</Button>
+          <Button onClick={generateReport} variant="contained">
+            Generate Report
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Predictive Analysis Dialog */}
+      <Dialog open={showPredictiveDialog} onClose={() => setShowPredictiveDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Run Predictive Analysis</DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            select
+            label="Analysis Type"
+            value={predictiveForm.analysis_type}
+            onChange={(e) => setPredictiveForm({ ...predictiveForm, analysis_type: e.target.value })}
+            margin="normal"
+          >
+            <MenuItem value="production_forecast">Production Forecast</MenuItem>
+            <MenuItem value="demand_prediction">Demand Prediction</MenuItem>
+            <MenuItem value="quality_prediction">Quality Prediction</MenuItem>
+            <MenuItem value="financial_forecast">Financial Forecast</MenuItem>
+            <MenuItem value="market_analysis">Market Analysis</MenuItem>
+          </TextField>
+          
+          <TextField
+            fullWidth
+            label="Forecast Period (days)"
+            type="number"
+            value={predictiveForm.forecast_period}
+            onChange={(e) => setPredictiveForm({ ...predictiveForm, forecast_period: parseInt(e.target.value) })}
+            margin="normal"
+            inputProps={{ min: 1, max: 365 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowPredictiveDialog(false)}>Cancel</Button>
+          <Button onClick={runPredictiveAnalysis} variant="contained">
+            Run Analysis
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  );
+};
+
+export default AnalyticsReporting;

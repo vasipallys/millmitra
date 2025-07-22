@@ -314,7 +314,7 @@ const Farmers = () => {
             </Typography>
           </CardContent>
         </Card>
-      </Grid>
+      </TabPanel>
     </Box>
   );
 };

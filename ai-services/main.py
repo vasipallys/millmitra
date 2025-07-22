@@ -32,3 +32,8 @@ async def process_voice(audio_data: bytes):
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+if __name__ == "__main__":
+    import uvicorn
+    print("🚀 Starting Rice Mill AI Services...")
+    uvicorn.run(app, host="127.0.0.1", port=8000)

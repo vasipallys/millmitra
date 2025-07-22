@@ -23,6 +23,9 @@ import {
   Analytics as AnalyticsIcon,
   Settings as SettingsIcon,
   SmartToy as AIIcon,
+  HighQuality as QualityIcon,
+  PsychologyAlt as FinancialIntelligenceIcon,
+  Gavel as ComplianceIcon,
 } from '@mui/icons-material';
 
 const drawerWidth = 240;
@@ -75,6 +78,24 @@ const menuItems = [
     icon: <AnalyticsIcon />,
     path: '/analytics',
     description: 'Business Intelligence'
+  },
+  {
+    text: 'Quality Control',
+    icon: <QualityIcon />,
+    path: '/quality-control',
+    description: 'AI Quality Assessment'
+  },
+  {
+    text: 'Financial Intelligence',
+    icon: <FinancialIntelligenceIcon />,
+    path: '/financial-intelligence',
+    description: 'Smart Financial Analytics'
+  },
+  {
+    text: 'Compliance & GST',
+    icon: <ComplianceIcon />,
+    path: '/compliance-gst',
+    description: 'Tax & Regulatory Compliance'
   },
   {
     text: 'Settings',

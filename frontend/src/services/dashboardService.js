@@ -1,50 +1,50 @@
-import axios from 'axios';
+import api from './api';
 
-const API_BASE = '/api/dashboard';
+const API_BASE = '/dashboard';
 
 class DashboardService {
   async getOverview(days = 7) {
-    const response = await axios.get(`${API_BASE}/overview?days=${days}`);
+    const response = await api.get(`${API_BASE}/overview?days=${days}`);
     return response.data;
   }
 
   async getWidgets() {
-    const response = await axios.get(`${API_BASE}/widgets`);
+    const response = await api.get(`${API_BASE}/widgets`);
     return response.data;
   }
 
   async getInsights() {
-    const response = await axios.get(`${API_BASE}/insights`);
+    const response = await api.get(`${API_BASE}/insights`);
     return response.data;
   }
 
   async getAlerts() {
-    const response = await axios.get(`${API_BASE}/alerts`);
+    const response = await api.get(`${API_BASE}/alerts`);
     return response.data;
   }
 
   async getPredictions(type = 'all') {
-    const response = await axios.get(`${API_BASE}/predictions?type=${type}`);
+    const response = await api.get(`${API_BASE}/predictions?type=${type}`);
     return response.data;
   }
 
   async saveCustomization(preferences) {
-    const response = await axios.post(`${API_BASE}/customize`, preferences);
+    const response = await api.post(`${API_BASE}/customize`, preferences);
     return response.data;
   }
 
   async getProductionMetrics(days = 30) {
-    const response = await axios.get(`${API_BASE}/metrics/production?days=${days}`);
+    const response = await api.get(`${API_BASE}/metrics/production?days=${days}`);
     return response.data;
   }
 
   async getQualityMetrics(days = 30) {
-    const response = await axios.get(`${API_BASE}/metrics/quality?days=${days}`);
+    const response = await api.get(`${API_BASE}/metrics/quality?days=${days}`);
     return response.data;
   }
 
   async getInventoryMetrics() {
-    const response = await axios.get(`${API_BASE}/metrics/inventory`);
+    const response = await api.get(`${API_BASE}/metrics/inventory`);
     return response.data;
   }
 }

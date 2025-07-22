@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import {
   Visibility, GetApp, LocalShipping, Payment,
-  TrendingUp, Analytics, PredictiveText
+  TrendingUp, Analytics, Psychology
 } from '@mui/icons-material';
 import { useQuery } from 'react-query';
 import { customerService } from '../services/customerService';

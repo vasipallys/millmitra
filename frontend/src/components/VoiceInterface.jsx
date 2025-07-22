@@ -29,3 +29,5 @@ export const VoiceInterface = () => {
     </div>
   );
 };
+
+export default VoiceInterface;

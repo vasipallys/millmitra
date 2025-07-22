@@ -69,10 +69,16 @@ try:
 except ImportError:
     pass
 
+try:
+    from .financial import Transaction, Invoice, FinancialAlert, CashFlowForecast, FinancialHealthScore, PaymentSchedule
+except ImportError:
+    pass
+
 # Export all models
 __all__ = [
     'User', 'AuthLog', 'AIInteraction', 'UserSession', 'UserPreference',
     'Farmer', 'FarmerContract', 'PaddyStock', 'ProductStock',
     'ProductionBatch', 'QualityTest', 'Customer', 'SalesOrder',
-    'Payment', 'Expense', 'Budget'
+    'Payment', 'Expense', 'Budget', 'Transaction', 'Invoice',
+    'FinancialAlert', 'CashFlowForecast', 'FinancialHealthScore', 'PaymentSchedule'
 ]

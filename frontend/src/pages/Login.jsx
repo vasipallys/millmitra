@@ -9,8 +9,9 @@ import { Mic, MicOff, Fingerprint, Face, Visibility, VisibilityOff } from '@mui/
 import { useVoiceRecognition } from '../hooks/useVoiceRecognition';
 import { useBiometric } from '../hooks/useBiometric';
 import { authService } from '../services/authService';
+import BiometricLogin from '../components/BiometricLogin';
 
-const Login = () => {
+const Login = ({ onLogin }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(0);
   const [formData, setFormData] = useState({ username: '', password: '' });
@@ -20,6 +21,7 @@ const Login = () => {
   const [requires2FA, setRequires2FA] = useState(false);
   const [otpCode, setOtpCode] = useState('');
   const [otpMethod, setOtpMethod] = useState('');
+  const [showBiometricLogin, setShowBiometricLogin] = useState(false);
 
   // Voice recognition hook
   const {
@@ -99,7 +101,11 @@ const Login = () => {
       } else {
         localStorage.setItem('token', result.access_token);
         localStorage.setItem('user', JSON.stringify(result.user));
-        navigate('/');
+        // Call the onLogin callback to update App state immediately
+        if (onLogin) {
+          onLogin(result.user);
+        }
+        navigate('/', { replace: true });
       }
     } catch (error) {
       setError(error.message || 'Login failed');
@@ -129,7 +135,11 @@ const Login = () => {
       } else {
         localStorage.setItem('token', result.access_token);
         localStorage.setItem('user', JSON.stringify(result.user));
-        navigate('/');
+        // Call the onLogin callback to update App state immediately
+        if (onLogin) {
+          onLogin(result.user);
+        }
+        navigate('/', { replace: true });
       }
     } catch (error) {
       setError(error.message || 'Voice login failed');
@@ -166,7 +176,11 @@ const Login = () => {
       } else {
         localStorage.setItem('token', result.access_token);
         localStorage.setItem('user', JSON.stringify(result.user));
-        navigate('/');
+        // Call the onLogin callback to update App state immediately
+        if (onLogin) {
+          onLogin(result.user);
+        }
+        navigate('/', { replace: true });
       }
     } catch (error) {
       setError(error.message || 'Biometric login failed');
@@ -187,11 +201,20 @@ const Login = () => {
         const result = await authService.completeLogin();
         localStorage.setItem('token', result.access_token);
         localStorage.setItem('user', JSON.stringify(result.user));
-        navigate('/');
+        // Call the onLogin callback to update App state immediately
+        if (onLogin) {
+          onLogin(result.user);
+        }
+        navigate('/', { replace: true });
       }
     } catch (error) {
       setError('Invalid OTP');
     }
+  };
+
+  const handleBiometricSuccess = (user) => {
+    setShowBiometricLogin(false);
+    onLogin(user);
   };
 
   const getDeviceInfo = async () => {
@@ -378,20 +401,10 @@ const Login = () => {
                   fullWidth
                   variant="outlined"
                   startIcon={<Fingerprint />}
-                  onClick={() => handleBiometricLogin('fingerprint')}
+                  onClick={() => setShowBiometricLogin(true)}
                   disabled={loading}
                 >
-                  Fingerprint
-                </Button>
-                
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  startIcon={<Face />}
-                  onClick={() => handleBiometricLogin('face')}
-                  disabled={loading}
-                >
-                  Face ID
+                  Biometric Login
                 </Button>
               </Box>
             </Box>
@@ -421,6 +434,13 @@ const Login = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Biometric Login Dialog */}
+      <BiometricLogin
+        open={showBiometricLogin}
+        onClose={() => setShowBiometricLogin(false)}
+        onSuccess={handleBiometricSuccess}
+      />
     </Box>
   );
 };

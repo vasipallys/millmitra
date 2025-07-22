@@ -128,8 +128,8 @@ class AuthLog(db.Model):
     method = db.Column(db.String(50))  # password, voice, biometric, otp
     success = db.Column(db.Boolean)
     ip_address = db.Column(db.String(45))
-    user_agent = db.Column(db.String(255))
-    device_fingerprint = db.Column(db.String(255))
+    user_agent = db.Column(db.Text)  # Changed to Text for longer user agents
+    device_fingerprint = db.Column(db.Text)  # Changed to Text for longer device fingerprints
     location = db.Column(db.String(100))
     failure_reason = db.Column(db.String(100))
     risk_score = db.Column(db.Float)  # AI-calculated risk score

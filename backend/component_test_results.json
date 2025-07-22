@@ -1,0 +1,362 @@
+[
+  {
+    "test_name": "File app.py",
+    "success": true,
+    "message": "File app.py exists",
+    "timestamp": "2025-07-22T11:36:48.991573"
+  },
+  {
+    "test_name": "File models.py",
+    "success": true,
+    "message": "File models.py exists",
+    "timestamp": "2025-07-22T11:36:48.991573"
+  },
+  {
+    "test_name": "File extensions.py",
+    "success": true,
+    "message": "File extensions.py exists",
+    "timestamp": "2025-07-22T11:36:48.991573"
+  },
+  {
+    "test_name": "File services/ai_services.py",
+    "success": true,
+    "message": "File services/ai_services.py exists",
+    "timestamp": "2025-07-22T11:36:48.991573"
+  },
+  {
+    "test_name": "File services/quality_control_service.py",
+    "success": true,
+    "message": "File services/quality_control_service.py exists",
+    "timestamp": "2025-07-22T11:36:48.992571"
+  },
+  {
+    "test_name": "File services/financial_intelligence_service.py",
+    "success": true,
+    "message": "File services/financial_intelligence_service.py exists",
+    "timestamp": "2025-07-22T11:36:48.992571"
+  },
+  {
+    "test_name": "File services/compliance_gst_service.py",
+    "success": true,
+    "message": "File services/compliance_gst_service.py exists",
+    "timestamp": "2025-07-22T11:36:48.992571"
+  },
+  {
+    "test_name": "File services/analytics_reporting_service.py",
+    "success": true,
+    "message": "File services/analytics_reporting_service.py exists",
+    "timestamp": "2025-07-22T11:36:48.992571"
+  },
+  {
+    "test_name": "File routes/auth.py",
+    "success": true,
+    "message": "File routes/auth.py exists",
+    "timestamp": "2025-07-22T11:36:48.992571"
+  },
+  {
+    "test_name": "File routes/ai_services.py",
+    "success": true,
+    "message": "File routes/ai_services.py exists",
+    "timestamp": "2025-07-22T11:36:48.993572"
+  },
+  {
+    "test_name": "File routes/quality_control.py",
+    "success": true,
+    "message": "File routes/quality_control.py exists",
+    "timestamp": "2025-07-22T11:36:48.993572"
+  },
+  {
+    "test_name": "File routes/financial_intelligence.py",
+    "success": true,
+    "message": "File routes/financial_intelligence.py exists",
+    "timestamp": "2025-07-22T11:36:48.993572"
+  },
+  {
+    "test_name": "File routes/compliance_gst.py",
+    "success": true,
+    "message": "File routes/compliance_gst.py exists",
+    "timestamp": "2025-07-22T11:36:48.993572"
+  },
+  {
+    "test_name": "File routes/analytics_reporting.py",
+    "success": true,
+    "message": "File routes/analytics_reporting.py exists",
+    "timestamp": "2025-07-22T11:36:48.993572"
+  },
+  {
+    "test_name": "Import Flask",
+    "success": true,
+    "message": "Import successful",
+    "timestamp": "2025-07-22T11:36:49.242071"
+  },
+  {
+    "test_name": "Import SQLAlchemy",
+    "success": true,
+    "message": "Import successful",
+    "timestamp": "2025-07-22T11:36:49.611861"
+  },
+  {
+    "test_name": "Import JWT",
+    "success": true,
+    "message": "Import successful",
+    "timestamp": "2025-07-22T11:36:49.670386"
+  },
+  {
+    "test_name": "Import Models",
+    "success": true,
+    "message": "Import successful",
+    "timestamp": "2025-07-22T11:36:49.940095"
+  },
+  {
+    "test_name": "Import Extensions",
+    "success": true,
+    "message": "Import successful",
+    "timestamp": "2025-07-22T11:36:49.940095"
+  },
+  {
+    "test_name": "Import AI Services",
+    "success": true,
+    "message": "Import successful",
+    "timestamp": "2025-07-22T11:36:50.082666"
+  },
+  {
+    "test_name": "Import Quality Control",
+    "success": true,
+    "message": "Import successful",
+    "timestamp": "2025-07-22T11:36:50.181075"
+  },
+  {
+    "test_name": "Import Financial Intelligence",
+    "success": true,
+    "message": "Import successful",
+    "timestamp": "2025-07-22T11:36:50.181075"
+  },
+  {
+    "test_name": "Import Compliance GST",
+    "success": true,
+    "message": "Import successful",
+    "timestamp": "2025-07-22T11:36:50.181075"
+  },
+  {
+    "test_name": "Import Analytics Reporting",
+    "success": true,
+    "message": "Import successful",
+    "timestamp": "2025-07-22T11:36:50.197028"
+  },
+  {
+    "test_name": "App Creation",
+    "success": true,
+    "message": "Flask app created successfully",
+    "timestamp": "2025-07-22T11:36:50.631088"
+  },
+  {
+    "test_name": "App Configuration",
+    "success": true,
+    "message": "App configuration accessible",
+    "timestamp": "2025-07-22T11:36:50.631088"
+  },
+  {
+    "test_name": "Model User",
+    "success": true,
+    "message": "Model User defined correctly",
+    "timestamp": "2025-07-22T11:36:50.631088"
+  },
+  {
+    "test_name": "Model User to_dict",
+    "success": true,
+    "message": "User has to_dict method",
+    "timestamp": "2025-07-22T11:36:50.631088"
+  },
+  {
+    "test_name": "Model Transaction",
+    "success": true,
+    "message": "Model Transaction defined correctly",
+    "timestamp": "2025-07-22T11:36:50.631088"
+  },
+  {
+    "test_name": "Model Transaction to_dict",
+    "success": true,
+    "message": "Transaction has to_dict method",
+    "timestamp": "2025-07-22T11:36:50.631088"
+  },
+  {
+    "test_name": "Model Invoice",
+    "success": true,
+    "message": "Model Invoice defined correctly",
+    "timestamp": "2025-07-22T11:36:50.631088"
+  },
+  {
+    "test_name": "Model Invoice to_dict",
+    "success": true,
+    "message": "Invoice has to_dict method",
+    "timestamp": "2025-07-22T11:36:50.631088"
+  },
+  {
+    "test_name": "Model Customer",
+    "success": true,
+    "message": "Model Customer defined correctly",
+    "timestamp": "2025-07-22T11:36:50.631088"
+  },
+  {
+    "test_name": "Model Customer to_dict",
+    "success": true,
+    "message": "Customer has to_dict method",
+    "timestamp": "2025-07-22T11:36:50.631088"
+  },
+  {
+    "test_name": "Model Farmer",
+    "success": true,
+    "message": "Model Farmer defined correctly",
+    "timestamp": "2025-07-22T11:36:50.631088"
+  },
+  {
+    "test_name": "Model Farmer to_dict",
+    "success": true,
+    "message": "Farmer has to_dict method",
+    "timestamp": "2025-07-22T11:36:50.631088"
+  },
+  {
+    "test_name": "Model ProductionBatch",
+    "success": true,
+    "message": "Model ProductionBatch defined correctly",
+    "timestamp": "2025-07-22T11:36:50.631088"
+  },
+  {
+    "test_name": "Model ProductionBatch to_dict",
+    "success": true,
+    "message": "ProductionBatch has to_dict method",
+    "timestamp": "2025-07-22T11:36:50.631088"
+  },
+  {
+    "test_name": "Model QualityTest",
+    "success": true,
+    "message": "Model QualityTest defined correctly",
+    "timestamp": "2025-07-22T11:36:50.631088"
+  },
+  {
+    "test_name": "Model QualityTest to_dict",
+    "success": true,
+    "message": "QualityTest has to_dict method",
+    "timestamp": "2025-07-22T11:36:50.631088"
+  },
+  {
+    "test_name": "Service AI Services",
+    "success": true,
+    "message": "AI Services instantiated successfully",
+    "timestamp": "2025-07-22T11:36:50.631088"
+  },
+  {
+    "test_name": "Service Quality Control",
+    "success": true,
+    "message": "Quality Control instantiated successfully",
+    "timestamp": "2025-07-22T11:36:50.631088"
+  },
+  {
+    "test_name": "Service Financial Intelligence",
+    "success": true,
+    "message": "Financial Intelligence instantiated successfully",
+    "timestamp": "2025-07-22T11:36:50.631088"
+  },
+  {
+    "test_name": "Service Compliance GST",
+    "success": true,
+    "message": "Compliance GST instantiated successfully",
+    "timestamp": "2025-07-22T11:36:50.631088"
+  },
+  {
+    "test_name": "Service Analytics Reporting",
+    "success": true,
+    "message": "Analytics Reporting instantiated successfully",
+    "timestamp": "2025-07-22T11:36:50.631088"
+  },
+  {
+    "test_name": "Blueprint Auth Routes",
+    "success": true,
+    "message": "Auth Routes imported successfully",
+    "timestamp": "2025-07-22T11:36:50.631088"
+  },
+  {
+    "test_name": "Blueprint AI Services Routes",
+    "success": true,
+    "message": "AI Services Routes imported successfully",
+    "timestamp": "2025-07-22T11:36:50.648297"
+  },
+  {
+    "test_name": "Blueprint Quality Control Routes",
+    "success": true,
+    "message": "Quality Control Routes imported successfully",
+    "timestamp": "2025-07-22T11:36:50.653046"
+  },
+  {
+    "test_name": "Blueprint Financial Intelligence Routes",
+    "success": true,
+    "message": "Financial Intelligence Routes imported successfully",
+    "timestamp": "2025-07-22T11:36:50.653046"
+  },
+  {
+    "test_name": "Blueprint Compliance GST Routes",
+    "success": true,
+    "message": "Compliance GST Routes imported successfully",
+    "timestamp": "2025-07-22T11:36:50.653046"
+  },
+  {
+    "test_name": "Blueprint Analytics Reporting Routes",
+    "success": true,
+    "message": "Analytics Reporting Routes imported successfully",
+    "timestamp": "2025-07-22T11:36:50.653046"
+  },
+  {
+    "test_name": "Config SECRET_KEY",
+    "success": true,
+    "message": "SECRET_KEY is configured",
+    "timestamp": "2025-07-22T11:36:50.690901"
+  },
+  {
+    "test_name": "Config SQLALCHEMY_DATABASE_URI",
+    "success": true,
+    "message": "SQLALCHEMY_DATABASE_URI is configured",
+    "timestamp": "2025-07-22T11:36:50.690901"
+  },
+  {
+    "test_name": "Config JWT_SECRET_KEY",
+    "success": true,
+    "message": "JWT_SECRET_KEY is configured",
+    "timestamp": "2025-07-22T11:36:50.690901"
+  },
+  {
+    "test_name": "Database Connection",
+    "success": true,
+    "message": "Database connection and table creation successful",
+    "timestamp": "2025-07-22T11:36:50.736625"
+  },
+  {
+    "test_name": "AI Method process_voice_command",
+    "success": true,
+    "message": "Method process_voice_command exists",
+    "timestamp": "2025-07-22T11:36:50.736625"
+  },
+  {
+    "test_name": "AI Method analyze_quality_image",
+    "success": true,
+    "message": "Method analyze_quality_image exists",
+    "timestamp": "2025-07-22T11:36:50.736625"
+  },
+  {
+    "test_name": "AI Method generate_insights",
+    "success": true,
+    "message": "Method generate_insights exists",
+    "timestamp": "2025-07-22T11:36:50.736625"
+  },
+  {
+    "test_name": "AI Method predict_demand",
+    "success": true,
+    "message": "Method predict_demand exists",
+    "timestamp": "2025-07-22T11:36:50.736625"
+  },
+  {
+    "test_name": "AI Method optimize_production",
+    "success": true,
+    "message": "Method optimize_production exists",
+    "timestamp": "2025-07-22T11:36:50.736625"
+  }
+]

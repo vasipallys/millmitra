@@ -20,6 +20,10 @@ import Finance from './pages/Finance';
 import Customers from './pages/Customers';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
+import QualityControl from './pages/QualityControl';
+import FinancialIntelligence from './pages/FinancialIntelligence';
+import ComplianceGST from './pages/ComplianceGST';
+import AnalyticsReporting from './pages/AnalyticsReporting';
 
 // Services
 import { authService } from './services/authService';
@@ -157,8 +161,6 @@ function App() {
             flexGrow: 1,
             display: 'flex',
             flexDirection: 'column',
-            transition: 'margin-left 0.3s',
-            marginLeft: sidebarOpen ? '240px' : '0px',
           }}
         >
           {/* Top Navigation */}
@@ -169,7 +171,7 @@ function App() {
           />
           
           {/* Page Content */}
-          <Box sx={{ flexGrow: 1, p: 3, bgcolor: 'background.default' }}>
+          <Box sx={{ flexGrow: 1, p: 2, bgcolor: 'background.default' }}>
             <Routes>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<Dashboard />} />
@@ -180,6 +182,10 @@ function App() {
               <Route path="/finance/*" element={<Finance />} />
               <Route path="/customers/*" element={<Customers />} />
               <Route path="/analytics" element={<Analytics />} />
+              <Route path="/quality-control" element={<QualityControl />} />
+              <Route path="/financial-intelligence" element={<FinancialIntelligence />} />
+              <Route path="/compliance-gst" element={<ComplianceGST />} />
+              <Route path="/analytics" element={<AnalyticsReporting />} />
               <Route path="/settings" element={<Settings />} />
             </Routes>
           </Box>

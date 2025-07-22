@@ -6,7 +6,7 @@ import {
 import { MoreVert, Refresh } from '@mui/icons-material';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useQuery } from 'react-query';
-import axios from 'axios';
+import api from '../services/api';
 
 const SmartWidget = ({ widget }) => {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -15,7 +15,7 @@ const SmartWidget = ({ widget }) => {
   // Fetch widget data if it has an endpoint
   const { data: widgetData, isLoading } = useQuery(
     [`widget-${widget.id}`, refreshKey],
-    () => widget.data?.endpoint ? axios.get(widget.data.endpoint).then(res => res.data) : null,
+    () => widget.data?.endpoint ? api.get(widget.data.endpoint).then(res => res.data) : null,
     {
       enabled: !!widget.data?.endpoint,
       refetchInterval: widget.refresh_interval || 60000

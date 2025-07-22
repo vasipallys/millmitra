@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from sqlalchemy import func, and_, or_
 from extensions import db
-from models.farmer import Farmer, FarmerContract, PaddyProcurement, FarmerPayment, FarmerDocument
+from models.farmer import Farmer, FarmerContract
 from models.user import User
 
 class FarmerService:

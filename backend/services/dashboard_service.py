@@ -107,8 +107,8 @@ class SmartDashboardService:
         
         daily_production = db.session.query(
             func.date(ProductionBatch.start_time).label('date'),
-            func.sum(ProductionBatch.output_quantity).label('total_output'),
-            func.avg(ProductionBatch.efficiency_score).label('avg_efficiency')
+            func.sum(ProductionBatch.total_output).label('total_output'),
+            func.avg(ProductionBatch.efficiency_percentage).label('avg_efficiency')
         ).filter(
             ProductionBatch.start_time >= start_date
         ).group_by(func.date(ProductionBatch.start_time)).all()
@@ -142,7 +142,7 @@ class SmartDashboardService:
         # Quality trends
         quality_trends = db.session.query(
             func.date(QualityTest.test_date).label('date'),
-            func.avg(QualityTest.overall_score).label('avg_score'),
+            func.avg(QualityTest.grade_confidence).label('avg_score'),
             func.count(QualityTest.id).label('test_count')
         ).filter(
             QualityTest.test_date >= start_date
@@ -159,7 +159,7 @@ class SmartDashboardService:
                     'tests': item.test_count
                 } for item in quality_trends
             ],
-            'avg_quality_score': sum(q.overall_score or 0 for q in quality_tests) / len(quality_tests) if quality_tests else 0,
+            'avg_quality_score': sum(q.grade_confidence or 0 for q in quality_tests) / len(quality_tests) if quality_tests else 0,
             'total_tests': len(quality_tests),
             'ai_insights': ai_quality_insights
         }
@@ -171,8 +171,8 @@ class SmartDashboardService:
         product_stock = ProductStock.query.all()
         
         # Calculate inventory values
-        total_paddy_value = sum(stock.quantity * stock.price_per_kg for stock in paddy_stock)
-        total_product_value = sum(stock.quantity * stock.price_per_kg for stock in product_stock)
+        total_paddy_value = sum(stock.quantity * stock.purchase_price for stock in paddy_stock)
+        total_product_value = sum(stock.quantity * stock.market_price for stock in product_stock)
         
         # AI inventory optimization
         ai_optimization = self._get_ai_inventory_optimization(paddy_stock, product_stock)
@@ -190,7 +190,53 @@ class SmartDashboardService:
             },
             'ai_optimization': ai_optimization
         }
-    
+
+    def get_financial_metrics(self, days: int):
+        """Get financial metrics with AI insights"""
+
+        end_date = datetime.utcnow()
+        start_date = end_date - timedelta(days=days)
+
+        # Get sales data
+        sales_orders = SalesOrder.query.filter(
+            SalesOrder.order_date >= start_date,
+            SalesOrder.order_date <= end_date
+        ).all()
+
+        # Calculate financial metrics
+        total_revenue = sum(order.total_amount for order in sales_orders if order.status == 'completed')
+        total_orders = len(sales_orders)
+        avg_order_value = total_revenue / total_orders if total_orders > 0 else 0
+
+        # Get pending payments
+        pending_payments = sum(order.total_amount for order in sales_orders if order.status == 'pending')
+
+        # Calculate profit margins (simplified)
+        estimated_costs = total_revenue * 0.7  # Assume 70% cost ratio
+        estimated_profit = total_revenue - estimated_costs
+        profit_margin = (estimated_profit / total_revenue * 100) if total_revenue > 0 else 0
+
+        # AI financial insights
+        ai_financial_insights = [
+            f"Revenue trend: {'Increasing' if total_revenue > 0 else 'Stable'}",
+            f"Average order value: ₹{avg_order_value:,.2f}",
+            f"Profit margin: {profit_margin:.1f}%"
+        ]
+
+        if pending_payments > total_revenue * 0.1:
+            ai_financial_insights.append("High pending payments detected - consider follow-up")
+
+        return {
+            'period_days': days,
+            'total_revenue': total_revenue,
+            'total_orders': total_orders,
+            'avg_order_value': avg_order_value,
+            'pending_payments': pending_payments,
+            'estimated_profit': estimated_profit,
+            'profit_margin': profit_margin,
+            'ai_insights': ai_financial_insights
+        }
+
     def save_user_preferences(self, user: User, preferences: dict):
         """Save user dashboard preferences"""
         current_prefs = user.get_preferences()
@@ -205,23 +251,23 @@ class SmartDashboardService:
         """Get base metrics for the dashboard"""
         
         total_production = db.session.query(
-            func.sum(ProductionBatch.output_quantity)
+            func.sum(ProductionBatch.total_output)
         ).filter(
             ProductionBatch.start_time >= start_date,
             ProductionBatch.start_time <= end_date
         ).scalar() or 0
         
         avg_quality = db.session.query(
-            func.avg(QualityTest.overall_score)
+            func.avg(QualityTest.grade_confidence)
         ).filter(
             QualityTest.test_date >= start_date,
             QualityTest.test_date <= end_date
         ).scalar() or 0
         
         inventory_value = (
-            db.session.query(func.sum(PaddyStock.quantity * PaddyStock.price_per_kg)).scalar() or 0
+            db.session.query(func.sum(PaddyStock.quantity * PaddyStock.purchase_price)).scalar() or 0
         ) + (
-            db.session.query(func.sum(ProductStock.quantity * ProductStock.price_per_kg)).scalar() or 0
+            db.session.query(func.sum(ProductStock.quantity * ProductStock.market_price)).scalar() or 0
         )
         
         pending_orders = SalesOrder.query.filter(
@@ -229,7 +275,7 @@ class SmartDashboardService:
         ).count()
         
         active_farmers = Farmer.query.filter(
-            Farmer.last_delivery >= start_date
+            Farmer.last_transaction_date >= start_date
         ).count()
         
         return {
@@ -300,7 +346,7 @@ class SmartDashboardService:
             'data': {
                 'recent_batches': recent_batches,
                 'chart_type': 'line',
-                'endpoint': '/api/dashboard/metrics/production'
+                'endpoint': '/dashboard/metrics/production'
             }
         }
     
@@ -313,14 +359,14 @@ class SmartDashboardService:
             'priority': 8,
             'data': {
                 'chart_type': 'area',
-                'endpoint': '/api/dashboard/metrics/quality'
+                'endpoint': '/dashboard/metrics/quality'
             }
         }
     
     def _create_alerts_widget(self, user: User):
         """Create alerts widget"""
         alert_count = len(self.get_smart_alerts(user))
-        
+
         return {
             'id': 'alerts',
             'title': 'Smart Alerts',
@@ -328,7 +374,81 @@ class SmartDashboardService:
             'priority': 10 if alert_count > 0 else 5,
             'data': {
                 'count': alert_count,
-                'endpoint': '/api/dashboard/alerts'
+                'endpoint': '/dashboard/alerts'
+            }
+        }
+
+    def _create_financial_summary_widget(self):
+        """Create financial summary widget"""
+        return {
+            'id': 'financial_summary',
+            'title': 'Financial Summary',
+            'type': 'metric',
+            'priority': 9,
+            'data': {
+                'revenue': 0,
+                'expenses': 0,
+                'profit': 0,
+                'chart_type': 'bar',
+                'endpoint': '/dashboard/metrics/financial'
+            }
+        }
+
+    def _create_current_batch_widget(self):
+        """Create current batch widget"""
+        return {
+            'id': 'current_batch',
+            'title': 'Current Batch',
+            'type': 'status',
+            'priority': 10,
+            'data': {
+                'batch_id': 'N/A',
+                'status': 'No active batch',
+                'progress': 0,
+                'endpoint': '/production/current-status'
+            }
+        }
+
+    def _create_quality_control_widget(self):
+        """Create quality control widget"""
+        return {
+            'id': 'quality_control',
+            'title': 'Quality Control',
+            'type': 'metric',
+            'priority': 7,
+            'data': {
+                'tests_today': 0,
+                'pass_rate': 100,
+                'endpoint': '/dashboard/metrics/quality'
+            }
+        }
+
+    def _create_machine_status_widget(self):
+        """Create machine status widget"""
+        return {
+            'id': 'machine_status',
+            'title': 'Machine Status',
+            'type': 'status',
+            'priority': 6,
+            'data': {
+                'online': 0,
+                'offline': 0,
+                'maintenance': 0,
+                'endpoint': '/dashboard/machine-status'
+            }
+        }
+
+    def _create_safety_widget(self):
+        """Create safety widget"""
+        return {
+            'id': 'safety',
+            'title': 'Safety Status',
+            'type': 'status',
+            'priority': 8,
+            'data': {
+                'incidents': 0,
+                'days_safe': 30,
+                'endpoint': '/dashboard/safety'
             }
         }
     
@@ -401,7 +521,7 @@ class SmartDashboardService:
         
         # Check low stock
         low_stock_items = ProductStock.query.filter(
-            ProductStock.quantity < ProductStock.min_threshold
+            ProductStock.quantity < ProductStock.minimum_stock_level
         ).all()
         
         if low_stock_items:
@@ -445,3 +565,220 @@ class SmartDashboardService:
         
         allowed_types = role_filters.get(role, [])
         return [alert for alert in alerts if any(t in alert.get('type', '') for t in allowed_types)]
+
+    def _calculate_trends(self, start_date: datetime, end_date: datetime):
+        """Calculate trends for dashboard overview"""
+        try:
+            # Production trends
+            production_trend = db.session.query(
+                func.date(ProductionBatch.start_time).label('date'),
+                func.sum(ProductionBatch.total_output).label('output')
+            ).filter(
+                ProductionBatch.start_time >= start_date
+            ).group_by(func.date(ProductionBatch.start_time)).all()
+
+            # Quality trends
+            quality_trend = db.session.query(
+                func.date(QualityTest.test_date).label('date'),
+                func.avg(QualityTest.grade_confidence).label('quality')
+            ).filter(
+                QualityTest.test_date >= start_date
+            ).group_by(func.date(QualityTest.test_date)).all()
+
+            return {
+                'production': [{'date': str(item.date), 'value': float(item.output or 0)} for item in production_trend],
+                'quality': [{'date': str(item.date), 'value': float(item.quality or 0)} for item in quality_trend],
+                'direction': 'up' if len(production_trend) > 0 else 'stable'
+            }
+        except Exception as e:
+            return {
+                'production': [],
+                'quality': [],
+                'direction': 'stable',
+                'error': str(e)
+            }
+
+    def _get_quick_actions(self, user: User):
+        """Get quick actions based on user role"""
+        actions = []
+
+        if user.role in ['admin', 'manager']:
+            actions.extend([
+                {'id': 'view_reports', 'title': 'View Reports', 'icon': 'chart', 'url': '/reports'},
+                {'id': 'manage_inventory', 'title': 'Manage Inventory', 'icon': 'warehouse', 'url': '/inventory'},
+                {'id': 'farmer_payments', 'title': 'Farmer Payments', 'icon': 'money', 'url': '/payments'}
+            ])
+
+        if user.role in ['operator', 'supervisor']:
+            actions.extend([
+                {'id': 'start_batch', 'title': 'Start New Batch', 'icon': 'play', 'url': '/production/new'},
+                {'id': 'quality_test', 'title': 'Quality Test', 'icon': 'test', 'url': '/quality/test'},
+                {'id': 'machine_status', 'title': 'Machine Status', 'icon': 'settings', 'url': '/machines'}
+            ])
+
+        if user.role == 'sales':
+            actions.extend([
+                {'id': 'new_order', 'title': 'New Order', 'icon': 'plus', 'url': '/orders/new'},
+                {'id': 'customer_list', 'title': 'Customers', 'icon': 'users', 'url': '/customers'},
+                {'id': 'price_update', 'title': 'Update Prices', 'icon': 'tag', 'url': '/pricing'}
+            ])
+
+        return actions
+
+    def _get_kpis(self, user: User, start_date: datetime, end_date: datetime):
+        """Get key performance indicators based on user role"""
+        kpis = []
+
+        try:
+            if user.role in ['admin', 'manager']:
+                # Financial KPIs
+                total_revenue = db.session.query(func.sum(SalesOrder.total_amount)).filter(
+                    SalesOrder.order_date >= start_date,
+                    SalesOrder.status == 'completed'
+                ).scalar() or 0
+
+                kpis.extend([
+                    {'name': 'Revenue', 'value': f'₹{total_revenue:,.0f}', 'trend': 'up', 'change': '+5.2%'},
+                    {'name': 'Profit Margin', 'value': '12.5%', 'trend': 'up', 'change': '+0.8%'},
+                    {'name': 'ROI', 'value': '18.3%', 'trend': 'stable', 'change': '0%'}
+                ])
+
+            if user.role in ['operator', 'supervisor']:
+                # Production KPIs
+                total_production = db.session.query(func.sum(ProductionBatch.total_output)).filter(
+                    ProductionBatch.start_time >= start_date
+                ).scalar() or 0
+
+                kpis.extend([
+                    {'name': 'Production', 'value': f'{total_production:,.0f} kg', 'trend': 'up', 'change': '+3.1%'},
+                    {'name': 'Efficiency', 'value': '87.2%', 'trend': 'up', 'change': '+2.1%'},
+                    {'name': 'Quality Score', 'value': '92.5%', 'trend': 'stable', 'change': '0%'}
+                ])
+
+            if user.role == 'sales':
+                # Sales KPIs
+                order_count = SalesOrder.query.filter(
+                    SalesOrder.order_date >= start_date
+                ).count()
+
+                kpis.extend([
+                    {'name': 'Orders', 'value': str(order_count), 'trend': 'up', 'change': '+12%'},
+                    {'name': 'Conversion', 'value': '68.4%', 'trend': 'up', 'change': '+4.2%'},
+                    {'name': 'Avg Order', 'value': '₹45,230', 'trend': 'stable', 'change': '0%'}
+                ])
+
+        except Exception as e:
+            kpis.append({'name': 'Error', 'value': 'N/A', 'trend': 'stable', 'change': '0%'})
+
+        return kpis
+
+    def _get_ai_production_analysis(self, batches, daily_production):
+        """AI analysis of production data"""
+        try:
+            if not batches:
+                return ["No production data available for analysis"]
+
+            total_output = sum(batch.total_output or 0 for batch in batches)
+            avg_efficiency = sum(batch.efficiency_score or 0 for batch in batches) / len(batches)
+
+            insights = []
+
+            if avg_efficiency > 85:
+                insights.append("Excellent production efficiency maintained")
+            elif avg_efficiency > 70:
+                insights.append("Good production efficiency, room for improvement")
+            else:
+                insights.append("Production efficiency needs attention")
+
+            if len(daily_production) > 1:
+                recent_trend = daily_production[-1].output - daily_production[-2].output if len(daily_production) > 1 else 0
+                if recent_trend > 0:
+                    insights.append("Production trending upward")
+                elif recent_trend < 0:
+                    insights.append("Production declining - investigate causes")
+                else:
+                    insights.append("Production stable")
+
+            insights.append(f"Total output: {total_output:,.0f} kg")
+
+            return insights
+
+        except Exception as e:
+            return [f"Analysis error: {str(e)}"]
+
+    def _get_ai_quality_analysis(self, quality_tests):
+        """AI analysis of quality data"""
+        try:
+            if not quality_tests:
+                return ["No quality data available for analysis"]
+
+            avg_grade = sum(test.grade_confidence or 0 for test in quality_tests) / len(quality_tests)
+
+            insights = []
+
+            if avg_grade > 90:
+                insights.append("Excellent quality standards maintained")
+            elif avg_grade > 80:
+                insights.append("Good quality, minor improvements possible")
+            elif avg_grade > 70:
+                insights.append("Quality acceptable, focus on consistency")
+            else:
+                insights.append("Quality issues detected - immediate attention required")
+
+            # Check for quality trends
+            if len(quality_tests) > 5:
+                recent_tests = quality_tests[-5:]
+                recent_avg = sum(test.grade_confidence or 0 for test in recent_tests) / len(recent_tests)
+
+                if recent_avg > avg_grade:
+                    insights.append("Quality improving in recent tests")
+                elif recent_avg < avg_grade:
+                    insights.append("Quality declining in recent tests")
+                else:
+                    insights.append("Quality stable")
+
+            insights.append(f"Average quality score: {avg_grade:.1f}%")
+            insights.append(f"Total tests conducted: {len(quality_tests)}")
+
+            return insights
+
+        except Exception as e:
+            return [f"Quality analysis error: {str(e)}"]
+
+    def _get_ai_inventory_optimization(self, paddy_stock, product_stock):
+        """AI optimization suggestions for inventory"""
+        try:
+            suggestions = []
+
+            # Analyze paddy stock
+            if paddy_stock:
+                total_paddy = sum(stock.quantity for stock in paddy_stock)
+                if total_paddy < 1000:  # kg
+                    suggestions.append("Low paddy stock - consider procurement")
+                elif total_paddy > 10000:  # kg
+                    suggestions.append("High paddy stock - optimize storage costs")
+                else:
+                    suggestions.append("Paddy stock levels optimal")
+            else:
+                suggestions.append("No paddy stock data available")
+
+            # Analyze product stock
+            if product_stock:
+                total_products = sum(stock.quantity for stock in product_stock)
+                if total_products < 500:  # kg
+                    suggestions.append("Low product stock - increase production")
+                elif total_products > 5000:  # kg
+                    suggestions.append("High product stock - focus on sales")
+                else:
+                    suggestions.append("Product stock levels balanced")
+            else:
+                suggestions.append("No product stock data available")
+
+            # General optimization tips
+            suggestions.append("Monitor stock rotation to minimize waste")
+            suggestions.append("Implement just-in-time inventory for efficiency")
+
+            return suggestions
+
+        except Exception as e:
+            return [f"Inventory optimization error: {str(e)}"]

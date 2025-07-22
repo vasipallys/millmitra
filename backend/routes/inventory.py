@@ -13,6 +13,31 @@ inventory_bp = Blueprint('inventory', __name__)
 # inventory_service = InventoryService()
 # ai_inventory = AIInventoryService()
 
+# Simple endpoints for frontend compatibility
+@inventory_bp.route('/paddy', methods=['GET'])
+@jwt_required()
+def get_paddy():
+    """Simple paddy stock endpoint for frontend compatibility"""
+    paddy_stocks = PaddyStock.query.all()
+    return jsonify({
+        'stocks': [stock.to_dict() for stock in paddy_stocks],
+        'total_quantity': sum(stock.quantity for stock in paddy_stocks),
+        'total_value': sum(stock.quantity * stock.purchase_price for stock in paddy_stocks),
+        'message': 'Paddy stock data loaded successfully'
+    })
+
+@inventory_bp.route('/products', methods=['GET'])
+@jwt_required()
+def get_products():
+    """Simple product stock endpoint for frontend compatibility"""
+    product_stocks = ProductStock.query.all()
+    return jsonify({
+        'stocks': [stock.to_dict() for stock in product_stocks],
+        'total_quantity': sum(stock.quantity for stock in product_stocks),
+        'total_value': sum(stock.quantity * stock.market_price for stock in product_stocks),
+        'message': 'Product stock data loaded successfully'
+    })
+
 # Paddy Stock Management
 @inventory_bp.route('/paddy-stock', methods=['GET'])
 @jwt_required()

@@ -83,9 +83,19 @@ def get_quality_metrics():
 @jwt_required()
 def get_inventory_metrics():
     user_id = get_jwt_identity()
-    
+
     metrics = dashboard_service.get_inventory_metrics()
-    
+
+    return jsonify(metrics)
+
+@dashboard_bp.route('/metrics/financial', methods=['GET'])
+@jwt_required()
+def get_financial_metrics():
+    user_id = get_jwt_identity()
+
+    days = request.args.get('days', 30, type=int)
+    metrics = dashboard_service.get_financial_metrics(days)
+
     return jsonify(metrics)
 
 @dashboard_bp.route('/predictions', methods=['GET'])

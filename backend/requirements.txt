@@ -1,86 +1,110 @@
 # Core Flask dependencies
-Flask==3.0.0
+Flask==3.0.3
 Flask-SQLAlchemy==3.1.1
 Flask-JWT-Extended==4.6.0
 Flask-CORS==4.0.0
-Flask-Migrate==4.0.5
+Flask-Migrate==4.0.7
+Flask-RESTful==0.3.10
 
 # Database - Updated for Python 3.13 compatibility
-SQLAlchemy==2.0.35
-PyMySQL==1.1.0
-psycopg==3.1.18
+SQLAlchemy==2.0.36
+PyMySQL==1.1.1
+psycopg==3.2.3
+psycopg2-binary==2.9.9
 
-# AI and ML dependencies - Minimal set
+# AI and ML dependencies
 numpy==1.26.4
 scikit-learn==1.5.2
+tensorflow>=2.13.0,<2.16.0
+torch>=2.0.0
+transformers>=4.30.0
 
 # Google AI (Gemini Flash)
-google-generativeai==0.8.3
-google-cloud-aiplatform==1.38.0
+google-generativeai>=0.7.0
+google-cloud-aiplatform>=1.38.0
+google-cloud-storage>=2.10.0
+
+# OpenAI integration
+openai>=1.0.0
 
 # LangChain for AI orchestration
-langchain==0.3.7
-langchain-community==0.3.7
-langchain-google-genai==2.0.4
+langchain>=0.1.0
+langchain-community>=0.0.20
+langchain-google-genai>=1.0.0
+langchain-openai>=0.1.0
 
 # Audio processing for voice features
-SpeechRecognition==3.10.0
-pydub==0.25.1
+SpeechRecognition>=3.10.0
+pydub>=0.25.1
+librosa>=0.9.0
+soundfile>=0.12.0
 
 # Data processing and analysis
 scipy==1.14.1
 plotly==5.24.1
+matplotlib==3.9.2
+seaborn==0.13.2
 
 # API and web services
 requests==2.32.3
 httpx==0.27.2
 fastapi==0.115.4
 uvicorn==0.32.0
+aiofiles==24.1.0
 
 # File handling and utilities
 openpyxl==3.1.5
 python-multipart==0.0.12
 python-dotenv==1.0.1
 celery==5.4.0
-redis==5.1.1
+redis==5.2.0
 
 # Security and authentication
 bcrypt==4.2.0
 cryptography==43.0.3
 PyJWT==2.9.0
+passlib==1.7.4
 
 # Date and time handling
 python-dateutil==2.9.0
 pytz==2024.2
+arrow==1.3.0
 
 # Validation and serialization
 marshmallow==3.23.1
 pydantic==2.9.2
+jsonschema==4.23.0
 
 # Testing
 pytest==8.3.3
 pytest-flask==1.3.0
 pytest-cov==6.0.0
+pytest-asyncio==0.24.0
 
 # Development tools
 black==24.10.0
 flake8==7.1.1
 isort==5.13.2
+mypy==1.13.0
 
 # Production server
 gunicorn==23.0.0
 gevent==24.10.3
+eventlet==0.37.0
 
 # Monitoring and logging
 sentry-sdk==2.17.0
 structlog==24.4.0
+loguru==0.7.2
 
 # Background tasks
 APScheduler==3.11.0
+dramatiq==1.17.0
 
 # Image processing (for quality analysis)
 Pillow==11.0.0
 opencv-python==4.10.0.84
+scikit-image==0.24.0
 
 # Geographic and mapping
 geopy==2.4.1
@@ -88,21 +112,67 @@ folium==0.18.0
 
 # Configuration management
 dynaconf==3.2.6
+pyyaml==6.0.2
 
-# Additional AI and ML dependencies
-face-recognition
-dlib
+# Computer Vision and AI
+face-recognition==1.3.0
+dlib==19.24.6
+mediapipe==0.10.18
 
 # Vector database for AI
-faiss-cpu
+faiss-cpu==1.9.0
+chromadb==0.5.20
 
 # Natural language processing
 nltk==3.9.1
 spacy==3.8.2
+textblob==0.18.0
 
-# Time series analysis
+# Time series analysis and forecasting
 pandas==2.2.3
+statsmodels==0.14.4
+prophet==1.1.6
+
+# Financial calculations
+numpy-financial==1.0.0
+
+# Email functionality
+Flask-Mail==0.10.0
+yagmail==0.15.293
+
+# PDF generation
+reportlab==4.2.5
+weasyprint==62.3
+
+# Excel/CSV processing
+xlsxwriter==3.2.0
+tablib==3.6.1
+
+# Caching
+Flask-Caching==2.3.0
+
+# Rate limiting
+Flask-Limiter==3.8.0
+
+# WebSocket support
+Flask-SocketIO==5.4.1
+python-socketio==5.11.4
 
 # Additional utilities
 python-magic==0.4.27
-Werkzeug==3.0.4
+Werkzeug==3.0.6
+click==8.1.7
+itsdangerous==2.2.0
+MarkupSafe==3.0.2
+
+# Environment and deployment
+supervisor==4.2.5
+docker==7.1.0
+
+# Health checks and metrics
+prometheus-client==0.21.0
+psutil==6.1.0
+
+# Internationalization
+Flask-Babel==4.0.0
+Babel==2.16.0
