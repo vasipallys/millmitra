@@ -5,7 +5,7 @@ import {
   Select, MenuItem, Box, Typography, Alert,
   Autocomplete, CircularProgress, Chip
 } from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+// import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { useQuery } from 'react-query';
@@ -13,16 +13,15 @@ import { farmerService } from '../../services/farmerService';
 
 const validationSchema = Yup.object({
   farmer_id: Yup.number().required('Farmer selection is required'),
-  season: Yup.string().required('Season is required'),
-  year: Yup.number().required('Year is required'),
-  paddy_variety: Yup.string().required('Paddy variety is required'),
-  expected_quantity: Yup.number()
+  crop_type: Yup.string().required('Crop type is required'),
+  quantity_committed: Yup.number()
     .min(1, 'Quantity must be greater than 0')
-    .required('Expected quantity is required'),
+    .required('Quantity committed is required'),
   base_price: Yup.number()
     .min(1, 'Price must be greater than 0')
     .required('Base price is required'),
-  contract_date: Yup.date().required('Contract date is required')
+  contract_start_date: Yup.date().required('Contract start date is required'),
+  contract_end_date: Yup.date().required('Contract end date is required')
 });
 
 const CreateContractDialog = ({ open, onClose, onSubmit, loading = false }) => {
@@ -38,16 +37,13 @@ const CreateContractDialog = ({ open, onClose, onSubmit, loading = false }) => {
   const formik = useFormik({
     initialValues: {
       farmer_id: '',
-      season: '',
-      year: new Date().getFullYear(),
-      paddy_variety: '',
-      expected_quantity: '',
+      crop_type: 'Basmati Rice',
+      quantity_committed: '',
       base_price: '',
       quality_bonus: '',
       advance_amount: '',
-      contract_date: new Date(),
-      expected_delivery_start: null,
-      expected_delivery_end: null,
+      contract_start_date: new Date(),
+      contract_end_date: null,
       terms_conditions: '',
       special_instructions: '',
       advance_payment_method: 'bank_transfer'
@@ -87,7 +83,7 @@ const CreateContractDialog = ({ open, onClose, onSubmit, loading = false }) => {
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
       <DialogTitle>
-        <Typography variant="h6">Create Farmer Contract</Typography>
+        Create Farmer Contract
       </DialogTitle>
 
       <DialogContent>
@@ -176,33 +172,27 @@ const CreateContractDialog = ({ open, onClose, onSubmit, loading = false }) => {
             </Grid>
 
             <Grid item xs={12} sm={6}>
-              <Autocomplete
-                options={paddyVarieties}
-                value={formik.values.paddy_variety}
-                onChange={(event, newValue) => {
-                  formik.setFieldValue('paddy_variety', newValue || '');
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Paddy Variety *"
-                    error={formik.touched.paddy_variety && Boolean(formik.errors.paddy_variety)}
-                    helperText={formik.touched.paddy_variety && formik.errors.paddy_variety}
-                  />
-                )}
+              <TextField
+                fullWidth
+                name="crop_type"
+                label="Crop Type *"
+                value={formik.values.crop_type}
+                onChange={formik.handleChange}
+                error={formik.touched.crop_type && Boolean(formik.errors.crop_type)}
+                helperText={formik.touched.crop_type && formik.errors.crop_type}
               />
             </Grid>
 
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                name="expected_quantity"
-                label="Expected Quantity (quintals) *"
+                name="quantity_committed"
+                label="Quantity Committed (quintals) *"
                 type="number"
-                value={formik.values.expected_quantity}
+                value={formik.values.quantity_committed}
                 onChange={formik.handleChange}
-                error={formik.touched.expected_quantity && Boolean(formik.errors.expected_quantity)}
-                helperText={formik.touched.expected_quantity && formik.errors.expected_quantity}
+                error={formik.touched.quantity_committed && Boolean(formik.errors.quantity_committed)}
+                helperText={formik.touched.quantity_committed && formik.errors.quantity_committed}
               />
             </Grid>
 
@@ -261,36 +251,30 @@ const CreateContractDialog = ({ open, onClose, onSubmit, loading = false }) => {
 
             {/* Dates */}
             <Grid item xs={12} sm={4}>
-              <DatePicker
-                label="Contract Date *"
-                value={formik.values.contract_date}
-                onChange={(newValue) => formik.setFieldValue('contract_date', newValue)}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    fullWidth
-                    error={formik.touched.contract_date && Boolean(formik.errors.contract_date)}
-                    helperText={formik.touched.contract_date && formik.errors.contract_date}
-                  />
-                )}
+              <TextField
+                fullWidth
+                label="Contract Start Date"
+                name="contract_start_date"
+                type="date"
+                value={formik.values.contract_start_date ? formik.values.contract_start_date.toISOString().split('T')[0] : ''}
+                onChange={(e) => formik.setFieldValue('contract_start_date', new Date(e.target.value))}
+                error={formik.touched.contract_start_date && Boolean(formik.errors.contract_start_date)}
+                helperText={formik.touched.contract_start_date && formik.errors.contract_start_date}
+                InputLabelProps={{ shrink: true }}
+                required
               />
             </Grid>
 
-            <Grid item xs={12} sm={4}>
-              <DatePicker
-                label="Expected Delivery Start"
-                value={formik.values.expected_delivery_start}
-                onChange={(newValue) => formik.setFieldValue('expected_delivery_start', newValue)}
-                renderInput={(params) => <TextField {...params} fullWidth />}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={4}>
-              <DatePicker
-                label="Expected Delivery End"
-                value={formik.values.expected_delivery_end}
-                onChange={(newValue) => formik.setFieldValue('expected_delivery_end', newValue)}
-                renderInput={(params) => <TextField {...params} fullWidth />}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Contract End Date"
+                name="contract_end_date"
+                type="date"
+                value={formik.values.contract_end_date ? formik.values.contract_end_date.toISOString().split('T')[0] : ''}
+                onChange={(e) => formik.setFieldValue('contract_end_date', e.target.value ? new Date(e.target.value) : null)}
+                InputLabelProps={{ shrink: true }}
+                required
               />
             </Grid>
 

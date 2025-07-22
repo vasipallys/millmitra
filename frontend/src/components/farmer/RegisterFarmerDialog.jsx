@@ -334,7 +334,7 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
       <DialogTitle>
-        <Typography variant="h6">Register New Farmer</Typography>
+        Register New Farmer
       </DialogTitle>
 
       <DialogContent>

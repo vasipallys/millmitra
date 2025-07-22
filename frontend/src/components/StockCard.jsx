@@ -34,6 +34,11 @@ const StockCard = ({
   onViewDetails,
   onReorder 
 }) => {
+  // Return early if stock is not provided
+  if (!stock) {
+    return null;
+  }
+
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
 
@@ -46,7 +51,7 @@ const StockCard = ({
   };
 
   const getStockStatus = () => {
-    const { current_stock, reorder_level, max_stock } = stock;
+    const { current_stock = 0, reorder_level = 0, max_stock = 100 } = stock || {};
     
     if (current_stock <= reorder_level) {
       return { status: 'low', color: 'error', label: 'Low Stock' };
@@ -126,7 +131,7 @@ const StockCard = ({
             </Avatar>
             <Box>
               <Typography variant="h6" component="div" noWrap>
-                {stock.product_name}
+                {stock?.product_name || 'Unknown Product'}
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Chip 
@@ -150,7 +155,7 @@ const StockCard = ({
               Current Stock
             </Typography>
             <Typography variant="h6" fontWeight="bold" color={stockStatus.color + '.main'}>
-              {stock.current_stock.toLocaleString()} {stock.unit}
+              {(stock?.current_stock || 0).toLocaleString()} {stock?.unit || 'kg'}
             </Typography>
           </Box>
           
@@ -163,10 +168,10 @@ const StockCard = ({
           
           <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
             <Typography variant="caption" color="text.secondary">
-              Reorder: {stock.reorder_level} {stock.unit}
+              Reorder: {stock?.reorder_level || 0} {stock?.unit || 'kg'}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Max: {stock.max_stock} {stock.unit}
+              Max: {stock?.max_stock || 100} {stock?.unit || 'kg'}
             </Typography>
           </Box>
         </Box>
@@ -178,7 +183,7 @@ const StockCard = ({
               Category
             </Typography>
             <Typography variant="body1" fontWeight="medium">
-              {stock.category.replace('_', ' ').toUpperCase()}
+              {(stock?.category || 'general').replace('_', ' ').toUpperCase()}
             </Typography>
           </Grid>
           <Grid item xs={6}>
@@ -202,7 +207,7 @@ const StockCard = ({
               Total Value
             </Typography>
             <Typography variant="body1" fontWeight="medium">
-              ₹{((stock.current_stock * (stock.unit_price || 45)) / 1000).toFixed(0)}K
+              ₹{(((stock?.current_stock || 0) * (stock?.unit_price || 45)) / 1000).toFixed(0)}K
             </Typography>
           </Grid>
         </Grid>

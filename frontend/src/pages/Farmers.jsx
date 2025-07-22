@@ -9,6 +9,7 @@ import {
   TrendingUp, Agriculture, AccountBalance
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { useNavigate } from 'react-router-dom';
 import { farmerService } from '../services/farmerService';
 import RegisterFarmerDialog from '../components/farmer/RegisterFarmerDialog';
 import CreateContractDialog from '../components/farmer/CreateContractDialog';
@@ -22,18 +23,35 @@ const Farmers = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFarmer, setSelectedFarmer] = useState(null);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  // Check if user is authenticated
+  const isAuthenticated = !!localStorage.getItem('token');
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login');
+    }
+  }, [isAuthenticated, navigate]);
 
   // Queries
   const { data: farmersData } = useQuery(
     ['farmers', searchTerm],
     () => farmerService.getFarmers({ search: searchTerm }),
-    { refetchInterval: 300000 }
+    {
+      refetchInterval: 300000,
+      enabled: isAuthenticated
+    }
   );
 
   const { data: analytics } = useQuery(
     'farmer-analytics',
     farmerService.getFarmerAnalytics,
-    { refetchInterval: 300000 }
+    {
+      refetchInterval: 300000,
+      enabled: isAuthenticated
+    }
   );
 
   // Mutations
@@ -315,6 +333,28 @@ const Farmers = () => {
           </CardContent>
         </Card>
       </TabPanel>
+
+      {/* Dialogs */}
+      <RegisterFarmerDialog
+        open={registerDialogOpen}
+        onClose={() => setRegisterDialogOpen(false)}
+        onSubmit={registerFarmerMutation.mutate}
+        loading={registerFarmerMutation.isLoading}
+      />
+
+      <CreateContractDialog
+        open={contractDialogOpen}
+        onClose={() => setContractDialogOpen(false)}
+        onSubmit={createContractMutation.mutate}
+        loading={createContractMutation.isLoading}
+      />
+
+      <RecordProcurementDialog
+        open={procurementDialogOpen}
+        onClose={() => setProcurementDialogOpen(false)}
+        onSubmit={recordProcurementMutation.mutate}
+        loading={recordProcurementMutation.isLoading}
+      />
     </Box>
   );
 };

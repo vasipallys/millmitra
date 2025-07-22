@@ -1,46 +1,100 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import User, Farmer, FarmerContract
-# Temporarily using simplified implementations
-# from services.farmer_service import FarmerService
-# from services.ai_farmer_service import AIFarmerService
+from extensions import db
+from datetime import datetime
+import json
 
 farmer_bp = Blueprint('farmer', __name__)
-# farmer_service = FarmerService()
-# ai_farmer = AIFarmerService()
+
+# Import services with fallback
+try:
+    from services.farmer_service import FarmerService
+    from services.ai_farmer_service import AIFarmerService
+    farmer_service = FarmerService()
+    ai_farmer = AIFarmerService()
+except ImportError:
+    farmer_service = None
+    ai_farmer = None
 
 @farmer_bp.route('/register', methods=['POST'])
 @jwt_required()
 def register_farmer():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-    
-    data = request.get_json()
-    
-    # AI verification and validation
-    ai_verification = ai_farmer.verify_farmer_details(data)
-    
-    # AI duplicate detection
-    duplicate_check = ai_farmer.check_duplicate_farmer(data)
-    
-    if duplicate_check['is_duplicate']:
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+
+        data = request.get_json()
+
+        # Validate required fields
+        required_fields = ['name', 'phone', 'village', 'district', 'state']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({
+                    'success': False,
+                    'message': f'Missing required field: {field}'
+                }), 400
+
+        # Check for duplicate phone number
+        existing_farmer = Farmer.query.filter_by(phone=data['phone']).first()
+        if existing_farmer:
+            return jsonify({
+                'success': False,
+                'message': 'Farmer with this phone number already exists'
+            }), 400
+
+        # Generate farmer code
+        district_code = data['district'][:3].upper()
+        farmer_count = Farmer.query.filter_by(district=data['district']).count()
+        farmer_code = f"{district_code}{farmer_count + 1:04d}"
+
+        # Create farmer
+        farmer = Farmer(
+            farmer_code=farmer_code,
+            name=data['name'],
+            phone=data['phone'],
+            email=data.get('email'),
+            aadhar_number=data.get('aadhar_number'),
+            pan_number=data.get('pan_number'),
+            bank_account=data.get('bank_account_number'),
+            ifsc_code=data.get('bank_ifsc'),
+            bank_name=data.get('bank_name'),
+            branch_name=data.get('branch_name'),
+            village=data['village'],
+            district=data['district'],
+            state=data['state'],
+            pincode=data.get('pincode'),
+            land_area=data.get('total_land_area', 0.0),
+            farming_experience=data.get('farming_experience', 0),
+            farming_type=data.get('farming_type', 'conventional'),
+            irrigation_type=data.get('irrigation_type', 'bore_well'),
+            created_by=user.id,
+            created_at=datetime.utcnow()
+        )
+
+        db.session.add(farmer)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Farmer registered successfully',
+            'farmer': {
+                'id': farmer.id,
+                'farmer_code': farmer.farmer_code,
+                'name': farmer.name,
+                'phone': farmer.phone,
+                'village': farmer.village,
+                'district': farmer.district,
+                'state': farmer.state
+            }
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
         return jsonify({
             'success': False,
-            'message': 'Potential duplicate farmer found',
-            'duplicate_matches': duplicate_check['matches']
-        }), 400
-    
-    farmer = farmer_service.register_farmer(user, data, ai_verification)
-    
-    # AI onboarding recommendations
-    onboarding_recommendations = ai_farmer.get_onboarding_recommendations(farmer.to_dict())
-    
-    return jsonify({
-        'success': True,
-        'farmer': farmer.to_dict(),
-        'verification': ai_verification,
-        'onboarding_recommendations': onboarding_recommendations
-    }), 201
+            'message': f'Error registering farmer: {str(e)}'
+        }), 500
 
 @farmer_bp.route('/list', methods=['GET'])
 @jwt_required()
@@ -52,7 +106,7 @@ def get_farmers():
         'farmers': [farmer.to_dict() for farmer in farmers],
         'insights': {
             'total_farmers': len(farmers),
-            'active_farmers': len([f for f in farmers if f.status == 'active']),
+            'active_farmers': len([f for f in farmers if f.is_active]),
             'message': 'Farmer data loaded successfully'
         }
     })
@@ -77,64 +131,159 @@ def get_farmer_details(farmer_id):
 @farmer_bp.route('/contracts', methods=['POST'])
 @jwt_required()
 def create_contract():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-    
-    data = request.get_json()
-    
-    # AI contract optimization
-    contract_optimization = ai_farmer.optimize_contract_terms(data)
-    
-    # AI risk assessment
-    risk_assessment = ai_farmer.assess_contract_risk(data)
-    
-    if risk_assessment['risk_level'] == 'high':
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+
+        data = request.get_json()
+
+        # Validate required fields
+        required_fields = ['farmer_id', 'crop_type', 'quantity_committed', 'base_price', 'contract_start_date', 'contract_end_date']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({
+                    'success': False,
+                    'message': f'Missing required field: {field}'
+                }), 400
+
+        # Verify farmer exists
+        farmer = Farmer.query.get(data['farmer_id'])
+        if not farmer:
+            return jsonify({
+                'success': False,
+                'message': 'Farmer not found'
+            }), 404
+
+        # Generate contract number
+        contract_count = FarmerContract.query.count()
+        contract_number = f"CON{contract_count + 1:06d}"
+
+        # Create contract
+        contract = FarmerContract(
+            contract_number=contract_number,
+            farmer_id=data['farmer_id'],
+            contract_type=data.get('contract_type', 'seasonal'),
+            variety=data.get('variety', data['crop_type']),
+            quantity_committed=float(data['quantity_committed']),
+            price_per_kg=float(data['base_price']),
+            start_date=datetime.strptime(data['contract_start_date'], '%Y-%m-%d'),
+            end_date=datetime.strptime(data['contract_end_date'], '%Y-%m-%d'),
+            quality_specifications=json.dumps(data.get('quality_specifications', {})),
+            created_by=user.id,
+            created_at=datetime.utcnow()
+        )
+
+        db.session.add(contract)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Contract created successfully',
+            'contract': {
+                'id': contract.id,
+                'contract_number': contract.contract_number,
+                'farmer_name': farmer.name,
+                'variety': contract.variety,
+                'quantity_committed': contract.quantity_committed,
+                'price_per_kg': contract.price_per_kg,
+                'start_date': contract.start_date.isoformat(),
+                'end_date': contract.end_date.isoformat()
+            }
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
         return jsonify({
             'success': False,
-            'message': 'High risk contract detected',
-            'risk_factors': risk_assessment['risk_factors'],
-            'recommendations': risk_assessment['recommendations']
-        }), 400
-    
-    contract = farmer_service.create_contract(user, data, contract_optimization)
-    
-    return jsonify({
-        'success': True,
-        'contract': contract.to_dict(),
-        'optimization': contract_optimization,
-        'risk_assessment': risk_assessment
-    }), 201
+            'message': f'Error creating contract: {str(e)}'
+        }), 500
 
 @farmer_bp.route('/procurements', methods=['POST'])
 @jwt_required()
 def record_procurement():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-    
-    data = request.get_json()
-    
-    # AI quality assessment
-    quality_assessment = ai_farmer.assess_paddy_quality(data)
-    
-    # AI pricing recommendation
-    pricing_recommendation = ai_farmer.recommend_procurement_price(data, quality_assessment)
-    
-    # Apply AI recommendations to data
-    if pricing_recommendation.get('recommended_price'):
-        data['base_price'] = pricing_recommendation['recommended_price']
-    
-    procurement = farmer_service.record_procurement(user, data, quality_assessment)
-    
-    # AI post-procurement analysis
-    post_analysis = ai_farmer.analyze_procurement_impact(procurement.to_dict())
-    
-    return jsonify({
-        'success': True,
-        'procurement': procurement.to_dict(),
-        'quality_assessment': quality_assessment,
-        'pricing_recommendation': pricing_recommendation,
-        'post_analysis': post_analysis
-    }), 201
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+
+        data = request.get_json()
+
+        # Validate required fields
+        required_fields = ['farmer_id', 'crop_type', 'quantity', 'price_per_unit', 'procurement_date']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({
+                    'success': False,
+                    'message': f'Missing required field: {field}'
+                }), 400
+
+        # Verify farmer exists
+        farmer = Farmer.query.get(data['farmer_id'])
+        if not farmer:
+            return jsonify({
+                'success': False,
+                'message': 'Farmer not found'
+            }), 404
+
+        # Import PaddyStock model
+        from models.inventory import PaddyStock
+
+        # Generate stock ID
+        stock_count = PaddyStock.query.count()
+        stock_id = f"STOCK{stock_count + 1:06d}"
+
+        # Calculate total amount
+        quantity = float(data['quantity'])
+        price_per_unit = float(data['price_per_unit'])
+        total_amount = quantity * price_per_unit
+
+        # Create procurement record
+        procurement = PaddyStock(
+            stock_id=stock_id,
+            farmer_id=data['farmer_id'],
+            variety=data['crop_type'],
+            quantity=quantity,
+            purchase_price=price_per_unit,
+            total_amount=total_amount,
+            moisture_content=float(data.get('moisture_content', 0)),
+            purchase_date=datetime.strptime(data['procurement_date'], '%Y-%m-%d'),
+            warehouse_id=data.get('storage_location', 'WH001'),
+            quality_grade=data.get('quality_grade', 'A'),
+            remaining_quantity=quantity,
+            created_by=user.id,
+            created_at=datetime.utcnow()
+        )
+
+        db.session.add(procurement)
+
+        # Update farmer's total procurement
+        farmer.total_quantity_supplied = (farmer.total_quantity_supplied or 0) + quantity
+        farmer.total_transactions = (farmer.total_transactions or 0) + 1
+        farmer.last_transaction_date = datetime.utcnow()
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Procurement recorded successfully',
+            'procurement': {
+                'id': procurement.id,
+                'stock_id': procurement.stock_id,
+                'farmer_name': farmer.name,
+                'variety': procurement.variety,
+                'quantity': procurement.quantity,
+                'purchase_price': procurement.purchase_price,
+                'total_amount': procurement.total_amount,
+                'moisture_content': procurement.moisture_content,
+                'purchase_date': procurement.purchase_date.isoformat()
+            }
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': f'Error recording procurement: {str(e)}'
+        }), 500
 
 @farmer_bp.route('/payments', methods=['POST'])
 @jwt_required()

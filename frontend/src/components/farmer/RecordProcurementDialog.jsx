@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   TextField, Button, Grid, FormControl, InputLabel,
   Select, MenuItem, Box, Typography, Alert,
   Autocomplete, CircularProgress, Card, CardContent
 } from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+// import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { useQuery } from 'react-query';
@@ -14,27 +14,22 @@ import { farmerService } from '../../services/farmerService';
 const validationSchema = Yup.object({
   farmer_id: Yup.number().required('Farmer selection is required'),
   procurement_date: Yup.date().required('Procurement date is required'),
-  paddy_variety: Yup.string().required('Paddy variety is required'),
+  crop_type: Yup.string().required('Crop type is required'),
   quantity: Yup.number()
     .min(0.1, 'Quantity must be greater than 0')
     .required('Quantity is required'),
-  base_price: Yup.number()
-    .min(1, 'Price must be greater than 0')
-    .required('Base price is required'),
+  price_per_unit: Yup.number()
+    .min(1, 'Price per unit must be greater than 0')
+    .required('Price per unit is required'),
   moisture_content: Yup.number()
     .min(0)
-    .max(100, 'Moisture content cannot exceed 100%'),
-  foreign_matter: Yup.number()
-    .min(0)
-    .max(100, 'Foreign matter cannot exceed 100%'),
-  broken_grains: Yup.number()
-    .min(0)
-    .max(100, 'Broken grains cannot exceed 100%')
+    .max(30, 'Moisture content cannot exceed 30%')
 });
 
 const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) => {
   const [qualityAssessment, setQualityAssessment] = useState(null);
   const [pricingRecommendation, setPricingRecommendation] = useState(null);
+  const [selectedFarmerId, setSelectedFarmerId] = useState('');
 
   const { data: farmersData } = useQuery(
     'farmers-list',
@@ -43,29 +38,25 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
   );
 
   const { data: contractsData } = useQuery(
-    ['contracts', formik.values.farmer_id],
-    () => farmerService.getContracts({ 
-      farmer_id: formik.values.farmer_id,
+    ['contracts', selectedFarmerId],
+    () => farmerService.getContracts({
+      farmer_id: selectedFarmerId,
       status: 'active'
     }),
-    { enabled: open && formik.values.farmer_id }
+    { enabled: open && !!selectedFarmerId }
   );
 
   const formik = useFormik({
     initialValues: {
       farmer_id: '',
-      contract_id: '',
+      crop_type: 'Basmati Rice',
       procurement_date: new Date(),
-      paddy_variety: '',
       quantity: '',
+      price_per_unit: '',
       moisture_content: '',
-      foreign_matter: '',
-      broken_grains: '',
-      base_price: '',
-      vehicle_number: '',
-      driver_name: '',
-      storage_location: '',
-      inspector_notes: ''
+      quality_grade: 'A',
+      storage_location: 'Main Warehouse',
+      notes: ''
     },
     validationSchema,
     onSubmit: async (values) => {
@@ -81,6 +72,13 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
       }
     }
   });
+
+  // Reset selectedFarmerId when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setSelectedFarmerId('');
+    }
+  }, [open]);
 
   const handleClose = () => {
     formik.resetForm();
@@ -125,7 +123,7 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth>
       <DialogTitle>
-        <Typography variant="h6">Record Paddy Procurement</Typography>
+        Record Paddy Procurement
       </DialogTitle>
 
       <DialogContent>
@@ -169,7 +167,9 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
                 getOptionLabel={(option) => `${option.name} (${option.farmer_code})`}
                 value={farmersData?.farmers?.find(f => f.id === formik.values.farmer_id) || null}
                 onChange={(event, newValue) => {
-                  formik.setFieldValue('farmer_id', newValue?.id || '');
+                  const farmerId = newValue?.id || '';
+                  formik.setFieldValue('farmer_id', farmerId);
+                  setSelectedFarmerId(farmerId);
                   formik.setFieldValue('contract_id', ''); // Reset contract selection
                 }}
                 renderInput={(params) => (
@@ -205,18 +205,17 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
 
             {/* Procurement Details */}
             <Grid item xs={12} md={4}>
-              <DatePicker
-                label="Procurement Date *"
-                value={formik.values.procurement_date}
-                onChange={(newValue) => formik.setFieldValue('procurement_date', newValue)}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    fullWidth
-                    error={formik.touched.procurement_date && Boolean(formik.errors.procurement_date)}
-                    helperText={formik.touched.procurement_date && formik.errors.procurement_date}
-                  />
-                )}
+              <TextField
+                fullWidth
+                label="Procurement Date"
+                name="procurement_date"
+                type="date"
+                value={formik.values.procurement_date ? formik.values.procurement_date.toISOString().split('T')[0] : ''}
+                onChange={(e) => formik.setFieldValue('procurement_date', new Date(e.target.value))}
+                error={formik.touched.procurement_date && Boolean(formik.errors.procurement_date)}
+                helperText={formik.touched.procurement_date && formik.errors.procurement_date}
+                InputLabelProps={{ shrink: true }}
+                required
               />
             </Grid>
 

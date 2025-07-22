@@ -502,7 +502,7 @@ class SmartDashboardService:
         ).all()
         
         if recent_tests:
-            avg_quality = sum(t.overall_score or 0 for t in recent_tests) / len(recent_tests)
+            avg_quality = sum(t.calculate_quality_score() or 0 for t in recent_tests) / len(recent_tests)
             if avg_quality < 80:
                 alerts.append({
                     'id': 'quality_decline',
