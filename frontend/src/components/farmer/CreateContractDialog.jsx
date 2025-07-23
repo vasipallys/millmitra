@@ -14,6 +14,11 @@ import { farmerService } from '../../services/farmerService';
 const validationSchema = Yup.object({
   farmer_id: Yup.number().required('Farmer selection is required'),
   crop_type: Yup.string().required('Crop type is required'),
+  season: Yup.string().oneOf(['kharif', 'rabi'], 'Invalid season').required('Season is required'),
+  year: Yup.number()
+    .min(2020, 'Year must be 2020 or later')
+    .max(2030, 'Year must be 2030 or earlier')
+    .required('Year is required'),
   quantity_committed: Yup.number()
     .min(1, 'Quantity must be greater than 0')
     .required('Quantity committed is required'),
@@ -38,6 +43,8 @@ const CreateContractDialog = ({ open, onClose, onSubmit, loading = false }) => {
     initialValues: {
       farmer_id: '',
       crop_type: 'Basmati Rice',
+      season: 'kharif',
+      year: new Date().getFullYear(),
       quantity_committed: '',
       base_price: '',
       quality_bonus: '',
@@ -51,10 +58,34 @@ const CreateContractDialog = ({ open, onClose, onSubmit, loading = false }) => {
     validationSchema,
     onSubmit: async (values) => {
       try {
-        const result = await onSubmit(values);
-        setAiOptimization(result.optimization);
-        setRiskAssessment(result.risk_assessment);
-        if (result.success) {
+        // Format dates for backend
+        const formattedValues = {
+          ...values,
+          contract_start_date: values.contract_start_date instanceof Date
+            ? values.contract_start_date.toISOString().split('T')[0]
+            : values.contract_start_date,
+          contract_end_date: values.contract_end_date instanceof Date
+            ? values.contract_end_date.toISOString().split('T')[0]
+            : values.contract_end_date
+        };
+
+        const result = await onSubmit(formattedValues);
+
+        // Handle AI optimization and risk assessment if available
+        if (result && typeof result === 'object') {
+          if (result.optimization) {
+            setAiOptimization(result.optimization);
+          }
+          if (result.risk_assessment) {
+            setRiskAssessment(result.risk_assessment);
+          }
+
+          if (result.success) {
+            handleClose();
+          }
+        } else {
+          // If result is not an object or is undefined, assume success
+          console.log('Contract creation completed');
           handleClose();
         }
       } catch (error) {

@@ -27,6 +27,31 @@ export const farmerService = {
     return response.data;
   },
 
+  // Edit request management
+  getEditRequests: async (filters = {}) => {
+    const params = new URLSearchParams();
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) params.append(key, filters[key]);
+    });
+
+    const response = await api.get(`/farmer/edit-requests?${params}`);
+    return response.data;
+  },
+
+  approveEditRequest: async (requestId, comments = '') => {
+    const response = await api.post(`/farmer/edit-requests/${requestId}/approve`, {
+      comments
+    });
+    return response.data;
+  },
+
+  rejectEditRequest: async (requestId, comments) => {
+    const response = await api.post(`/farmer/edit-requests/${requestId}/reject`, {
+      comments
+    });
+    return response.data;
+  },
+
   // Contract management
   createContract: async (contractData) => {
     const response = await api.post('/farmer/contracts', contractData);

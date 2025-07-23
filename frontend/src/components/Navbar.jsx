@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -21,11 +21,31 @@ import {
   Mic,
   MicOff,
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
+import NotificationsPanel from './NotificationsPanel';
+import ProfilePanel from './ProfilePanel';
+import notificationService from '../services/notificationService';
 
 const Navbar = ({ onMenuClick, onLogout, user }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [notificationAnchor, setNotificationAnchor] = useState(null);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const navigate = useNavigate();
+
+  // Subscribe to notification updates
+  useEffect(() => {
+    const unsubscribe = notificationService.subscribe(({ unreadCount }) => {
+      setUnreadCount(unreadCount);
+    });
+
+    // Initial load
+    setUnreadCount(notificationService.getUnreadCount());
+
+    return unsubscribe;
+  }, []);
 
   const handleProfileMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -43,16 +63,22 @@ const Navbar = ({ onMenuClick, onLogout, user }) => {
     setNotificationAnchor(null);
   };
 
+  const handleProfileClick = () => {
+    setProfileOpen(true);
+    handleProfileMenuClose();
+  };
+
+  const handleSettingsClick = () => {
+    navigate('/settings');
+    handleProfileMenuClose();
+  };
+
   const toggleVoice = () => {
     setIsVoiceActive(!isVoiceActive);
     // Voice interface logic will be handled by VoiceInterface component
   };
 
-  const mockNotifications = [
-    { id: 1, message: 'New farmer registration pending approval', time: '5 min ago' },
-    { id: 2, message: 'Production batch #PB001 completed', time: '15 min ago' },
-    { id: 3, message: 'Low stock alert: Basmati Rice', time: '1 hour ago' },
-  ];
+
 
   return (
     <AppBar 
@@ -108,7 +134,7 @@ const Navbar = ({ onMenuClick, onLogout, user }) => {
             onClick={handleNotificationMenuOpen}
             sx={{ mr: 1 }}
           >
-            <Badge badgeContent={mockNotifications.length} color="error">
+            <Badge badgeContent={unreadCount} color="error">
               <NotificationsIcon />
             </Badge>
           </IconButton>
@@ -147,11 +173,11 @@ const Navbar = ({ onMenuClick, onLogout, user }) => {
               {user?.role || 'Operator'}
             </Typography>
           </Box>
-          <MenuItem onClick={handleProfileMenuClose}>
+          <MenuItem onClick={handleProfileClick}>
             <AccountCircle sx={{ mr: 1 }} />
             Profile
           </MenuItem>
-          <MenuItem onClick={handleProfileMenuClose}>
+          <MenuItem onClick={handleSettingsClick}>
             <Settings sx={{ mr: 1 }} />
             Settings
           </MenuItem>
@@ -161,41 +187,19 @@ const Navbar = ({ onMenuClick, onLogout, user }) => {
           </MenuItem>
         </Menu>
 
-        {/* Notifications Menu */}
-        <Menu
+        {/* Enhanced Notifications Panel */}
+        <NotificationsPanel
           anchorEl={notificationAnchor}
           open={Boolean(notificationAnchor)}
           onClose={handleNotificationMenuClose}
-          PaperProps={{
-            elevation: 3,
-            sx: {
-              mt: 1.5,
-              maxWidth: 350,
-              maxHeight: 400,
-            },
-          }}
-        >
-          <Box sx={{ px: 2, py: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
-            <Typography variant="subtitle2">Notifications</Typography>
-          </Box>
-          {mockNotifications.map((notification) => (
-            <MenuItem key={notification.id} onClick={handleNotificationMenuClose}>
-              <Box>
-                <Typography variant="body2">{notification.message}</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {notification.time}
-                </Typography>
-              </Box>
-            </MenuItem>
-          ))}
-          {mockNotifications.length === 0 && (
-            <MenuItem disabled>
-              <Typography variant="body2" color="text.secondary">
-                No new notifications
-              </Typography>
-            </MenuItem>
-          )}
-        </Menu>
+        />
+
+        {/* Enhanced Profile Panel */}
+        <ProfilePanel
+          open={profileOpen}
+          onClose={() => setProfileOpen(false)}
+          user={user}
+        />
       </Toolbar>
     </AppBar>
   );

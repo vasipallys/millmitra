@@ -110,6 +110,14 @@ def login():
             expires_delta=timedelta(hours=8)
         )
 
+        # Create session
+        from services.session_manager import session_manager
+        session_token = session_manager.create_session(
+            user_id=user.id,
+            device_info=device_info,
+            ip_address=request.remote_addr
+        )
+
         # Update user login info
         user.last_login = datetime.utcnow()
         user.login_count = getattr(user, 'login_count', 0) + 1
@@ -126,6 +134,7 @@ def login():
 
         return jsonify({
             'access_token': access_token,
+            'session_token': session_token,
             'user': {
                 'id': user.id,
                 'username': user.username,
@@ -178,15 +187,45 @@ def verify_otp():
     
     return jsonify({'error': 'Invalid OTP'}), 401
 
+@auth_bp.route('/logout', methods=['POST'])
+@jwt_required()
+def logout():
+    """Logout user and invalidate session"""
+    try:
+        from services.session_manager import session_manager
+
+        # Get session token from headers
+        session_token = request.headers.get('X-Session-Token')
+
+        if session_token:
+            # Invalidate specific session
+            session_manager.invalidate_session(session_token)
+        else:
+            # Fallback: invalidate all user sessions
+            user_id = get_jwt_identity()
+            session_manager.invalidate_user_sessions(user_id)
+
+        return jsonify({
+            'success': True,
+            'message': 'Logged out successfully'
+        })
+
+    except Exception as e:
+        print(f"💥 Logout error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': 'Logout failed'
+        }), 500
+
 @auth_bp.route('/voice-login', methods=['POST'])
 def voice_login():
     audio_data = request.files.get('audio')
     device_info = request.form.get('device_info', '{}')
-    
+
     # Process voice for both speech-to-text and voice print
     result = ai_auth.process_voice_login(audio_data, device_info)
-    
+
     if result['success']:
         return jsonify(result)
-    
+
     return jsonify({'error': result['error']}), 401

@@ -3,6 +3,9 @@ from flask_cors import CORS
 from extensions import db, jwt, init_extensions
 from config import Config
 
+# Import models to ensure they're registered
+from models.farmer_edit_request import FarmerEditRequest
+
 # Import all blueprints
 from routes.auth import auth_bp
 from routes.dashboard import dashboard_bp
@@ -17,6 +20,9 @@ from routes.production import production_bp
 from routes.sales import sales_bp
 from routes.finance import finance_bp
 from routes.customers import customers_bp
+from routes.session import session_bp
+from routes.notifications import notifications_bp
+from routes.user import user_bp
 # TODO: Re-enable these routes after implementation
 # from routes.supply_chain import supply_chain_bp
 # from routes.analytics import analytics_bp
@@ -27,10 +33,14 @@ from routes.customers import customers_bp
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
-    
+
     # Initialize extensions
     init_extensions(app)
     CORS(app, origins=['http://localhost:3000', 'http://localhost:3001'])
+
+    # Initialize session middleware
+    from middleware.session_middleware import session_middleware
+    session_middleware.init_app(app)
     
     # Register blueprints
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -47,6 +57,9 @@ def create_app():
     app.register_blueprint(sales_bp, url_prefix='/api/sales')
     app.register_blueprint(finance_bp, url_prefix='/api/finance')
     app.register_blueprint(customers_bp, url_prefix='/api/customers')
+    app.register_blueprint(session_bp, url_prefix='/api/session')
+    app.register_blueprint(notifications_bp)
+    app.register_blueprint(user_bp)
     # TODO: Re-enable these routes after implementation
     # app.register_blueprint(supply_chain_bp, url_prefix='/api/supply-chain')
     # app.register_blueprint(analytics_bp, url_prefix='/api/analytics')

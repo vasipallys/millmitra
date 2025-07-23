@@ -13,17 +13,24 @@ import { farmerService } from '../../services/farmerService';
 
 const validationSchema = Yup.object({
   farmer_id: Yup.number().required('Farmer selection is required'),
+  contract_id: Yup.number().nullable(), // Optional field
   procurement_date: Yup.date().required('Procurement date is required'),
   crop_type: Yup.string().required('Crop type is required'),
+  paddy_variety: Yup.string().required('Paddy variety is required'),
   quantity: Yup.number()
     .min(0.1, 'Quantity must be greater than 0')
     .required('Quantity is required'),
   price_per_unit: Yup.number()
     .min(1, 'Price per unit must be greater than 0')
     .required('Price per unit is required'),
+  base_price: Yup.number()
+    .min(1, 'Base price must be greater than 0')
+    .required('Base price is required'),
   moisture_content: Yup.number()
     .min(0)
     .max(30, 'Moisture content cannot exceed 30%')
+    .required('Moisture content is required'),
+  storage_location: Yup.string().required('Storage location is required')
 });
 
 const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) => {
@@ -49,26 +56,70 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
   const formik = useFormik({
     initialValues: {
       farmer_id: '',
+      contract_id: '',
       crop_type: 'Basmati Rice',
+      paddy_variety: '',
       procurement_date: new Date(),
       quantity: '',
       price_per_unit: '',
+      base_price: '',
       moisture_content: '',
+      foreign_matter: '',
+      broken_grains: '',
       quality_grade: 'A',
       storage_location: 'Main Warehouse',
+      vehicle_number: '',
+      driver_name: '',
+      inspector_notes: '',
       notes: ''
     },
     validationSchema,
     onSubmit: async (values) => {
       try {
-        const result = await onSubmit(values);
-        setQualityAssessment(result.quality_assessment);
-        setPricingRecommendation(result.pricing_recommendation);
-        if (result.success) {
+        console.log('Submitting procurement data:', values);
+
+        // Format the data for backend
+        const formattedValues = {
+          ...values,
+          procurement_date: values.procurement_date instanceof Date
+            ? values.procurement_date.toISOString().split('T')[0]
+            : values.procurement_date,
+          farmer_id: parseInt(values.farmer_id),
+          contract_id: values.contract_id ? parseInt(values.contract_id) : null,
+          quantity: parseFloat(values.quantity),
+          price_per_unit: parseFloat(values.price_per_unit),
+          base_price: parseFloat(values.base_price),
+          moisture_content: parseFloat(values.moisture_content || 0),
+          foreign_matter: parseFloat(values.foreign_matter || 0),
+          broken_grains: parseFloat(values.broken_grains || 0)
+        };
+
+        console.log('Formatted procurement data:', formattedValues);
+
+        const result = await onSubmit(formattedValues);
+
+        console.log('Procurement result:', result);
+
+        // Handle AI responses if available
+        if (result && typeof result === 'object') {
+          if (result.quality_assessment) {
+            setQualityAssessment(result.quality_assessment);
+          }
+          if (result.pricing_recommendation) {
+            setPricingRecommendation(result.pricing_recommendation);
+          }
+
+          if (result.success) {
+            handleClose();
+          }
+        } else {
+          // If result is not an object or is undefined, assume success
+          console.log('Procurement recording completed');
           handleClose();
         }
       } catch (error) {
         console.error('Procurement recording failed:', error);
+        // You might want to show an error message to the user here
       }
     }
   });
@@ -79,6 +130,13 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
       setSelectedFarmerId('');
     }
   }, [open]);
+
+  // Debug form state (remove in production)
+  useEffect(() => {
+    if (Object.keys(formik.errors).length > 0) {
+      console.log('Form validation errors:', formik.errors);
+    }
+  }, [formik.errors]);
 
   const handleClose = () => {
     formik.resetForm();
@@ -93,7 +151,7 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
   ];
 
   const storageLocations = [
-    'Warehouse A', 'Warehouse B', 'Warehouse C',
+    'Main Warehouse', 'Warehouse A', 'Warehouse B', 'Warehouse C',
     'Temporary Storage 1', 'Temporary Storage 2'
   ];
 
@@ -158,7 +216,7 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
           </Alert>
         )}
 
-        <form onSubmit={formik.handleSubmit}>
+        <form id="procurement-form" onSubmit={formik.handleSubmit}>
           <Grid container spacing={3}>
             {/* Farmer and Contract Selection */}
             <Grid item xs={12} md={6}>
@@ -172,6 +230,7 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
                   setSelectedFarmerId(farmerId);
                   formik.setFieldValue('contract_id', ''); // Reset contract selection
                 }}
+                isOptionEqualToValue={(option, value) => option?.id === value?.id}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -222,10 +281,11 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
             <Grid item xs={12} md={4}>
               <Autocomplete
                 options={paddyVarieties}
-                value={formik.values.paddy_variety}
+                value={formik.values.paddy_variety || null}
                 onChange={(event, newValue) => {
                   formik.setFieldValue('paddy_variety', newValue || '');
                 }}
+                isOptionEqualToValue={(option, value) => option === value}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -264,7 +324,7 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
                 label="Moisture Content (%)"
                 type="number"
                 inputProps={{ step: 0.1, min: 0, max: 100 }}
-                value={formik.values.moisture_content}
+                value={formik.values.moisture_content || ''}
                 onChange={formik.handleChange}
                 error={formik.touched.moisture_content && Boolean(formik.errors.moisture_content)}
                 helperText={formik.touched.moisture_content && formik.errors.moisture_content}
@@ -278,7 +338,7 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
                 label="Foreign Matter (%)"
                 type="number"
                 inputProps={{ step: 0.1, min: 0, max: 100 }}
-                value={formik.values.foreign_matter}
+                value={formik.values.foreign_matter || ''}
                 onChange={formik.handleChange}
                 error={formik.touched.foreign_matter && Boolean(formik.errors.foreign_matter)}
                 helperText={formik.touched.foreign_matter && formik.errors.foreign_matter}
@@ -292,7 +352,7 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
                 label="Broken Grains (%)"
                 type="number"
                 inputProps={{ step: 0.1, min: 0, max: 100 }}
-                value={formik.values.broken_grains}
+                value={formik.values.broken_grains || ''}
                 onChange={formik.handleChange}
                 error={formik.touched.broken_grains && Boolean(formik.errors.broken_grains)}
                 helperText={formik.touched.broken_grains && formik.errors.broken_grains}
@@ -324,10 +384,23 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
+                name="price_per_unit"
+                label="Price per Unit (₹/quintal) *"
+                type="number"
+                value={formik.values.price_per_unit || ''}
+                onChange={formik.handleChange}
+                error={formik.touched.price_per_unit && Boolean(formik.errors.price_per_unit)}
+                helperText={formik.touched.price_per_unit && formik.errors.price_per_unit}
+              />
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
                 name="base_price"
                 label="Base Price (₹/quintal) *"
                 type="number"
-                value={formik.values.base_price}
+                value={formik.values.base_price || ''}
                 onChange={formik.handleChange}
                 error={formik.touched.base_price && Boolean(formik.errors.base_price)}
                 helperText={formik.touched.base_price && formik.errors.base_price}
@@ -338,10 +411,11 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
             <Grid item xs={12} md={6}>
               <Autocomplete
                 options={storageLocations}
-                value={formik.values.storage_location}
+                value={formik.values.storage_location || null}
                 onChange={(event, newValue) => {
                   formik.setFieldValue('storage_location', newValue || '');
                 }}
+                isOptionEqualToValue={(option, value) => option === value}
                 renderInput={(params) => (
                   <TextField {...params} label="Storage Location" />
                 )}
@@ -353,7 +427,7 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
                 fullWidth
                 name="vehicle_number"
                 label="Vehicle Number"
-                value={formik.values.vehicle_number}
+                value={formik.values.vehicle_number || ''}
                 onChange={formik.handleChange}
               />
             </Grid>
@@ -363,7 +437,7 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
                 fullWidth
                 name="driver_name"
                 label="Driver Name"
-                value={formik.values.driver_name}
+                value={formik.values.driver_name || ''}
                 onChange={formik.handleChange}
               />
             </Grid>
@@ -376,7 +450,7 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
                 label="Inspector Notes"
                 multiline
                 rows={3}
-                value={formik.values.inspector_notes}
+                value={formik.values.inspector_notes || ''}
                 onChange={formik.handleChange}
               />
             </Grid>
@@ -387,8 +461,9 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
       <DialogActions>
         <Button onClick={handleClose}>Cancel</Button>
         <Button
-          onClick={formik.handleSubmit}
-          disabled={loading}
+          type="submit"
+          form="procurement-form"
+          disabled={loading || !formik.isValid}
           variant="contained"
           startIcon={loading && <CircularProgress size={20} />}
         >

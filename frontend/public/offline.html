@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Mill ERP - Offline</title>
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #1976d2, #42a5f5);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+        }
+        .offline-container {
+            max-width: 500px;
+            padding: 40px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        .offline-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            opacity: 0.8;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            font-weight: 300;
+        }
+        p {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+        .features {
+            text-align: left;
+            margin: 30px 0;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .features h3 {
+            margin-top: 0;
+            color: #ffeb3b;
+        }
+        .features ul {
+            list-style: none;
+            padding: 0;
+        }
+        .features li {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .features li:last-child {
+            border-bottom: none;
+        }
+        .features li::before {
+            content: "✓ ";
+            color: #4caf50;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .retry-btn {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+        .retry-btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .status.online {
+            background: rgba(76, 175, 80, 0.3);
+            color: #4caf50;
+        }
+        .status.offline {
+            background: rgba(244, 67, 54, 0.3);
+            color: #f44336;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="offline-icon pulse">📡</div>
+        <h1>You're Offline</h1>
+        <p>Don't worry! Smart Mill ERP works offline too. You can still access cached data and perform essential operations.</p>
+        
+        <div class="features">
+            <h3>🌟 Available Offline Features:</h3>
+            <ul>
+                <li>View cached dashboard data</li>
+                <li>Browse farmer information</li>
+                <li>Check inventory levels</li>
+                <li>Review production records</li>
+                <li>Access quality test results</li>
+                <li>View financial summaries</li>
+            </ul>
+        </div>
+        
+        <button class="retry-btn" onclick="checkConnection()">
+            🔄 Check Connection
+        </button>
+        
+        <button class="retry-btn" onclick="goToApp()">
+            🏠 Go to App
+        </button>
+        
+        <div id="status" class="status offline">
+            📶 Connection Status: Offline
+        </div>
+    </div>
+
+    <script>
+        // Check online status
+        function updateConnectionStatus() {
+            const status = document.getElementById('status');
+            if (navigator.onLine) {
+                status.textContent = '📶 Connection Status: Online';
+                status.className = 'status online';
+                
+                // Auto-redirect to app when online
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+            } else {
+                status.textContent = '📶 Connection Status: Offline';
+                status.className = 'status offline';
+            }
+        }
+
+        // Check connection manually
+        function checkConnection() {
+            updateConnectionStatus();
+            
+            // Try to fetch a small resource to verify connection
+            fetch('/manifest.json', { 
+                method: 'HEAD',
+                cache: 'no-cache'
+            })
+            .then(() => {
+                window.location.href = '/';
+            })
+            .catch(() => {
+                alert('Still offline. Please check your internet connection.');
+            });
+        }
+
+        // Go to app (will use cached version)
+        function goToApp() {
+            window.location.href = '/';
+        }
+
+        // Listen for online/offline events
+        window.addEventListener('online', updateConnectionStatus);
+        window.addEventListener('offline', updateConnectionStatus);
+
+        // Initial status check
+        updateConnectionStatus();
+
+        // Periodic connection check
+        setInterval(updateConnectionStatus, 5000);
+    </script>
+</body>
+</html>

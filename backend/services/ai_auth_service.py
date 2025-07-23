@@ -351,7 +351,7 @@ class AIAuthService:
             risk_score=risk_score,
             ip_address=device_info.get('ip_address'),
             user_agent=device_info.get('user_agent'),
-            device_fingerprint=device_info.get('fingerprint'),
+            device_fingerprint=self._optimize_device_fingerprint(device_info.get('fingerprint')),
             location=device_info.get('location')
         )
         db.session.add(log)
@@ -364,7 +364,7 @@ class AIAuthService:
             failure_reason=reason,
             ip_address=device_info.get('ip_address'),
             user_agent=device_info.get('user_agent'),
-            device_fingerprint=device_info.get('fingerprint')
+            device_fingerprint=self._optimize_device_fingerprint(device_info.get('fingerprint'))
         )
         db.session.add(log)
         db.session.commit()
@@ -373,6 +373,29 @@ class AIAuthService:
     def _generate_otp(self) -> str:
         import random
         return str(random.randint(100000, 999999))
+
+    def _optimize_device_fingerprint(self, fingerprint: str) -> str:
+        """Optimize device fingerprint for storage"""
+        if not fingerprint:
+            return None
+
+        try:
+            # If fingerprint is very long, create a hash instead
+            if len(fingerprint) > 1000:
+                # Create a SHA-256 hash of the fingerprint
+                hash_obj = hashlib.sha256(fingerprint.encode('utf-8'))
+                return f"hash:{hash_obj.hexdigest()}"
+
+            # For shorter fingerprints, store as-is but limit length
+            return fingerprint[:1000] if fingerprint else None
+
+        except Exception as e:
+            print(f"⚠️ Error optimizing device fingerprint: {e}")
+            # Fallback: create hash of the fingerprint
+            if fingerprint:
+                hash_obj = hashlib.sha256(str(fingerprint).encode('utf-8'))
+                return f"hash:{hash_obj.hexdigest()}"
+            return None
     
     def _is_suspicious_location(self, user_id: int, ip_address: str) -> bool:
         # Check if IP is from a different country/region than usual

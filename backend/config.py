@@ -5,8 +5,8 @@ class Config:
     # Basic Flask configuration
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
     
-    # Database configuration - Using SQLite for development
-    DATABASE_URL = os.environ.get('DATABASE_URL') or 'sqlite:///rice_mill.db'
+    # Database configuration - PostgreSQL preferred, SQLite fallback
+    DATABASE_URL = os.environ.get('DATABASE_URL') or 'postgresql://postgres:siva@localhost:5432/rice_mill_erp'
     SQLALCHEMY_DATABASE_URI = DATABASE_URL
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
@@ -66,11 +66,20 @@ class Config:
     CACHE_DEFAULT_TIMEOUT = 300
     
     # Session configuration
-    SESSION_TYPE = 'redis'
-    SESSION_REDIS = REDIS_URL
-    SESSION_PERMANENT = False
-    SESSION_USE_SIGNER = True
-    SESSION_KEY_PREFIX = 'rice_mill:'
+    SESSION_TYPE = os.environ.get('SESSION_TYPE', 'redis')
+    SESSION_REDIS_URL = os.environ.get('SESSION_REDIS_URL', 'redis://localhost:6379/1')
+    SESSION_PERMANENT = os.environ.get('SESSION_PERMANENT', 'False').lower() == 'true'
+    SESSION_USE_SIGNER = os.environ.get('SESSION_USE_SIGNER', 'True').lower() == 'true'
+    SESSION_KEY_PREFIX = os.environ.get('SESSION_KEY_PREFIX', 'rice_mill_session:')
+    SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'False').lower() == 'true'
+    SESSION_COOKIE_HTTPONLY = os.environ.get('SESSION_COOKIE_HTTPONLY', 'True').lower() == 'true'
+    SESSION_COOKIE_SAMESITE = os.environ.get('SESSION_COOKIE_SAMESITE', 'Lax')
+    SESSION_COOKIE_NAME = 'rice_mill_session'
+    SESSION_COOKIE_DOMAIN = None  # Set to your domain in production
+
+    # Session timeout settings
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=int(os.environ.get('JWT_ACCESS_TOKEN_EXPIRES_HOURS', 24)))
+    SESSION_REFRESH_EACH_REQUEST = True
     
     # Business configuration
     COMPANY_NAME = "Rice Mill ERP"

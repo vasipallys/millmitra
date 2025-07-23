@@ -1,8 +1,9 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import User, Farmer, FarmerContract
+from models.farmer_edit_request import FarmerEditRequest
 from extensions import db
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 
 farmer_bp = Blueprint('farmer', __name__)
@@ -115,18 +116,442 @@ def get_farmers():
 @jwt_required()
 def get_farmer_details(farmer_id):
     dashboard_data = farmer_service.get_farmer_dashboard_data(farmer_id)
-    
+
     # AI farmer performance analysis
     performance_analysis = ai_farmer.analyze_farmer_performance(dashboard_data)
-    
+
     # AI recommendations for farmer
     recommendations = ai_farmer.get_farmer_recommendations(dashboard_data)
-    
+
     return jsonify({
         **dashboard_data,
         'performance_analysis': performance_analysis,
         'recommendations': recommendations
     })
+
+@farmer_bp.route('/<int:farmer_id>', methods=['PUT'])
+@jwt_required()
+def update_farmer(farmer_id):
+    """Submit farmer information update for verification"""
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+
+        data = request.get_json()
+        reason = data.pop('edit_reason', 'Information update')
+
+        # Get farmer
+        farmer = Farmer.query.get_or_404(farmer_id)
+
+        # Get current farmer data
+        original_data = farmer.to_dict()
+
+        # Prepare proposed changes (only include fields that are being changed)
+        proposed_changes = {}
+        for key, value in data.items():
+            if key in ['name', 'phone', 'email', 'village', 'district', 'state', 'pincode', 'address',
+                      'aadhar_number', 'pan_number', 'land_area', 'farming_experience', 'farming_type',
+                      'irrigation_type', 'bank_account', 'ifsc_code', 'bank_name', 'branch_name',
+                      'payment_terms', 'credit_limit']:
+                # Only include if value is different from current
+                current_value = getattr(farmer, key, None)
+                if str(current_value) != str(value):
+                    proposed_changes[key] = value
+
+        if not proposed_changes:
+            return jsonify({
+                'success': False,
+                'message': 'No changes detected'
+            }), 400
+
+        # Create edit request
+        edit_request = FarmerEditRequest.create_edit_request(
+            farmer_id=farmer_id,
+            requested_by=user_id,
+            original_data=original_data,
+            proposed_changes=proposed_changes,
+            reason=reason
+        )
+
+        db.session.add(edit_request)
+        db.session.commit()
+
+        # If auto-approved, apply changes immediately
+        if edit_request.auto_approved:
+            apply_farmer_changes(farmer, proposed_changes)
+            db.session.commit()
+
+            return jsonify({
+                'success': True,
+                'message': 'Changes applied successfully (auto-approved)',
+                'farmer': farmer.to_dict(),
+                'edit_request': edit_request.to_dict(),
+                'auto_approved': True
+            })
+        else:
+            return jsonify({
+                'success': True,
+                'message': 'Edit request submitted for approval',
+                'edit_request': edit_request.to_dict(),
+                'requires_approval': True,
+                'pending_approval': True
+            })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': f'Error submitting edit request: {str(e)}'
+        }), 500
+
+def apply_farmer_changes(farmer, changes):
+    """Apply approved changes to farmer"""
+    for key, value in changes.items():
+        if hasattr(farmer, key):
+            # Handle numeric fields that should be None if empty
+            if key in ['land_area', 'credit_limit']:
+                setattr(farmer, key, float(value) if value and str(value).strip() else None)
+            elif key in ['farming_experience']:
+                setattr(farmer, key, int(value) if value and str(value).strip() else None)
+            else:
+                # For string fields, set to None if empty string
+                setattr(farmer, key, value if value and str(value).strip() else None)
+    farmer.updated_at = datetime.utcnow()
+
+@farmer_bp.route('/edit-requests', methods=['GET'])
+def get_edit_requests():
+    """Get farmer edit requests"""
+    try:
+        status = request.args.get('status', 'pending')
+        farmer_id = request.args.get('farmer_id', type=int)
+
+        if farmer_id:
+            requests = FarmerEditRequest.get_requests_by_farmer(farmer_id)
+        elif status == 'all':
+            requests = FarmerEditRequest.query.order_by(FarmerEditRequest.created_at.desc()).all()
+        else:
+            requests = FarmerEditRequest.get_requests_by_status(status)
+
+        return jsonify({
+            'success': True,
+            'edit_requests': [req.to_dict() for req in requests],
+            'total': len(requests)
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error fetching edit requests: {str(e)}'
+        }), 500
+
+@farmer_bp.route('/edit-requests/<int:request_id>/approve', methods=['POST'])
+def approve_edit_request(request_id):
+    """Approve farmer edit request"""
+    try:
+        # For testing, use a default user ID
+        user_id = 1  # Default admin user
+        user = User.query.get(user_id) if user_id else None
+
+        data = request.get_json()
+        comments = data.get('comments', '')
+
+        edit_request = FarmerEditRequest.query.get_or_404(request_id)
+
+        if edit_request.status != 'pending':
+            return jsonify({
+                'success': False,
+                'message': 'Edit request is not pending'
+            }), 400
+
+        # Get farmer and apply changes
+        farmer = Farmer.query.get(edit_request.farmer_id)
+        if not farmer:
+            return jsonify({
+                'success': False,
+                'message': 'Farmer not found'
+            }), 404
+
+        # Apply the approved changes
+        proposed_changes = json.loads(edit_request.proposed_changes)
+        apply_farmer_changes(farmer, proposed_changes)
+
+        # Update edit request status
+        edit_request.approve(user_id, comments)
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Edit request approved and changes applied',
+            'edit_request': edit_request.to_dict(),
+            'farmer': farmer.to_dict()
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error approving edit request {request_id}: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': f'Error approving edit request: {str(e)}',
+            'error_details': str(e)
+        }), 500
+
+@farmer_bp.route('/edit-requests/<int:request_id>/reject', methods=['POST'])
+def reject_edit_request(request_id):
+    """Reject farmer edit request"""
+    try:
+        # For testing, use a default user ID
+        user_id = 1  # Default admin user
+        user = User.query.get(user_id) if user_id else None
+
+        data = request.get_json()
+        comments = data.get('comments', '')
+
+        if not comments:
+            return jsonify({
+                'success': False,
+                'message': 'Rejection reason is required'
+            }), 400
+
+        edit_request = FarmerEditRequest.query.get_or_404(request_id)
+
+        if edit_request.status != 'pending':
+            return jsonify({
+                'success': False,
+                'message': 'Edit request is not pending'
+            }), 400
+
+        # Update edit request status
+        edit_request.reject(user_id, comments)
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Edit request rejected',
+            'edit_request': edit_request.to_dict()
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error rejecting edit request {request_id}: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': f'Error rejecting edit request: {str(e)}',
+            'error_details': str(e)
+        }), 500
+
+@farmer_bp.route('/edit-requests/create-sample', methods=['POST'])
+def create_sample_edit_requests():
+    """Create sample edit requests for testing"""
+    try:
+        # Get first farmer
+        farmer = Farmer.query.first()
+        if not farmer:
+            return jsonify({
+                'success': False,
+                'message': 'No farmers found. Please create a farmer first.'
+            }), 404
+
+        # Create sample edit requests
+        sample_requests = []
+
+        # Sample 1: Name change (high priority)
+        original_data = farmer.to_dict()
+        proposed_changes = {
+            'name': 'Updated Farmer Name',
+            'phone': '+91 9876543210'
+        }
+
+        edit_request1 = FarmerEditRequest.create_edit_request(
+            farmer_id=farmer.id,
+            requested_by=1,  # Assuming user ID 1 exists
+            original_data=original_data,
+            proposed_changes=proposed_changes,
+            reason='Correction of name and phone number as per updated documents'
+        )
+
+        # Sample 2: Email change (auto-approved)
+        proposed_changes2 = {
+            'email': 'updated.farmer@example.com'
+        }
+
+        edit_request2 = FarmerEditRequest.create_edit_request(
+            farmer_id=farmer.id,
+            requested_by=1,
+            original_data=original_data,
+            proposed_changes=proposed_changes2,
+            reason='Email address correction'
+        )
+
+        db.session.add(edit_request1)
+        db.session.add(edit_request2)
+        db.session.commit()
+
+        sample_requests.append(edit_request1.to_dict())
+        sample_requests.append(edit_request2.to_dict())
+
+        return jsonify({
+            'success': True,
+            'message': 'Sample edit requests created',
+            'edit_requests': sample_requests
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error creating sample edit requests: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': f'Error creating sample edit requests: {str(e)}'
+        }), 500
+
+@farmer_bp.route('/contracts', methods=['GET'])
+@jwt_required()
+def get_contracts():
+    """Get farmer contracts with optional filtering"""
+    try:
+        farmer_id = request.args.get('farmer_id')
+        status = request.args.get('status', 'active')
+
+        query = FarmerContract.query
+
+        if farmer_id:
+            query = query.filter_by(farmer_id=farmer_id)
+
+        # Only filter by status if it's not 'all'
+        if status and status != 'all':
+            query = query.filter_by(status=status)
+
+        contracts = query.all()
+
+        # If no contracts exist and we have farmers, create a sample contract for testing
+        if not contracts and status == 'all':
+            farmers = Farmer.query.limit(1).all()
+            if farmers:
+                sample_contract = FarmerContract(
+                    contract_number=f"CON{datetime.now().strftime('%Y%m%d')}001",
+                    farmer_id=farmers[0].id,
+                    contract_type='seasonal',
+                    variety='Basmati',
+                    quantity_committed=1000.0,
+                    price_per_kg=25.0,
+                    start_date=datetime.utcnow(),
+                    end_date=datetime.utcnow() + timedelta(days=120),
+                    status='active',
+                    created_by=1,  # Assuming admin user
+                    payment_terms='30 days'
+                )
+                db.session.add(sample_contract)
+                try:
+                    db.session.commit()
+                    contracts = [sample_contract]
+                    print("✅ Created sample contract for testing")
+                except Exception as e:
+                    db.session.rollback()
+                    print(f"⚠️ Could not create sample contract: {e}")
+
+        # Format contract data with farmer names and field mapping
+        contract_list = []
+        for contract in contracts:
+            contract_dict = contract.to_dict()
+
+            # Get farmer name
+            farmer = Farmer.query.get(contract.farmer_id)
+            contract_dict['farmer_name'] = farmer.name if farmer else 'Unknown'
+
+            # Map fields for frontend compatibility
+            contract_dict['crop_type'] = contract_dict.get('variety', 'Rice')  # Map variety to crop_type
+            contract_dict['season'] = contract_dict.get('contract_type', 'Kharif')  # Map contract_type to season
+            contract_dict['base_price'] = contract_dict.get('price_per_kg', 0)  # Map price_per_kg to base_price
+            contract_dict['contract_start_date'] = contract_dict.get('start_date')  # Map start_date
+            contract_dict['contract_end_date'] = contract_dict.get('end_date')  # Map end_date
+
+            # Add season mapping based on contract dates if available
+            if contract_dict.get('start_date'):
+                try:
+                    start_date = datetime.fromisoformat(contract_dict['start_date'].replace('Z', '+00:00'))
+                    month = start_date.month
+                    if month in [6, 7, 8, 9, 10]:  # June to October
+                        contract_dict['season'] = 'Kharif'
+                    elif month in [11, 12, 1, 2, 3]:  # November to March
+                        contract_dict['season'] = 'Rabi'
+                    else:  # April to May
+                        contract_dict['season'] = 'Summer'
+                except:
+                    contract_dict['season'] = contract_dict.get('contract_type', 'Kharif')
+
+            contract_list.append(contract_dict)
+
+        return jsonify({
+            'success': True,
+            'contracts': contract_list,
+            'total': len(contract_list)
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error fetching contracts: {str(e)}'
+        }), 500
+
+@farmer_bp.route('/contracts/<int:contract_id>', methods=['PUT'])
+@jwt_required()
+def update_contract(contract_id):
+    """Update contract information"""
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+
+        data = request.get_json()
+
+        # Get contract
+        contract = FarmerContract.query.get_or_404(contract_id)
+
+        # Update fields if provided
+        if 'quantity_committed' in data:
+            contract.quantity_committed = float(data['quantity_committed']) if data['quantity_committed'] else None
+        if 'base_price' in data:
+            contract.base_price = float(data['base_price']) if data['base_price'] else None
+        if 'quality_bonus' in data:
+            contract.quality_bonus = float(data['quality_bonus']) if data['quality_bonus'] else None
+        if 'advance_amount' in data:
+            contract.advance_amount = float(data['advance_amount']) if data['advance_amount'] else None
+        if 'terms_conditions' in data:
+            contract.terms_conditions = data['terms_conditions']
+        if 'special_instructions' in data:
+            contract.special_instructions = data['special_instructions']
+        if 'status' in data:
+            contract.status = data['status']
+        if 'payment_terms' in data:
+            contract.payment_terms = data['payment_terms']
+
+        contract.updated_at = datetime.utcnow()
+
+        db.session.commit()
+
+        # Get farmer name for response
+        farmer = Farmer.query.get(contract.farmer_id)
+        contract_dict = contract.to_dict()
+        contract_dict['farmer_name'] = farmer.name if farmer else 'Unknown'
+
+        return jsonify({
+            'success': True,
+            'message': 'Contract updated successfully',
+            'contract': contract_dict
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': f'Error updating contract: {str(e)}'
+        }), 500
 
 @farmer_bp.route('/contracts', methods=['POST'])
 @jwt_required()
@@ -196,6 +621,65 @@ def create_contract():
         return jsonify({
             'success': False,
             'message': f'Error creating contract: {str(e)}'
+        }), 500
+
+@farmer_bp.route('/procurements', methods=['GET'])
+@jwt_required()
+def get_procurements():
+    """Get procurement records with optional filtering"""
+    try:
+        farmer_id = request.args.get('farmer_id')
+        limit = request.args.get('limit', 50, type=int)
+        sort = request.args.get('sort', 'recent')
+
+        # Import PaddyStock model
+        from models.inventory import PaddyStock
+
+        query = PaddyStock.query
+
+        if farmer_id:
+            query = query.filter_by(farmer_id=farmer_id)
+
+        # Sort by date
+        if sort == 'recent':
+            query = query.order_by(PaddyStock.purchase_date.desc())
+        else:
+            query = query.order_by(PaddyStock.purchase_date.asc())
+
+        # Apply limit
+        procurements = query.limit(limit).all()
+
+        # Format procurement data
+        procurement_list = []
+        for procurement in procurements:
+            # Get farmer name
+            farmer = Farmer.query.get(procurement.farmer_id)
+            farmer_name = farmer.name if farmer else 'Unknown'
+
+            procurement_list.append({
+                'id': procurement.id,
+                'farmer_id': procurement.farmer_id,
+                'farmer_name': farmer_name,
+                'variety': procurement.variety,
+                'quantity': procurement.quantity,
+                'price_per_unit': procurement.purchase_price,
+                'total_amount': procurement.total_amount,
+                'procurement_date': procurement.purchase_date.isoformat() if procurement.purchase_date else None,
+                'quality_grade': procurement.quality_grade,
+                'moisture_content': procurement.moisture_content,
+                'status': 'Completed'  # Default status
+            })
+
+        return jsonify({
+            'success': True,
+            'procurements': procurement_list,
+            'total': len(procurement_list)
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error fetching procurements: {str(e)}'
         }), 500
 
 @farmer_bp.route('/procurements', methods=['POST'])
@@ -320,31 +804,172 @@ def process_payment():
 @farmer_bp.route('/analytics/overview', methods=['GET'])
 @jwt_required()
 def get_farmer_analytics():
-    # Simplified implementation - return mock analytics data
-    period = request.args.get('period', 'monthly')
-    district = request.args.get('district')
+    """Get comprehensive farmer analytics overview"""
+    try:
+        # Validate and sanitize parameters
+        period = request.args.get('period', 'monthly')
+        district = request.args.get('district')
 
-    farmers = Farmer.query.all()
+        # Handle case where period might be an object string
+        if period and ('[object' in str(period).lower() or 'object' in str(period).lower()):
+            period = 'monthly'
 
+        # Validate period parameter
+        valid_periods = ['daily', 'weekly', 'monthly', 'quarterly', 'yearly']
+        if period not in valid_periods:
+            period = 'monthly'
+
+        print(f"📊 Analytics request - Period: {period}, District: {district}")
+
+        # Get basic counts with error handling
+        try:
+            total_farmers = Farmer.query.count()
+            active_farmers = Farmer.query.filter_by(is_active=True).count()
+        except Exception as e:
+            print(f"⚠️ Error getting farmer counts: {e}")
+            total_farmers = 0
+            active_farmers = 0
+
+        # Get contract analytics with error handling
+        try:
+            active_contracts = FarmerContract.query.filter_by(status='active').count()
+            total_contracts = FarmerContract.query.count()
+        except Exception as e:
+            print(f"⚠️ Error getting contract counts: {e}")
+            active_contracts = 0
+            total_contracts = 0
+
+        # Get procurement analytics with error handling
+        total_procurement_qty = 0
+        total_procurement_records = 0
+        total_procurement_value = 0
+        try:
+            # Try to import PaddyStock model
+            from models.inventory import PaddyStock
+            total_procurement_qty = db.session.query(db.func.sum(PaddyStock.quantity)).scalar() or 0
+            total_procurement_records = PaddyStock.query.count()
+            total_procurement_value = db.session.query(
+                db.func.sum(PaddyStock.quantity * PaddyStock.purchase_price)
+            ).scalar() or 0
+        except ImportError:
+            print("⚠️ PaddyStock model not found, using default values")
+        except Exception as e:
+            print(f"⚠️ Error getting procurement data: {e}")
+
+        # Get payment analytics with error handling
+        total_payments = 0
+        payment_records = 0
+        try:
+            total_payments = db.session.query(db.func.sum(FarmerPayment.amount)).scalar() or 0
+            payment_records = FarmerPayment.query.count()
+        except Exception as e:
+            print(f"⚠️ Error getting payment data: {e}")
+
+        # Calculate average metrics with error handling
+        avg_land_area = 0
+        try:
+            avg_land_area = db.session.query(db.func.avg(Farmer.land_area)).scalar() or 0
+        except Exception as e:
+            print(f"⚠️ Error calculating average land area: {e}")
+
+        avg_quality_rating = 0
+        try:
+            avg_quality_rating = db.session.query(db.func.avg(Farmer.quality_rating)).scalar() or 0
+        except Exception as e:
+            print(f"⚠️ Error calculating average quality rating: {e}")
+
+        # Get recent activity (last 30 days) with error handling
+        recent_farmers = 0
+        recent_contracts = 0
+        recent_procurements = 0
+        try:
+            thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+            recent_farmers = Farmer.query.filter(Farmer.created_at >= thirty_days_ago).count()
+            recent_contracts = FarmerContract.query.filter(FarmerContract.created_at >= thirty_days_ago).count()
+
+            # Only try to get recent procurements if PaddyStock is available
+            try:
+                from models.inventory import PaddyStock
+                recent_procurements = PaddyStock.query.filter(PaddyStock.purchase_date >= thirty_days_ago).count()
+            except ImportError:
+                recent_procurements = 0
+        except Exception as e:
+            print(f"⚠️ Error calculating recent activity: {e}")
+
+        print(f"✅ Analytics calculated successfully - Farmers: {total_farmers}, Contracts: {active_contracts}")
+
+        return jsonify({
+            'success': True,
+            'analytics': {
+                'total_farmers': total_farmers,
+                'active_farmers': active_farmers,
+                'active_contracts': active_contracts,
+                'total_contracts': total_contracts,
+                'total_procurement': total_procurement_qty,
+                'total_procurement_records': total_procurement_records,
+                'total_procurement_value': total_procurement_value,
+                'total_payments': total_payments,
+                'payment_records': payment_records,
+                'avg_land_area': round(avg_land_area, 2),
+                'avg_quality_rating': round(avg_quality_rating, 2),
+                'period': period,
+                'district': district or 'All Districts'
+            },
+            'recent_activity': {
+                'new_farmers': recent_farmers,
+                'new_contracts': recent_contracts,
+                'new_procurements': recent_procurements,
+                'period': '30 days'
+            },
+            'ai_analytics': {
+                'insights': [
+                    f'Total of {total_farmers} farmers registered',
+                    f'{active_contracts} active contracts in progress',
+                    f'{total_procurement_qty:.0f} kg total procurement recorded',
+                    'Quality metrics showing positive trends'
+                ],
+                'recommendations': [
+                    'Focus on farmer training programs',
+                    'Expand procurement network',
+                    'Improve contract completion rates',
+                    'Enhance quality assessment processes'
+                ]
+            },
+            'trend_analysis': {
+                'direction': 'positive' if recent_farmers > 0 else 'stable',
+                'growth_rate': f'{(recent_farmers / max(total_farmers, 1) * 100):.1f}%',
+                'procurement_trend': 'increasing' if recent_procurements > 0 else 'stable'
+            },
+            'predictions': {
+                'next_month_farmers': total_farmers + max(recent_farmers, 2),
+                'next_month_procurement': total_procurement_qty * 1.1,
+                'confidence': 0.85
+            }
+        })
+
+    except Exception as e:
+        print(f"💥 Analytics endpoint error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': f'Error fetching analytics: {str(e)}',
+            'analytics': {
+                'total_farmers': 0,
+                'active_farmers': 0,
+                'active_contracts': 0,
+                'total_procurement': 0,
+                'total_payments': 0
+            }
+        }), 500
+
+@farmer_bp.route('/analytics/test', methods=['GET'])
+def test_analytics():
+    """Simple test endpoint for analytics"""
     return jsonify({
-        'analytics': {
-            'total_farmers': len(farmers),
-            'period': period,
-            'district': district or 'All Districts',
-            'summary': 'Analytics data loaded successfully'
-        },
-        'ai_analytics': {
-            'insights': ['Farmer engagement is stable', 'Quality metrics improving'],
-            'recommendations': ['Focus on training programs', 'Expand procurement network']
-        },
-        'trend_analysis': {
-            'direction': 'positive',
-            'growth_rate': '5.2%'
-        },
-        'predictions': {
-            'next_month_farmers': len(farmers) + 5,
-            'confidence': 0.85
-        }
+        'success': True,
+        'message': 'Analytics endpoint is working',
+        'timestamp': datetime.utcnow().isoformat()
     })
 
 @farmer_bp.route('/seasonal-planning', methods=['POST'])

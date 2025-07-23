@@ -4,8 +4,33 @@ const API_BASE = '/auth';
 
 class AuthService {
   async login(credentials) {
-    const response = await api.post(`${API_BASE}/login`, credentials);
-    return response.data;
+    try {
+      // Add device info to login request
+      const deviceInfo = this.getDeviceInfo();
+      const loginData = {
+        ...credentials,
+        device_info: deviceInfo
+      };
+
+      const response = await api.post(`${API_BASE}/login`, loginData);
+
+      if (response.data.access_token) {
+        localStorage.setItem('token', response.data.access_token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+
+        // Store session token if provided
+        if (response.data.session_token) {
+          localStorage.setItem('sessionToken', response.data.session_token);
+        }
+
+        return response.data;
+      }
+
+      throw new Error('No access token received');
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
   }
 
   async voiceLogin(data) {
@@ -43,9 +68,18 @@ class AuthService {
     return response.data;
   }
 
-  logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+  async logout() {
+    try {
+      // Call logout endpoint to invalidate session
+      await api.post(`${API_BASE}/logout`);
+    } catch (error) {
+      console.warn('Logout API call failed:', error);
+    } finally {
+      // Clear local storage regardless of API call result
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('sessionToken');
+    }
   }
 
   async getCurrentUser() {
@@ -74,6 +108,89 @@ class AuthService {
   isAuthenticated() {
     return !!this.getToken();
   }
+
+  getDeviceInfo() {
+    return {
+      user_agent: navigator.userAgent,
+      screen_resolution: `${screen.width}x${screen.height}`,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      language: navigator.language,
+      platform: navigator.platform,
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  getSessionToken() {
+    return localStorage.getItem('sessionToken');
+  }
+
+  async getUserProfile() {
+    try {
+      const response = await api.get('/user/profile');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      throw error;
+    }
+  }
+
+  async updateProfile(profileData) {
+    try {
+      const response = await api.put('/user/profile', profileData);
+
+      // Update stored user data
+      const currentUser = this.getCurrentUser();
+      if (currentUser) {
+        const updatedUser = { ...currentUser, ...response.data.user };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      throw error;
+    }
+  }
+
+  async changePassword(passwordData) {
+    try {
+      const response = await api.post('/user/change-password', passwordData);
+      return response.data;
+    } catch (error) {
+      console.error('Error changing password:', error);
+      throw error;
+    }
+  }
+
+  async updatePreferences(preferences) {
+    try {
+      const response = await api.put('/user/preferences', preferences);
+
+      // Update stored user data
+      const currentUser = this.getCurrentUser();
+      if (currentUser) {
+        const updatedUser = { ...currentUser, preferences: response.data.preferences };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error('Error updating preferences:', error);
+      throw error;
+    }
+  }
+
+  async getUserActivity() {
+    try {
+      const response = await api.get('/user/activity');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching user activity:', error);
+      throw error;
+    }
+  }
 }
 
-export const authService = new AuthService();
+const authService = new AuthService();
+export { authService };
+export default authService;

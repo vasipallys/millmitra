@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from 'react-query';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import VoiceInterface from './components/VoiceInterface';
+import PWAInstallPrompt from './components/PWAInstallPrompt';
 
 // Pages
 import Login from './pages/Login';
@@ -20,6 +21,7 @@ import Finance from './pages/Finance';
 import Customers from './pages/Customers';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
+import Notifications from './pages/Notifications';
 import QualityControl from './pages/QualityControl';
 import FinancialIntelligence from './pages/FinancialIntelligence';
 import ComplianceGST from './pages/ComplianceGST';
@@ -180,6 +182,7 @@ function App() {
           }}>
             <Routes>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/login" element={<Login />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/farmers/*" element={<Farmers />} />
               <Route path="/inventory/*" element={<Inventory />} />
@@ -192,6 +195,7 @@ function App() {
               <Route path="/financial-intelligence" element={<FinancialIntelligence />} />
               <Route path="/compliance-gst" element={<ComplianceGST />} />
               <Route path="/analytics" element={<AnalyticsReporting />} />
+              <Route path="/notifications" element={<Notifications />} />
               <Route path="/settings" element={<Settings />} />
             </Routes>
           </Box>
@@ -199,6 +203,9 @@ function App() {
         
         {/* Voice Interface */}
         <VoiceInterface />
+
+        {/* PWA Install Prompt */}
+        <PWAInstallPrompt />
       </Box>
     </ThemeProvider>
   );
