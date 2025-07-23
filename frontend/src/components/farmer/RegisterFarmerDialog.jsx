@@ -85,13 +85,16 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
 
   const isStepValid = (step) => {
     switch (step) {
-      case 0:
-        return formik.values.name && formik.values.phone && formik.values.village;
-      case 1:
-        return !formik.errors.phone && !formik.errors.aadhar_number;
-      case 2:
+      case 0: // Basic Information - name and phone are required
+        return formik.values.name && formik.values.phone &&
+               !formik.errors.name && !formik.errors.phone;
+      case 1: // Contact Details - village, district, state are required
+        return formik.values.village && formik.values.district && formik.values.state &&
+               !formik.errors.village && !formik.errors.district && !formik.errors.state &&
+               !formik.errors.aadhar_number && !formik.errors.pan_number;
+      case 2: // Farm Details
         return !formik.errors.total_land_area;
-      case 3:
+      case 3: // Bank Details
         return !formik.errors.bank_ifsc;
       default:
         return true;

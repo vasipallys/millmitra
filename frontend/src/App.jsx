@@ -148,12 +148,12 @@ function App() {
       <CssBaseline />
       <Box sx={{ display: 'flex', minHeight: '100vh' }}>
         {/* Sidebar */}
-        <Sidebar 
-          open={sidebarOpen} 
+        <Sidebar
+          open={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
           user={user}
         />
-        
+
         {/* Main Content */}
         <Box
           component="main"
@@ -161,6 +161,7 @@ function App() {
             flexGrow: 1,
             display: 'flex',
             flexDirection: 'column',
+            minWidth: 0, // Prevent flex item from overflowing
           }}
         >
           {/* Top Navigation */}
@@ -171,7 +172,12 @@ function App() {
           />
           
           {/* Page Content */}
-          <Box sx={{ flexGrow: 1, p: 2, bgcolor: 'background.default' }}>
+          <Box sx={{
+            flexGrow: 1,
+            p: 0, // Remove padding to eliminate gaps
+            bgcolor: 'background.default',
+            overflow: 'hidden' // Prevent any overflow issues
+          }}>
             <Routes>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<Dashboard />} />

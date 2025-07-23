@@ -225,13 +225,15 @@ const Sidebar = ({ open, onClose, user }) => {
       anchor="left"
       open={open}
       sx={{
-        width: drawerWidth,
+        width: open ? drawerWidth : 0, // Dynamic width based on open state
         flexShrink: 0,
+        transition: 'width 0.3s ease-in-out', // Smooth width transition
         '& .MuiDrawer-paper': {
           width: drawerWidth,
           boxSizing: 'border-box',
           borderRight: '1px solid',
           borderColor: 'divider',
+          transition: 'transform 0.3s ease-in-out', // Smooth transform transition
         },
       }}
     >

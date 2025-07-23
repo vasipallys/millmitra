@@ -69,7 +69,7 @@ const Dashboard = () => {
   }
 
   return (
-    <Box>
+    <Box sx={{ p: 3 }}> {/* Add padding to dashboard content */}
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4" fontWeight="bold">
