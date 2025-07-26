@@ -23,6 +23,7 @@ from routes.customers import customers_bp
 from routes.session import session_bp
 from routes.notifications import notifications_bp
 from routes.user import user_bp
+from routes.natural_language import natural_language_bp
 # TODO: Re-enable these routes after implementation
 # from routes.supply_chain import supply_chain_bp
 # from routes.analytics import analytics_bp
@@ -60,6 +61,7 @@ def create_app():
     app.register_blueprint(session_bp, url_prefix='/api/session')
     app.register_blueprint(notifications_bp)
     app.register_blueprint(user_bp)
+    app.register_blueprint(natural_language_bp, url_prefix='/api/ai')
     # TODO: Re-enable these routes after implementation
     # app.register_blueprint(supply_chain_bp, url_prefix='/api/supply-chain')
     # app.register_blueprint(analytics_bp, url_prefix='/api/analytics')

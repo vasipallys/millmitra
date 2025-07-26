@@ -127,8 +127,24 @@ const Farmers = () => {
     onSuccess: () => {
       queryClient.invalidateQueries('farmers');
       setRegisterDialogOpen(false);
+    },
+    onError: (error) => {
+      console.error('Farmer registration error:', error);
     }
   });
+
+  // Handle farmer registration with proper promise handling
+  const handleFarmerRegistration = async (farmerData) => {
+    try {
+      const result = await farmerService.registerFarmer(farmerData);
+      queryClient.invalidateQueries('farmers');
+      setRegisterDialogOpen(false);
+      return result;
+    } catch (error) {
+      console.error('Farmer registration error:', error);
+      throw error;
+    }
+  };
 
   const createContractMutation = useMutation(farmerService.createContract, {
     onSuccess: () => {
@@ -984,7 +1000,7 @@ const Farmers = () => {
       <RegisterFarmerDialog
         open={registerDialogOpen}
         onClose={() => setRegisterDialogOpen(false)}
-        onSubmit={registerFarmerMutation.mutate}
+        onSubmit={handleFarmerRegistration}
         loading={registerFarmerMutation.isLoading}
       />
 

@@ -1,3 +1,6 @@
+# Rice Mill Management System - Python 3.13 Compatible Requirements
+# Core functionality without problematic dependencies
+
 # Core Flask dependencies
 Flask==3.0.3
 Flask-SQLAlchemy==3.1.1
@@ -6,16 +9,14 @@ Flask-CORS==4.0.0
 Flask-Migrate==4.0.7
 Flask-RESTful==0.3.10
 
-# Database - Updated for Python 3.13 compatibility
+# Database
 SQLAlchemy==2.0.36
 PyMySQL==1.1.1
-psycopg==3.2.3
 psycopg2-binary==2.9.9
 
-# AI and ML dependencies (Python 3.13 compatible)
+# Basic AI and ML dependencies (Python 3.13 compatible)
 numpy>=1.26.0
 scikit-learn>=1.5.0
-# tensorflow>=2.13.0,<2.16.0  # TensorFlow may not be compatible with Python 3.13 yet
 torch>=2.0.0
 transformers>=4.30.0
 
@@ -33,17 +34,16 @@ langchain-community>=0.0.20
 langchain-google-genai>=1.0.0
 langchain-openai>=0.1.0
 
-# Audio processing for voice features (Python 3.13 compatible)
+# Basic audio processing
 SpeechRecognition>=3.10.0
 pydub>=0.25.1
-# librosa>=0.9.0  # May have dependency issues with Python 3.13
 soundfile>=0.12.0
 
 # Data processing and analysis
-scipy==1.14.1
-plotly==5.24.1
-matplotlib==3.9.2
-seaborn==0.13.2
+scipy>=1.11.0
+plotly>=5.17.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
 
 # API and web services
 requests==2.32.3
@@ -85,12 +85,10 @@ pytest-asyncio==0.24.0
 black==24.10.0
 flake8==7.1.1
 isort==5.13.2
-mypy==1.13.0
 
 # Production server
 gunicorn==23.0.0
 gevent==24.10.3
-eventlet==0.37.0
 
 # Monitoring and logging
 sentry-sdk==2.17.0
@@ -99,12 +97,11 @@ loguru==0.7.2
 
 # Background tasks
 APScheduler==3.11.0
-dramatiq==1.17.0
 
-# Image processing (for quality analysis)
-Pillow==11.0.0
-opencv-python==4.10.0.84
-scikit-image==0.24.0
+# Basic image processing (Python 3.13 compatible)
+Pillow>=10.0.0
+opencv-python>=4.8.0
+scikit-image>=0.21.0
 
 # Geographic and mapping
 geopy==2.4.1
@@ -114,35 +111,25 @@ folium==0.18.0
 dynaconf==3.2.6
 pyyaml==6.0.2
 
-# Computer Vision and AI (Python 3.13 compatible)
-# face-recognition==1.3.0  # Not compatible with Python 3.13 yet
-# dlib==19.24.6  # Not compatible with Python 3.13 yet
-# mediapipe==0.10.18  # Not compatible with Python 3.13 yet
+# Vector database for AI (basic version)
+faiss-cpu>=1.7.0
 
-# Vector database for AI
-faiss-cpu==1.9.0
-chromadb==0.5.20
-
-# Natural language processing
-nltk==3.9.1
-spacy==3.8.2
-textblob==0.18.0
+# Natural language processing (basic)
+nltk>=3.8.0
+textblob>=0.17.0
 
 # Time series analysis and forecasting
-pandas==2.2.3
-statsmodels==0.14.4
-prophet==1.1.6
+pandas>=2.0.0
+statsmodels>=0.14.0
 
 # Financial calculations
 numpy-financial==1.0.0
 
 # Email functionality
 Flask-Mail==0.10.0
-yagmail==0.15.293
 
 # PDF generation
 reportlab==4.2.5
-weasyprint==62.3
 
 # Excel/CSV processing
 xlsxwriter==3.2.0
@@ -159,15 +146,10 @@ Flask-SocketIO==5.4.1
 python-socketio==5.11.4
 
 # Additional utilities
-python-magic==0.4.27
 Werkzeug==3.0.6
 click==8.1.7
 itsdangerous==2.2.0
 MarkupSafe==3.0.2
-
-# Environment and deployment
-supervisor==4.2.5
-docker==7.1.0
 
 # Health checks and metrics
 prometheus-client==0.21.0

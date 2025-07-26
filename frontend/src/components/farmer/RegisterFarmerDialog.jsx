@@ -58,12 +58,29 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
     onSubmit: async (values) => {
       try {
         const result = await onSubmit(values);
-        setAiVerification(result.verification);
+
+        // Handle AI verification from API response
+        if (result.verification) {
+          setAiVerification(result.verification);
+        }
+
         if (result.success) {
           handleClose();
         }
       } catch (error) {
         console.error('Registration failed:', error);
+        // Set error verification
+        setAiVerification({
+          status: 'error',
+          confidence: 0,
+          checks: {
+            phone_format: false,
+            aadhar_format: false,
+            bank_details: false,
+            location_valid: false
+          },
+          recommendations: ['Registration failed. Please check all fields and try again.']
+        });
       }
     }
   });
