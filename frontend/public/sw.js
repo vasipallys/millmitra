@@ -111,7 +111,19 @@ self.addEventListener('fetch', (event) => {
 // Network-first strategy for API calls
 async function networkFirstStrategy(request) {
   try {
-    const networkResponse = await fetch(request);
+    // Add CORS headers for API requests
+    const fetchOptions = {
+      method: request.method,
+      headers: request.headers,
+      mode: 'cors',
+      credentials: 'same-origin'
+    };
+
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+      fetchOptions.body = await request.clone().blob();
+    }
+
+    const networkResponse = await fetch(request.url, fetchOptions);
 
     // Only cache GET requests with successful responses
     if (networkResponse.ok && request.method === 'GET') {
@@ -122,7 +134,23 @@ async function networkFirstStrategy(request) {
     return networkResponse;
   } catch (error) {
     console.log('Network failed, trying cache:', request.url);
-    
+
+    // Don't cache API requests that fail
+    if (request.url.includes('/api/')) {
+      console.log('API request failed, not using cache:', request.url);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: 'API unavailable offline',
+          offline: true
+        }),
+        {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
     const cachedResponse = await caches.match(request);
     if (cachedResponse) {
       return cachedResponse;

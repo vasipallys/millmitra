@@ -9,9 +9,429 @@ from datetime import datetime, timedelta
 import json
 
 customers_bp = Blueprint('customers', __name__)
-# Temporarily disabled until services are fixed
-# customer_service = CustomerService()
-# ai_customer = AICustomerService()
+
+# Mock AI Customer Service
+class MockAICustomerService:
+    def validate_customer_data(self, data):
+        return {'valid': True, 'errors': []}
+
+    def predict_customer_segment(self, data):
+        return {'segment': 'premium', 'confidence': 0.85}
+
+    def assess_credit_worthiness(self, data):
+        return {'score': 750, 'rating': 'A', 'risk_level': 'low'}
+
+    def detect_duplicate_customer(self, data):
+        return {'is_duplicate': False, 'similar_customers': []}
+
+    def enrich_customer_data(self, data):
+        return data  # Return as-is for now
+
+    def generate_onboarding_plan(self, customer_data):
+        return {'steps': ['Welcome call', 'Setup account', 'First order'], 'timeline': '7 days'}
+
+    def analyze_customer_profile(self, customer_data):
+        return {'profile_strength': 85, 'completeness': 90, 'engagement_level': 'high'}
+
+    def analyze_interaction_history(self, customer_id):
+        return {'total_interactions': 15, 'avg_satisfaction': 4.5, 'recent_interactions': []}
+
+    def get_next_best_action(self, context):
+        return {'action': 'Schedule follow-up call', 'priority': 'medium', 'timeline': '3 days'}
+
+    def predict_customer_satisfaction(self, customer_data):
+        return {'predicted_score': 4.2, 'confidence': 0.78, 'factors': ['Service quality', 'Response time']}
+
+    def assess_churn_risk(self, customer_data):
+        return {'risk_score': 25, 'risk_level': 'low', 'key_factors': ['Regular orders', 'High satisfaction']}
+
+    def analyze_update_impact(self, old_data, new_data):
+        return {'impact_level': 'low', 'affected_areas': [], 'recommendations': []}
+
+    def analyze_interaction_patterns(self, interactions):
+        return {'patterns': ['Regular communication', 'Positive sentiment'], 'insights': []}
+
+    def analyze_interaction_sentiment(self, interactions):
+        return {'overall_sentiment': 'positive', 'sentiment_score': 0.75, 'trends': []}
+
+    def classify_interaction(self, data):
+        return {'type': 'inquiry', 'category': 'general', 'urgency': 'normal'}
+
+    def analyze_text_sentiment(self, text):
+        return {'sentiment': 'positive', 'score': 0.8, 'confidence': 0.9}
+
+    def assess_interaction_priority(self, data, customer_data):
+        return {'priority': 'medium', 'score': 60, 'factors': []}
+
+    def suggest_interaction_response(self, data, customer_data):
+        return {'suggestions': ['Thank customer', 'Provide information'], 'templates': []}
+
+    def recommend_followup_actions(self, interaction_data):
+        return {'actions': ['Send follow-up email', 'Schedule call'], 'timeline': '2 days'}
+
+    # Add all other AI methods with mock responses
+    def analyze_segment_performance(self, segments):
+        return {'performance': 'good', 'insights': []}
+
+    def optimize_customer_segments(self, analysis):
+        return {'recommendations': ['Refine criteria', 'Add new segment']}
+
+    def validate_segment_criteria(self, data):
+        return {'valid': True, 'errors': []}
+
+    def optimize_segment_criteria(self, data):
+        return data
+
+    def analyze_customer_contracts(self, contracts):
+        return {'analysis': 'positive', 'insights': []}
+
+    def predict_contract_renewals(self, contracts):
+        return {'renewal_probability': 0.85, 'factors': []}
+
+    def optimize_contract_terms(self, data, customer_data):
+        return {'optimized_terms': data, 'improvements': []}
+
+    def assess_contract_risk(self, data, customer_data):
+        return {'risk_level': 'low', 'score': 25}
+
+    def recommend_contract_pricing(self, data, customer_data):
+        return {'recommended_price': data.get('price', 1000), 'justification': []}
+
+    def analyze_satisfaction_trends(self, data):
+        return {'trend': 'positive', 'insights': []}
+
+    def recommend_satisfaction_improvements(self, analysis):
+        return {'recommendations': ['Improve response time', 'Enhance service quality']}
+
+    def calculate_customer_lifetime_value(self, segment_id):
+        return {'avg_clv': 50000, 'distribution': {}, 'insights': []}
+
+    def optimize_customer_value(self, clv_analysis):
+        return {'strategies': ['Upselling', 'Cross-selling'], 'potential_increase': '20%'}
+
+    def predict_customer_churn_batch(self, segment_id, threshold):
+        return {'at_risk_customers': [], 'total_risk_score': 15}
+
+    def recommend_retention_strategies(self, churn_prediction):
+        return {'strategies': ['Loyalty program', 'Personal outreach']}
+
+    def analyze_campaign_performance(self, campaigns):
+        return {'performance': 'good', 'insights': []}
+
+    def optimize_communication_campaign(self, data):
+        return {'optimizations': [], 'expected_improvement': '15%'}
+
+    def optimize_campaign_audience(self, data):
+        return {'target_segments': [], 'reach_optimization': {}}
+
+    def optimize_campaign_content(self, data):
+        return {'content_suggestions': [], 'engagement_prediction': 0.75}
+
+    def analyze_survey_responses(self, surveys):
+        return {'insights': [], 'satisfaction_score': 4.2}
+
+    def optimize_survey_design(self, data):
+        return {'optimizations': [], 'response_rate_prediction': 0.65}
+
+    def recommend_survey_questions(self, data):
+        return {'questions': [], 'rationale': []}
+
+    def analyze_loyalty_program_effectiveness(self, programs):
+        return {'effectiveness': 'high', 'insights': []}
+
+    def optimize_loyalty_program(self, data):
+        return {'optimizations': [], 'engagement_prediction': 0.8}
+
+    def optimize_reward_structure(self, data):
+        return {'structure': data, 'improvements': []}
+
+    def recommend_products(self, customer_data):
+        return {'products': ['Premium Rice', 'Organic Variety'], 'confidence': 0.8}
+
+    def recommend_services(self, customer_data):
+        return {'services': ['Delivery service', 'Quality testing'], 'priority': []}
+
+    def recommend_engagement_strategies(self, customer_data):
+        return {'strategies': ['Personal calls', 'Email campaigns'], 'timeline': []}
+
+    def analyze_customer_journey_patterns(self, segment_id):
+        return {'patterns': [], 'insights': []}
+
+    def optimize_customer_journey(self, analysis):
+        return {'optimizations': [], 'impact_prediction': {}}
+
+    def analyze_support_tickets(self, tickets):
+        return {'insights': [], 'resolution_time': '2 days'}
+
+    def recommend_ticket_resolutions(self, tickets):
+        return {'recommendations': [], 'auto_resolve_candidates': []}
+
+    def classify_support_ticket(self, data):
+        return {'category': 'general', 'urgency': 'normal', 'complexity': 'low'}
+
+    def assess_ticket_priority(self, data):
+        return {'priority': 'medium', 'score': 60}
+
+    def check_auto_resolution(self, data):
+        return {'can_auto_resolve': False, 'confidence': 0.3}
+
+    def recommend_agent_assignment(self, data, classification):
+        return {'recommended_agent': 'general_support', 'reasoning': []}
+
+    def analyze_voice_of_customer(self, period):
+        return {'themes': [], 'sentiment': 'positive', 'insights': []}
+
+    def analyze_sentiment_trends(self, period):
+        return {'trend': 'stable', 'score': 0.75, 'changes': []}
+
+    def recommend_voc_actions(self, analysis):
+        return {'actions': [], 'priority': []}
+
+    def predict_customer_behavior(self, customer_id, horizon):
+        return {'predictions': [], 'confidence': 0.7}
+
+    def recommend_behavioral_interventions(self, prediction):
+        return {'interventions': [], 'expected_impact': {}}
+
+    def analyze_feedback(self, data):
+        return {'sentiment': 'positive', 'themes': [], 'actionable_items': []}
+
+    def get_general_recommendations(self):
+        return {'recommendations': ['Improve response time', 'Enhance product quality'], 'priority': []}
+
+# Mock Customer Service
+class MockCustomerService:
+    def create_customer(self, user, data, segment, credit_assessment):
+        customer = Customer(
+            name=data.get('name', 'New Customer'),
+            email=data.get('email', ''),
+            phone=data.get('phone', ''),
+            address=data.get('address', ''),
+            created_by=user.id
+        )
+
+        db.session.add(customer)
+        db.session.commit()
+        return customer
+
+    def update_customer(self, customer, user, data, new_segment):
+        for key, value in data.items():
+            if hasattr(customer, key):
+                setattr(customer, key, value)
+
+        db.session.commit()
+        return customer
+
+    def get_customer_interactions(self, customer_id, page, per_page, interaction_type):
+        # Mock pagination response
+        return {
+            'items': [],
+            'pagination': {
+                'page': page,
+                'per_page': per_page,
+                'total': 0,
+                'pages': 0
+            }
+        }
+
+    def create_interaction(self, customer, user, data, classification, sentiment, priority):
+        # Mock interaction object
+        class MockInteraction:
+            def __init__(self):
+                self.id = 1
+                self.customer_id = customer.id
+                self.interaction_type = data.get('type', 'call')
+                self.notes = data.get('notes', '')
+                self.created_by = user.id
+                self.created_at = datetime.now()
+
+            def to_dict(self):
+                return {
+                    'id': self.id,
+                    'customer_id': self.customer_id,
+                    'interaction_type': self.interaction_type,
+                    'notes': self.notes,
+                    'created_by': self.created_by,
+                    'created_at': self.created_at.isoformat()
+                }
+
+        return MockInteraction()
+
+    def get_customer_segments(self):
+        return []  # Return empty list for now
+
+    def create_segment(self, user, data, optimized_criteria):
+        # Mock segment object
+        class MockSegment:
+            def __init__(self):
+                self.id = 1
+                self.name = data.get('name', 'New Segment')
+                self.criteria = data.get('criteria', {})
+                self.created_by = user.id
+                self.created_at = datetime.now()
+
+            def to_dict(self):
+                return {
+                    'id': self.id,
+                    'name': self.name,
+                    'criteria': self.criteria,
+                    'created_by': self.created_by,
+                    'created_at': self.created_at.isoformat()
+                }
+
+        return MockSegment()
+
+    def get_customer_contracts(self, customer_id):
+        return []  # Return empty list for now
+
+    def create_contract(self, customer, user, data, optimization, pricing):
+        # Mock contract object
+        class MockContract:
+            def __init__(self):
+                self.id = 1
+                self.customer_id = customer.id
+                self.contract_type = data.get('type', 'standard')
+                self.value = data.get('value', 0)
+                self.created_by = user.id
+                self.created_at = datetime.now()
+
+            def to_dict(self):
+                return {
+                    'id': self.id,
+                    'customer_id': self.customer_id,
+                    'contract_type': self.contract_type,
+                    'value': self.value,
+                    'created_by': self.created_by,
+                    'created_at': self.created_at.isoformat()
+                }
+
+        return MockContract()
+
+    def get_satisfaction_analytics(self, period, segment_id):
+        return {'average_score': 4.2, 'trend': 'positive', 'responses': 150}
+
+    def get_communication_campaigns(self, status):
+        return []  # Return empty list for now
+
+    def create_communication_campaign(self, user, data, optimization, audience, content):
+        # Mock campaign object
+        class MockCampaign:
+            def __init__(self):
+                self.id = 1
+                self.name = data.get('name', 'New Campaign')
+                self.status = 'active'
+                self.created_by = user.id
+                self.created_at = datetime.now()
+
+            def to_dict(self):
+                return {
+                    'id': self.id,
+                    'name': self.name,
+                    'status': self.status,
+                    'created_by': self.created_by,
+                    'created_at': self.created_at.isoformat()
+                }
+
+        return MockCampaign()
+
+    def get_customer_surveys(self, status):
+        return []  # Return empty list for now
+
+    def create_customer_survey(self, user, data, optimization):
+        # Mock survey object
+        class MockSurvey:
+            def __init__(self):
+                self.id = 1
+                self.title = data.get('title', 'Customer Survey')
+                self.status = 'active'
+                self.created_by = user.id
+                self.created_at = datetime.now()
+
+            def to_dict(self):
+                return {
+                    'id': self.id,
+                    'title': self.title,
+                    'status': self.status,
+                    'created_by': self.created_by,
+                    'created_at': self.created_at.isoformat()
+                }
+
+        return MockSurvey()
+
+    def get_loyalty_programs(self):
+        return []  # Return empty list for now
+
+    def create_loyalty_program(self, user, data, optimization, reward_optimization):
+        # Mock loyalty program object
+        class MockLoyaltyProgram:
+            def __init__(self):
+                self.id = 1
+                self.name = data.get('name', 'Loyalty Program')
+                self.status = 'active'
+                self.created_by = user.id
+                self.created_at = datetime.now()
+
+            def to_dict(self):
+                return {
+                    'id': self.id,
+                    'name': self.name,
+                    'status': self.status,
+                    'created_by': self.created_by,
+                    'created_at': self.created_at.isoformat()
+                }
+
+        return MockLoyaltyProgram()
+
+    def get_support_tickets(self, status, priority, customer_id):
+        return []  # Return empty list for now
+
+    def create_support_ticket(self, user, data, classification, priority, agent_assignment):
+        # Mock support ticket object
+        class MockSupportTicket:
+            def __init__(self):
+                self.id = 1
+                self.title = data.get('title', 'Support Request')
+                self.status = 'open'
+                self.priority = priority.get('priority', 'medium')
+                self.created_by = user.id
+                self.created_at = datetime.now()
+
+            def to_dict(self):
+                return {
+                    'id': self.id,
+                    'title': self.title,
+                    'status': self.status,
+                    'priority': self.priority,
+                    'created_by': self.created_by,
+                    'created_at': self.created_at.isoformat()
+                }
+
+        return MockSupportTicket()
+
+    def store_feedback(self, feedback_data):
+        # Mock feedback object
+        class MockFeedback:
+            def __init__(self):
+                self.id = 1
+                self.customer_id = feedback_data.get('customer_id')
+                self.feedback_text = feedback_data.get('feedback', '')
+                self.rating = feedback_data.get('rating', 5)
+                self.created_at = datetime.now()
+
+            def to_dict(self):
+                return {
+                    'id': self.id,
+                    'customer_id': self.customer_id,
+                    'feedback_text': self.feedback_text,
+                    'rating': self.rating,
+                    'created_at': self.created_at.isoformat()
+                }
+
+        return MockFeedback()
+
+# Initialize services
+customer_service = MockCustomerService()
+ai_customer = MockAICustomerService()
 
 # Add analytics endpoints that frontend expects
 @customers_bp.route('/analytics/overview', methods=['GET'])

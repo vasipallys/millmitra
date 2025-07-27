@@ -90,10 +90,48 @@ const Inventory = () => {
   };
 
   const formatCurrency = (amount) => {
+    const numAmount = Number(amount);
+    if (isNaN(numAmount) || numAmount === null || numAmount === undefined) {
+      return '₹0';
+    }
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR'
-    }).format(amount);
+    }).format(numAmount);
+  };
+
+  // Transform backend data to StockCard expected format
+  const transformStockData = (stock, type) => {
+    if (!stock) return stock;
+
+    if (type === 'paddy') {
+      return {
+        ...stock,
+        product_name: stock.variety,
+        current_stock: stock.remaining_quantity || stock.quantity,
+        reorder_level: 100, // Default reorder level for paddy
+        max_stock: (stock.quantity || 0) * 1.5, // 150% of current as max
+        unit_price: stock.purchase_price,
+        unit: 'kg',
+        last_updated: stock.updated_at || stock.created_at,
+        category: 'paddy',
+        storage_location: stock.warehouse_id
+      };
+    } else if (type === 'product') {
+      return {
+        ...stock,
+        current_stock: stock.quantity,
+        reorder_level: stock.reorder_point || stock.minimum_stock_level || 50,
+        max_stock: stock.maximum_stock_level || (stock.quantity || 0) * 2,
+        unit_price: stock.market_price || stock.unit_cost,
+        unit: 'kg',
+        last_updated: stock.updated_at || stock.created_at,
+        category: stock.product_type,
+        storage_location: stock.storage_location || stock.warehouse_id
+      };
+    }
+
+    return stock;
   };
 
   return (
@@ -138,7 +176,7 @@ const Inventory = () => {
                     Total Valuation
                   </Typography>
                   <Typography variant="h5" fontWeight="bold">
-                    {valuation ? formatCurrency(valuation.total_valuation) : '₹0'}
+                    {valuation ? formatCurrency(valuation.total_valuation || valuation.total_value) : '₹0'}
                   </Typography>
                 </Box>
                 <Store color="primary" sx={{ fontSize: 40 }} />
@@ -155,7 +193,7 @@ const Inventory = () => {
                     Paddy Stock Value
                   </Typography>
                   <Typography variant="h5" fontWeight="bold">
-                    {valuation ? formatCurrency(valuation.paddy_valuation) : '₹0'}
+                    {valuation ? formatCurrency(valuation.paddy_valuation || valuation.paddy_value) : '₹0'}
                   </Typography>
                 </Box>
                 <InventoryIcon color="success" sx={{ fontSize: 40 }} />
@@ -172,7 +210,7 @@ const Inventory = () => {
                     Product Stock Value
                   </Typography>
                   <Typography variant="h5" fontWeight="bold">
-                    {valuation ? formatCurrency(valuation.product_valuation) : '₹0'}
+                    {valuation ? formatCurrency(valuation.product_valuation || valuation.product_value) : '₹0'}
                   </Typography>
                 </Box>
                 <Store color="info" sx={{ fontSize: 40 }} />
@@ -215,9 +253,14 @@ const Inventory = () => {
           {paddyStock?.stocks?.map((stock) => (
             <Grid item xs={12} md={6} lg={4} key={stock.id}>
               <StockCard
-                stock={stock}
+                stock={transformStockData(stock, 'paddy')}
                 type="paddy"
                 onUpdate={() => queryClient.invalidateQueries('paddy-stock')}
+                onReorder={(stock) => {
+                  console.log('Reorder requested for:', stock);
+                  // TODO: Implement reorder functionality
+                  alert(`Reorder request for ${stock?.variety || stock?.product_name || 'Unknown Product'}`);
+                }}
               />
             </Grid>
           ))}
@@ -250,9 +293,14 @@ const Inventory = () => {
           {productStock?.stocks?.map((stock) => (
             <Grid item xs={12} md={6} lg={4} key={stock.id}>
               <StockCard
-                stock={stock}
+                stock={transformStockData(stock, 'product')}
                 type="product"
                 onUpdate={() => queryClient.invalidateQueries('product-stock')}
+                onReorder={(stock) => {
+                  console.log('Reorder requested for:', stock);
+                  // TODO: Implement reorder functionality
+                  alert(`Reorder request for ${stock?.variety || stock?.product_name || 'Unknown Product'}`);
+                }}
               />
             </Grid>
           ))}
@@ -324,7 +372,16 @@ const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit,
   });
 
   const handleSubmit = () => {
-    onSubmit(formData);
+    // Transform data based on stock type
+    const submitData = { ...formData };
+
+    if (stockType === 'product') {
+      // For product stock, rename 'variety' to 'product_type'
+      submitData.product_type = submitData.variety;
+      delete submitData.variety;
+    }
+
+    onSubmit(submitData);
   };
 
   const resetForm = () => {
@@ -346,6 +403,20 @@ const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit,
     if (!open) resetForm();
   }, [open]);
 
+  // Reset variety when stock type changes
+  useEffect(() => {
+    console.log('Stock type changed to:', stockType);
+    setFormData(prev => ({
+      ...prev,
+      variety: ''
+    }));
+  }, [stockType]);
+
+  // Debug form data changes
+  useEffect(() => {
+    console.log('Form data updated:', formData);
+  }, [formData]);
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>Add New Stock</DialogTitle>
@@ -353,8 +424,10 @@ const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit,
         <Grid container spacing={2} sx={{ mt: 1 }}>
           <Grid item xs={12}>
             <FormControl fullWidth>
-              <InputLabel>Stock Type</InputLabel>
+              <InputLabel id="stock-type-select-label">Stock Type</InputLabel>
               <Select
+                labelId="stock-type-select-label"
+                label="Stock Type"
                 value={stockType}
                 onChange={(e) => onStockTypeChange(e.target.value)}
               >
@@ -366,25 +439,63 @@ const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit,
           
           <Grid item xs={12} md={6}>
             <FormControl fullWidth>
-              <InputLabel>{stockType === 'paddy' ? 'Paddy Variety' : 'Product Type'}</InputLabel>
+              <InputLabel id={`variety-select-label-${stockType}`}>
+                {stockType === 'paddy' ? 'Paddy Variety' : 'Product Type'}
+              </InputLabel>
               <Select
-                value={formData.variety}
-                onChange={(e) => setFormData({...formData, variety: e.target.value})}
+                labelId={`variety-select-label-${stockType}`}
+                id={`variety-select-${stockType}`}
+                label={stockType === 'paddy' ? 'Paddy Variety' : 'Product Type'}
+                value={formData.variety || ''}
+                onChange={(event) => {
+                  const selectedValue = event.target.value;
+                  console.log('Variety selected:', selectedValue, 'Stock type:', stockType);
+                  setFormData(prevData => ({
+                    ...prevData,
+                    variety: selectedValue
+                  }));
+                }}
+                displayEmpty
+                MenuProps={{
+                  PaperProps: {
+                    style: {
+                      maxHeight: 300,
+                      zIndex: 9999
+                    }
+                  }
+                }}
+                onClick={() => console.log('Select clicked')}
+                onOpen={() => console.log('Select opened')}
+                onClose={() => console.log('Select closed')}
               >
+                <MenuItem value="" disabled>
+                  <em>Select {stockType === 'paddy' ? 'Paddy Variety' : 'Product Type'}</em>
+                </MenuItem>
                 {stockType === 'paddy' ? (
-                  <>
-                    <MenuItem value="basmati">Basmati</MenuItem>
-                    <MenuItem value="jasmine">Jasmine</MenuItem>
-                    <MenuItem value="long_grain">Long Grain</MenuItem>
-                    <MenuItem value="short_grain">Short Grain</MenuItem>
-                  </>
+                  [
+                    <MenuItem key="basmati_1121" value="basmati_1121" onClick={() => console.log('Clicked: basmati_1121')}>Basmati 1121</MenuItem>,
+                    <MenuItem key="pusa_basmati" value="pusa_basmati" onClick={() => console.log('Clicked: pusa_basmati')}>Pusa Basmati</MenuItem>,
+                    <MenuItem key="ir64" value="ir64" onClick={() => console.log('Clicked: ir64')}>IR64</MenuItem>,
+                    <MenuItem key="swarna" value="swarna" onClick={() => console.log('Clicked: swarna')}>Swarna</MenuItem>,
+                    <MenuItem key="sona_masuri" value="sona_masuri" onClick={() => console.log('Clicked: sona_masuri')}>Sona Masuri</MenuItem>,
+                    <MenuItem key="pr106" value="pr106" onClick={() => console.log('Clicked: pr106')}>PR106</MenuItem>,
+                    <MenuItem key="pr121" value="pr121" onClick={() => console.log('Clicked: pr121')}>PR121</MenuItem>,
+                    <MenuItem key="sharbati" value="sharbati" onClick={() => console.log('Clicked: sharbati')}>Sharbati</MenuItem>,
+                    <MenuItem key="sugandha" value="sugandha" onClick={() => console.log('Clicked: sugandha')}>Sugandha</MenuItem>,
+                    <MenuItem key="kranti" value="kranti" onClick={() => console.log('Clicked: kranti')}>Kranti</MenuItem>
+                  ]
                 ) : (
-                  <>
-                    <MenuItem value="basmati_rice">Basmati Rice</MenuItem>
-                    <MenuItem value="jasmine_rice">Jasmine Rice</MenuItem>
-                    <MenuItem value="long_grain_rice">Long Grain Rice</MenuItem>
-                    <MenuItem value="short_grain_rice">Short Grain Rice</MenuItem>
-                  </>
+                  [
+                    <MenuItem key="basmati_rice" value="basmati_rice" onClick={() => console.log('Clicked: basmati_rice')}>Basmati Rice</MenuItem>,
+                    <MenuItem key="sona_masuri_rice" value="sona_masuri_rice" onClick={() => console.log('Clicked: sona_masuri_rice')}>Sona Masuri Rice</MenuItem>,
+                    <MenuItem key="ir64_rice" value="ir64_rice" onClick={() => console.log('Clicked: ir64_rice')}>IR64 Rice</MenuItem>,
+                    <MenuItem key="swarna_rice" value="swarna_rice" onClick={() => console.log('Clicked: swarna_rice')}>Swarna Rice</MenuItem>,
+                    <MenuItem key="parboiled_rice" value="parboiled_rice" onClick={() => console.log('Clicked: parboiled_rice')}>Parboiled Rice</MenuItem>,
+                    <MenuItem key="brown_rice" value="brown_rice" onClick={() => console.log('Clicked: brown_rice')}>Brown Rice</MenuItem>,
+                    <MenuItem key="broken_rice" value="broken_rice" onClick={() => console.log('Clicked: broken_rice')}>Broken Rice</MenuItem>,
+                    <MenuItem key="rice_bran" value="rice_bran" onClick={() => console.log('Clicked: rice_bran')}>Rice Bran</MenuItem>,
+                    <MenuItem key="rice_husk" value="rice_husk" onClick={() => console.log('Clicked: rice_husk')}>Rice Husk</MenuItem>
+                  ]
                 )}
               </Select>
             </FormControl>
@@ -412,8 +523,10 @@ const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit,
           
           <Grid item xs={12} md={6}>
             <FormControl fullWidth>
-              <InputLabel>Quality Grade</InputLabel>
+              <InputLabel id="quality-grade-select-label">Quality Grade</InputLabel>
               <Select
+                labelId="quality-grade-select-label"
+                label="Quality Grade"
                 value={formData.quality_grade}
                 onChange={(e) => setFormData({...formData, quality_grade: e.target.value})}
               >

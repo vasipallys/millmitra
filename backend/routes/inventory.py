@@ -38,6 +38,304 @@ def get_products():
         'message': 'Product stock data loaded successfully'
     })
 
+@inventory_bp.route('/overview', methods=['GET'])
+@jwt_required()
+def get_inventory_overview():
+    """Get inventory overview statistics"""
+    try:
+        # Get paddy stock totals
+        paddy_stocks = PaddyStock.query.all()
+        total_paddy_quantity = sum(stock.remaining_quantity or 0 for stock in paddy_stocks)
+        total_paddy_value = sum((stock.remaining_quantity or 0) * stock.purchase_price for stock in paddy_stocks)
+
+        # Get product stock totals
+        product_stocks = ProductStock.query.all()
+        total_product_quantity = sum(stock.quantity for stock in product_stocks)
+        total_product_value = sum(stock.quantity * (stock.market_price or 0) for stock in product_stocks)
+
+        # Calculate low stock items (less than 100 units)
+        low_stock_paddy = len([s for s in paddy_stocks if (s.remaining_quantity or 0) < 100])
+        low_stock_products = len([s for s in product_stocks if s.quantity < 100])
+
+        return jsonify({
+            'success': True,
+            'overview': {
+                'total_paddy_stock': total_paddy_quantity,
+                'total_product_stock': total_product_quantity,
+                'total_value': total_paddy_value + total_product_value,
+                'paddy_value': total_paddy_value,
+                'product_value': total_product_value,
+                'low_stock_items': low_stock_paddy + low_stock_products,
+                'total_items': len(paddy_stocks) + len(product_stocks),
+                'recent_movements': 0  # TODO: Implement when movement tracking is added
+            }
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error fetching inventory overview: {str(e)}'
+        }), 500
+
+@inventory_bp.route('/reorder-alerts', methods=['GET'])
+@jwt_required()
+def get_reorder_alerts():
+    """Get items that need reordering"""
+    try:
+        alerts = []
+
+        # Check paddy stocks
+        paddy_stocks = PaddyStock.query.all()
+        for stock in paddy_stocks:
+            if (stock.remaining_quantity or 0) < 100:  # Reorder threshold
+                alerts.append({
+                    'id': f'paddy_{stock.id}',
+                    'item_name': f'{stock.variety} Paddy',
+                    'item_type': 'paddy',
+                    'current_stock': stock.remaining_quantity or 0,
+                    'reorder_level': 100,
+                    'priority': 'high' if (stock.remaining_quantity or 0) < 50 else 'medium',
+                    'location': stock.warehouse_id or 'Unknown'
+                })
+
+        # Check product stocks
+        product_stocks = ProductStock.query.all()
+        for stock in product_stocks:
+            if stock.quantity < 100:  # Reorder threshold
+                alerts.append({
+                    'id': f'product_{stock.id}',
+                    'item_name': stock.product_name,
+                    'item_type': 'product',
+                    'current_stock': stock.quantity,
+                    'reorder_level': 100,
+                    'priority': 'high' if stock.quantity < 50 else 'medium',
+                    'location': stock.warehouse_id or 'Unknown'
+                })
+
+        return jsonify({
+            'success': True,
+            'alerts': alerts,
+            'total': len(alerts)
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error fetching reorder alerts: {str(e)}'
+        }), 500
+
+@inventory_bp.route('/valuation', methods=['GET'])
+@jwt_required()
+def get_inventory_valuation():
+    """Get inventory valuation breakdown"""
+    try:
+        # Calculate paddy valuation by variety
+        paddy_stocks = PaddyStock.query.all()
+        paddy_by_variety = {}
+        total_paddy_value = 0
+
+        for stock in paddy_stocks:
+            variety = stock.variety
+            value = (stock.remaining_quantity or 0) * stock.purchase_price
+            total_paddy_value += value
+
+            if variety in paddy_by_variety:
+                paddy_by_variety[variety] += value
+            else:
+                paddy_by_variety[variety] = value
+
+        # Calculate product valuation by type
+        product_stocks = ProductStock.query.all()
+        product_by_type = {}
+        total_product_value = 0
+
+        for stock in product_stocks:
+            product_type = stock.product_type
+            value = stock.quantity * (stock.market_price or 0)
+            total_product_value += value
+
+            if product_type in product_by_type:
+                product_by_type[product_type] += value
+            else:
+                product_by_type[product_type] = value
+
+        # Format for frontend
+        by_category = []
+        for variety, value in paddy_by_variety.items():
+            by_category.append({
+                'category': f'{variety} (Paddy)',
+                'value': value,
+                'type': 'paddy'
+            })
+
+        for product_type, value in product_by_type.items():
+            by_category.append({
+                'category': f'{product_type} (Product)',
+                'value': value,
+                'type': 'product'
+            })
+
+        return jsonify({
+            'success': True,
+            'valuation': {
+                'total_value': total_paddy_value + total_product_value,
+                'paddy_value': total_paddy_value,
+                'product_value': total_product_value,
+                'by_category': sorted(by_category, key=lambda x: x['value'], reverse=True)
+            }
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error fetching inventory valuation: {str(e)}'
+        }), 500
+
+@inventory_bp.route('/movements', methods=['GET'])
+@jwt_required()
+def get_stock_movements():
+    """Get stock movements/transactions"""
+    try:
+        # Get query parameters
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        movement_type = request.args.get('type')  # 'in', 'out', 'transfer'
+        item_type = request.args.get('item_type')  # 'paddy', 'product'
+
+        # Mock data for now - in production this would come from a StockMovement model
+        movements = [
+            {
+                'id': 1,
+                'date': '2025-07-26T10:00:00',
+                'type': 'in',
+                'item_type': 'paddy',
+                'item_name': 'Basmati Paddy',
+                'quantity': 1000,
+                'unit': 'kg',
+                'reference': 'PUR-001',
+                'source': 'Farmer - Siva Kumar',
+                'destination': 'Warehouse A',
+                'notes': 'Fresh paddy procurement'
+            },
+            {
+                'id': 2,
+                'date': '2025-07-26T14:30:00',
+                'type': 'out',
+                'item_type': 'product',
+                'item_name': 'Basmati Rice',
+                'quantity': 500,
+                'unit': 'kg',
+                'reference': 'SAL-001',
+                'source': 'Warehouse A',
+                'destination': 'Customer - ABC Store',
+                'notes': 'Sale to retail customer'
+            },
+            {
+                'id': 3,
+                'date': '2025-07-26T16:00:00',
+                'type': 'transfer',
+                'item_type': 'paddy',
+                'item_name': 'Sona Masuri Paddy',
+                'quantity': 750,
+                'unit': 'kg',
+                'reference': 'TRF-001',
+                'source': 'Warehouse A',
+                'destination': 'Processing Unit',
+                'notes': 'Transfer for processing'
+            }
+        ]
+
+        # Apply filters if provided
+        if movement_type:
+            movements = [m for m in movements if m['type'] == movement_type]
+
+        if item_type:
+            movements = [m for m in movements if m['item_type'] == item_type]
+
+        return jsonify({
+            'success': True,
+            'movements': movements,
+            'total': len(movements),
+            'summary': {
+                'total_in': sum(m['quantity'] for m in movements if m['type'] == 'in'),
+                'total_out': sum(m['quantity'] for m in movements if m['type'] == 'out'),
+                'total_transfers': sum(m['quantity'] for m in movements if m['type'] == 'transfer')
+            }
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error fetching stock movements: {str(e)}'
+        }), 500
+
+@inventory_bp.route('/movements', methods=['POST'])
+@jwt_required()
+def create_stock_movement():
+    """Create a new stock movement/transaction"""
+    try:
+        data = request.get_json()
+        user_id = get_jwt_identity()
+
+        # Validate required fields - handle both frontend formats
+        movement_type = data.get('movement_type') or data.get('type')
+        quantity = data.get('quantity')
+
+        if not movement_type:
+            return jsonify({
+                'success': False,
+                'message': 'Missing required field: movement_type or type'
+            }), 400
+
+        if not quantity:
+            return jsonify({
+                'success': False,
+                'message': 'Missing required field: quantity'
+            }), 400
+
+        # Generate movement ID
+        movement_id = f"MOV{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
+
+        # Create movement record (for now, just return success)
+        # In production, this would save to a StockMovement model
+        movement = {
+            'id': movement_id,
+            'date': datetime.utcnow().isoformat(),
+            'type': movement_type,
+            'movement_type': movement_type,  # Support both field names
+            'item_type': data.get('item_type', 'unknown'),
+            'item_name': data.get('item_name') or data.get('stock_name', 'Unknown Item'),
+            'quantity': float(quantity),
+            'unit': data.get('unit', 'kg'),
+            'unit_price': float(data.get('unit_price', 0)),
+            'total_value': float(data.get('total_value', 0)),
+            'reference': data.get('reference_number') or data.get('reference', ''),
+            'source': data.get('location_from') or data.get('source', ''),
+            'destination': data.get('location_to') or data.get('destination', ''),
+            'supplier_customer': data.get('supplier_customer', ''),
+            'reason': data.get('reason', ''),
+            'notes': data.get('notes', ''),
+            'batch_number': data.get('batch_number', ''),
+            'expiry_date': data.get('expiry_date', ''),
+            'stock_id': data.get('stock_id', ''),
+            'created_by': user_id,
+            'created_at': datetime.utcnow().isoformat()
+        }
+
+        # TODO: In production, save to database
+        # stock_movement = StockMovement(**movement)
+        # db.session.add(stock_movement)
+        # db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Stock movement created successfully',
+            'movement': movement
+        }), 201
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error creating stock movement: {str(e)}'
+        }), 500
+
 # Paddy Stock Management
 @inventory_bp.route('/paddy-stock', methods=['GET'])
 @jwt_required()
@@ -45,50 +343,85 @@ def get_paddy_stock():
     variety = request.args.get('variety', '')
     location = request.args.get('location', '')
     
-    stocks = inventory_service.get_paddy_stock(variety, location)
-    
-    # AI stock analysis
-    stock_analysis = ai_inventory.analyze_paddy_stock_levels([s.to_dict() for s in stocks])
-    
-    # AI demand prediction
-    demand_forecast = ai_inventory.predict_paddy_demand(variety)
-    
+    # Query paddy stocks directly from database
+    query = PaddyStock.query
+    if variety:
+        query = query.filter(PaddyStock.variety.ilike(f'%{variety}%'))
+    if location:
+        query = query.filter(PaddyStock.location.ilike(f'%{location}%'))
+
+    stocks = query.all()
+
     return jsonify({
+        'success': True,
         'stocks': [s.to_dict() for s in stocks],
-        'analysis': stock_analysis,
-        'demand_forecast': demand_forecast
+        'total': len(stocks),
+        'message': 'Paddy stock data loaded successfully'
     })
 
 @inventory_bp.route('/paddy-stock', methods=['POST'])
 @jwt_required()
 def add_paddy_stock():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-    
-    data = request.get_json()
-    
-    # AI quality assessment
-    quality_assessment = ai_inventory.assess_paddy_quality(data)
-    
-    # AI storage optimization
-    storage_optimization = ai_inventory.optimize_storage_location(data)
-    
-    # AI pricing recommendation
-    pricing_recommendation = ai_inventory.recommend_purchase_price(data)
-    
-    stock = inventory_service.add_paddy_stock(user, data, quality_assessment, storage_optimization)
-    
-    # AI post-addition recommendations
-    recommendations = ai_inventory.get_stock_management_recommendations(stock.id)
-    
-    return jsonify({
-        'success': True,
-        'stock': stock.to_dict(),
-        'quality_assessment': quality_assessment,
-        'storage_optimization': storage_optimization,
-        'pricing_recommendation': pricing_recommendation,
-        'recommendations': recommendations
-    }), 201
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+
+        if not user:
+            return jsonify({
+                'success': False,
+                'message': 'User not found'
+            }), 404
+
+        data = request.get_json()
+
+        # Validate required fields
+        required_fields = ['variety', 'quantity', 'quality_grade']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({
+                    'success': False,
+                    'message': f'Missing required field: {field}'
+                }), 400
+
+        # Generate stock ID
+        stock_count = PaddyStock.query.count() + 1
+        stock_id = f"PS{stock_count:06d}"
+
+        # Calculate total amount
+        quantity = float(data['quantity'])
+        purchase_price = float(data.get('purchase_price', 0))
+        total_amount = quantity * purchase_price
+
+        # Create new paddy stock entry
+        stock = PaddyStock(
+            stock_id=stock_id,
+            farmer_id=data.get('farmer_id', 1),  # Default to farmer ID 1 if not provided
+            variety=data['variety'],
+            quantity=quantity,
+            purchase_price=purchase_price,
+            total_amount=total_amount,
+            quality_grade=data['quality_grade'],
+            moisture_content=float(data.get('moisture_content', 0)),
+            warehouse_id=data.get('location', 'WH001'),
+            purchase_date=datetime.utcnow(),
+            created_by=user_id
+        )
+
+        db.session.add(stock)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Paddy stock added successfully',
+            'stock': stock.to_dict()
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': f'Error adding paddy stock: {str(e)}'
+        }), 500, 201
 
 @inventory_bp.route('/paddy-stock/<int:stock_id>', methods=['PUT'])
 @jwt_required()
@@ -110,58 +443,100 @@ def update_paddy_stock(stock_id):
 def get_product_stock():
     product_type = request.args.get('product_type', '')
     grade = request.args.get('grade', '')
-    
-    stocks = inventory_service.get_product_stock(product_type, grade)
-    
-    # AI stock analysis
-    stock_analysis = ai_inventory.analyze_product_stock_levels([s.to_dict() for s in stocks])
-    
-    # AI sales velocity analysis
-    velocity_analysis = ai_inventory.analyze_sales_velocity(product_type, grade)
-    
+
+    # Query product stocks directly from database
+    query = ProductStock.query
+    if product_type:
+        query = query.filter(ProductStock.product_type.ilike(f'%{product_type}%'))
+    if grade:
+        query = query.filter(ProductStock.quality_grade.ilike(f'%{grade}%'))
+
+    stocks = query.all()
+
     return jsonify({
+        'success': True,
         'stocks': [s.to_dict() for s in stocks],
-        'analysis': stock_analysis,
-        'velocity_analysis': velocity_analysis
+        'total': len(stocks),
+        'message': 'Product stock data loaded successfully'
     })
 
 @inventory_bp.route('/product-stock', methods=['POST'])
 @jwt_required()
 def add_product_stock():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-    
-    data = request.get_json()
-    
-    # AI pricing suggestions
-    pricing_suggestion = ai_inventory.suggest_product_pricing(data)
-    
-    stock = inventory_service.add_product_stock(user, data, pricing_suggestion)
-    
-    return jsonify({
-        'success': True,
-        'stock': stock.to_dict(),
-        'pricing_suggestion': pricing_suggestion
-    }), 201
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
 
-# Stock Movements
-@inventory_bp.route('/transactions', methods=['GET'])
-@jwt_required()
-def get_transactions():
-    page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 20, type=int)
-    transaction_type = request.args.get('type', '')
-    
-    transactions = inventory_service.get_transactions(page, per_page, transaction_type)
-    
-    # AI transaction pattern analysis
-    pattern_analysis = ai_inventory.analyze_transaction_patterns([t.to_dict() for t in transactions['items']])
-    
-    return jsonify({
-        'transactions': [t.to_dict() for t in transactions['items']],
-        'pagination': transactions['pagination'],
-        'pattern_analysis': pattern_analysis
-    })
+        if not user:
+            return jsonify({
+                'success': False,
+                'message': 'User not found'
+            }), 404
+
+        data = request.get_json()
+
+        # Validate required fields
+        required_fields = ['product_type', 'quantity', 'quality_grade']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({
+                    'success': False,
+                    'message': f'Missing required field: {field}'
+                }), 400
+
+        # Generate product ID
+        product_count = ProductStock.query.count() + 1
+        product_id = f"PR{product_count:06d}"
+
+        # Create new product stock entry
+        stock = ProductStock(
+            product_id=product_id,
+            product_name=data.get('product_name', data['product_type']),
+            product_type=data['product_type'],
+            variety=data.get('variety', ''),
+            grade=data['quality_grade'],
+            quantity=float(data['quantity']),
+            unit_cost=float(data.get('production_cost', 0)),
+            market_price=float(data.get('market_price', 0)),
+            warehouse_id=data.get('location', 'WH001'),
+            production_date=datetime.utcnow(),
+            created_by=user_id
+        )
+
+        db.session.add(stock)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Product stock added successfully',
+            'stock': stock.to_dict()
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': f'Error adding product stock: {str(e)}'
+        }), 500
+
+# Stock Movements - Temporarily disabled
+# @inventory_bp.route('/transactions', methods=['GET'])
+# @jwt_required()
+# def get_transactions():
+#     page = request.args.get('page', 1, type=int)
+#     per_page = request.args.get('per_page', 20, type=int)
+#     transaction_type = request.args.get('type', '')
+#
+#     transactions = inventory_service.get_transactions(page, per_page, transaction_type)
+#
+#     # AI transaction pattern analysis
+#     pattern_analysis = ai_inventory.analyze_transaction_patterns([t.to_dict() for t in transactions['items']])
+#
+#     return jsonify({
+#         'transactions': [t.to_dict() for t in transactions['items']],
+#         'pagination': transactions['pagination'],
+#         'pattern_analysis': pattern_analysis
+#     })
 
 @inventory_bp.route('/transactions', methods=['POST'])
 @jwt_required()
@@ -205,19 +580,19 @@ def create_transaction():
         'recommendations': recommendations
     }), 201
 
-# Inventory Analytics
-@inventory_bp.route('/analytics/overview', methods=['GET'])
-@jwt_required()
-def get_inventory_overview():
-    overview = inventory_service.get_inventory_overview()
-    
-    # AI-enhanced analytics
-    ai_analytics = ai_inventory.enhance_inventory_analytics(overview)
-    
-    return jsonify({
-        'overview': overview,
-        'ai_analytics': ai_analytics
-    })
+# Inventory Analytics - Temporarily disabled
+# @inventory_bp.route('/analytics/overview', methods=['GET'])
+# @jwt_required()
+# def get_inventory_analytics_overview():
+#     overview = inventory_service.get_inventory_overview()
+#
+#     # AI-enhanced analytics
+#     ai_analytics = ai_inventory.enhance_inventory_analytics(overview)
+#
+#     return jsonify({
+#         'overview': overview,
+#         'ai_analytics': ai_analytics
+#     })
 
 @inventory_bp.route('/analytics/turnover', methods=['GET'])
 @jwt_required()
@@ -229,7 +604,7 @@ def get_inventory_turnover():
 
 @inventory_bp.route('/analytics/valuation', methods=['GET'])
 @jwt_required()
-def get_inventory_valuation():
+def get_inventory_analytics_valuation():
     method = request.args.get('method', 'fifo')
     
     valuation = inventory_service.calculate_inventory_valuation(method)
@@ -278,9 +653,9 @@ def create_reorder_rule():
         'optimization_notes': optimized_rule.get('optimization_notes', [])
     }), 201
 
-@inventory_bp.route('/reorder-alerts', methods=['GET'])
+@inventory_bp.route('/reorder-alerts-advanced', methods=['GET'])
 @jwt_required()
-def get_reorder_alerts():
+def get_reorder_alerts_advanced():
     alerts = inventory_service.check_reorder_alerts()
     
     # AI prioritization of alerts

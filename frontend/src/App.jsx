@@ -9,6 +9,7 @@ import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import VoiceInterface from './components/VoiceInterface';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
+import { ProgressiveDisclosureProvider } from './components/ProgressiveDisclosure';
 
 // Pages
 import Login from './pages/Login';
@@ -148,7 +149,8 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+      <ProgressiveDisclosureProvider>
+        <Box sx={{ display: 'flex', minHeight: '100vh' }}>
         {/* Sidebar */}
         <Sidebar
           open={sidebarOpen}
@@ -206,7 +208,8 @@ function App() {
 
         {/* PWA Install Prompt */}
         <PWAInstallPrompt />
-      </Box>
+        </Box>
+      </ProgressiveDisclosureProvider>
     </ThemeProvider>
   );
 }

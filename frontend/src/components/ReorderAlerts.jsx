@@ -250,35 +250,35 @@ const ReorderAlerts = ({ onReorder, autoRefresh = true }) => {
                     </ListItemIcon>
                     <ListItemText
                       primary={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                          <Typography variant="subtitle2">
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <span style={{ fontWeight: 500 }}>
                             {alert.product_name}
-                          </Typography>
-                          <Chip 
-                            label={alert.priority.toUpperCase()} 
+                          </span>
+                          <Chip
+                            label={alert.priority.toUpperCase()}
                             color={getPriorityColor(alert.priority)}
                             size="small"
                           />
-                          <Chip 
-                            label={`${alert.days_remaining} days left`} 
-                            size="small" 
+                          <Chip
+                            label={`${alert.days_remaining} days left`}
+                            size="small"
                             variant="outlined"
                           />
-                        </Box>
+                        </span>
                       }
                       secondary={
-                        <Box sx={{ mt: 1 }}>
-                          <Typography variant="body2" gutterBottom>
-                            Current: {alert.current_stock} {alert.unit} | 
-                            Reorder Level: {alert.reorder_level} {alert.unit} | 
+                        <span style={{ marginTop: '8px', display: 'block' }}>
+                          <span style={{ display: 'block', marginBottom: '4px' }}>
+                            Current: {alert.current_stock} {alert.unit} |
+                            Reorder Level: {alert.reorder_level} {alert.unit} |
                             Consumption: {alert.consumption_rate} {alert.unit}/day
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Supplier: {alert.supplier} | 
-                            Unit Cost: {formatCurrency(alert.unit_cost)} | 
+                          </span>
+                          <span style={{ display: 'block', color: '#666' }}>
+                            Supplier: {alert.supplier} |
+                            Unit Cost: {formatCurrency(alert.unit_cost)} |
                             Recommended Order: {calculateRecommendedQuantity(alert)} {alert.unit}
-                          </Typography>
-                        </Box>
+                          </span>
+                        </span>
                       }
                     />
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, ml: 2 }}>

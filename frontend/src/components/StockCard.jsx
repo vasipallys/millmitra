@@ -51,8 +51,10 @@ const StockCard = ({
   };
 
   const getStockStatus = () => {
-    const { current_stock = 0, reorder_level = 0, max_stock = 100 } = stock || {};
-    
+    const current_stock = Number(stock?.current_stock) || 0;
+    const reorder_level = Number(stock?.reorder_level) || 0;
+    const max_stock = Number(stock?.max_stock) || 100;
+
     if (current_stock <= reorder_level) {
       return { status: 'low', color: 'error', label: 'Low Stock' };
     } else if (current_stock >= max_stock * 0.9) {
@@ -63,7 +65,8 @@ const StockCard = ({
   };
 
   const calculateStockPercentage = () => {
-    const { current_stock, max_stock } = stock;
+    const current_stock = Number(stock?.current_stock) || 0;
+    const max_stock = Number(stock?.max_stock) || 100;
     if (!max_stock || max_stock === 0) return 0;
     return Math.min((current_stock / max_stock) * 100, 100);
   };
@@ -89,18 +92,26 @@ const StockCard = ({
   };
 
   const formatLastUpdated = (dateString) => {
+    if (!dateString) return 'Never';
+
     const date = new Date(dateString);
+
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return 'Invalid Date';
+    }
+
     const now = new Date();
     const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
-    
+
     if (diffInHours < 1) {
       return 'Just now';
     } else if (diffInHours < 24) {
       return `${diffInHours}h ago`;
     } else {
-      return date.toLocaleDateString('en-IN', { 
-        day: '2-digit', 
-        month: 'short' 
+      return date.toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short'
       });
     }
   };
@@ -131,7 +142,7 @@ const StockCard = ({
             </Avatar>
             <Box>
               <Typography variant="h6" component="div" noWrap>
-                {stock?.product_name || 'Unknown Product'}
+                {stock?.product_name || stock?.variety || stock?.name || 'Unknown Product'}
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Chip 
@@ -155,7 +166,7 @@ const StockCard = ({
               Current Stock
             </Typography>
             <Typography variant="h6" fontWeight="bold" color={stockStatus.color + '.main'}>
-              {(stock?.current_stock || 0).toLocaleString()} {stock?.unit || 'kg'}
+              {(Number(stock?.current_stock) || 0).toLocaleString()} {stock?.unit || 'kg'}
             </Typography>
           </Box>
           
@@ -168,10 +179,10 @@ const StockCard = ({
           
           <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
             <Typography variant="caption" color="text.secondary">
-              Reorder: {stock?.reorder_level || 0} {stock?.unit || 'kg'}
+              Reorder: {Number(stock?.reorder_level) || 0} {stock?.unit || 'kg'}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Max: {stock?.max_stock || 100} {stock?.unit || 'kg'}
+              Max: {Number(stock?.max_stock) || 100} {stock?.unit || 'kg'}
             </Typography>
           </Box>
         </Box>
@@ -199,7 +210,7 @@ const StockCard = ({
               Unit Price
             </Typography>
             <Typography variant="body1" fontWeight="medium">
-              ₹{stock.unit_price || 45}/kg
+              ₹{Number(stock?.unit_price) || 45}/kg
             </Typography>
           </Grid>
           <Grid item xs={6}>
@@ -207,7 +218,7 @@ const StockCard = ({
               Total Value
             </Typography>
             <Typography variant="body1" fontWeight="medium">
-              ₹{(((stock?.current_stock || 0) * (stock?.unit_price || 45)) / 1000).toFixed(0)}K
+              ₹{(((Number(stock?.current_stock) || 0) * (Number(stock?.unit_price) || 45)) / 1000).toFixed(0)}K
             </Typography>
           </Grid>
         </Grid>

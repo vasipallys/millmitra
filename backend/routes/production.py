@@ -11,7 +11,257 @@ import json
 production_bp = Blueprint('production', __name__)
 # Temporarily disabled until services are fixed
 # production_service = ProductionService()
-# ai_production = AIProductionService()
+
+# Mock AI Production Service for now
+class MockAIProductionService:
+    def optimize_batch_parameters(self, data):
+        return {
+            'optimized_parameters': {
+                'estimated_duration': 8,
+                'recommended_temperature': 65,
+                'optimal_moisture': 13.2
+            },
+            'efficiency_score': 92
+        }
+
+    def get_batch_insights(self, batch):
+        return {
+            'efficiency_prediction': '95%',
+            'quality_forecast': 'A+',
+            'recommendations': ['Monitor temperature closely', 'Check moisture levels hourly']
+        }
+
+    def perform_pre_start_checks(self, batch):
+        return {
+            'can_start': True,
+            'checks': ['Equipment ready', 'Raw materials available', 'Quality parameters set']
+        }
+
+    def predict_final_quality(self, batch, data):
+        return {
+            'predicted_grade': 'A+',
+            'confidence': 0.92,
+            'quality_factors': ['Moisture content optimal', 'Processing temperature good']
+        }
+
+    def optimize_step_parameters(self, batch, data):
+        return data  # Return data as-is for now
+
+    def analyze_quality_parameters(self, data):
+        return {
+            'quality_score': 95,
+            'recommendations': ['Maintain current parameters'],
+            'alerts': []
+        }
+
+    def optimize_production_schedule(self, data, optimization_type='efficiency'):
+        return {
+            'optimized_parameters': data,
+            'efficiency_gain': '15%',
+            'recommendations': ['Schedule during peak hours', 'Optimize batch sequencing']
+        }
+
+    def enhance_analytics(self, analytics):
+        return {
+            'trends': ['Production efficiency improving', 'Quality consistency maintained'],
+            'predictions': ['Next week output: +12%', 'Quality grade: A+ expected'],
+            'recommendations': ['Continue current practices', 'Monitor equipment performance']
+        }
+
+    def predict_maintenance_needs(self, data):
+        return {
+            'maintenance_score': 85,
+            'next_maintenance': '7 days',
+            'priority_items': ['Check conveyor belt', 'Calibrate sensors']
+        }
+
+    def get_predictive_maintenance_schedule(self):
+        return {
+            'upcoming': [
+                {'equipment': 'Mill #1', 'due_date': '2025-08-01', 'priority': 'high'},
+                {'equipment': 'Dryer #2', 'due_date': '2025-08-05', 'priority': 'medium'}
+            ]
+        }
+
+    def analyze_production_efficiency(self, days, variety):
+        return {
+            'efficiency_score': 88,
+            'trends': ['Improving over time'],
+            'bottlenecks': ['Packaging stage'],
+            'recommendations': ['Optimize packaging workflow']
+        }
+
+    def get_dashboard_insights(self):
+        return {
+            'current_efficiency': '92%',
+            'quality_trend': 'Stable',
+            'alerts': ['Mill #2 maintenance due in 3 days'],
+            'recommendations': ['Maintain current production pace']
+        }
+
+ai_production = MockAIProductionService()
+
+# Mock Production Service for now
+class MockProductionService:
+    def create_batch(self, user, batch_data):
+        # Create a new production batch with correct field names
+        batch = ProductionBatch(
+            batch_number=f"BATCH{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            paddy_stock_id=1,  # Default paddy stock ID
+            start_time=datetime.now(),
+            paddy_input_quantity=float(batch_data.get('quantity', 1000)),
+            paddy_variety=batch_data.get('paddy_variety', 'Basmati'),
+            paddy_quality_grade=batch_data.get('quality_grade', 'A'),
+            operator_id=user.id,
+            shift='morning',
+            status='created'
+        )
+
+        db.session.add(batch)
+        db.session.commit()
+        return batch
+
+    def start_batch(self, batch, user):
+        batch.status = 'in_progress'
+        if not batch.start_time:
+            batch.start_time = datetime.now()
+        db.session.commit()
+
+        return {
+            'success': True,
+            'message': 'Batch started successfully',
+            'batch': batch.to_dict()
+        }
+
+    def complete_batch(self, batch, user, data):
+        batch.status = 'completed'
+        batch.end_time = datetime.now()
+        # Set output quantities based on model fields
+        batch.rice_output_quantity = float(data.get('total_output', batch.paddy_input_quantity * 0.7))
+        batch.efficiency_percentage = float(data.get('efficiency_percentage', 85))
+
+        db.session.commit()
+
+        return {
+            'success': True,
+            'message': 'Batch completed successfully',
+            'batch': batch.to_dict()
+        }
+
+    def add_production_step(self, batch, user, step_data):
+        # For now, just return a mock step object with to_dict method
+        class MockStep:
+            def __init__(self):
+                self.id = 1
+                self.batch_id = batch.id
+                self.step_name = step_data.get('step_name', 'Processing')
+                self.status = 'completed'
+                self.start_time = datetime.now()
+                self.end_time = datetime.now()
+
+            def to_dict(self):
+                return {
+                    'id': self.id,
+                    'batch_id': self.batch_id,
+                    'step_name': self.step_name,
+                    'status': self.status,
+                    'start_time': self.start_time.isoformat(),
+                    'end_time': self.end_time.isoformat()
+                }
+
+        return MockStep()
+
+    def create_quality_test(self, batch, user, data, ai_analysis):
+        # Create a quality test record
+        quality_test = QualityTest(
+            batch_id=batch.id,
+            test_type=data.get('test_type', 'standard'),
+            moisture_content=float(data.get('moisture_content', 13.0)),
+            foreign_matter=float(data.get('foreign_matter', 1.0)),
+            broken_percentage=float(data.get('broken_percentage', 2.0)),
+            overall_grade=data.get('overall_grade', 'A'),
+            test_date=datetime.now(),
+            tested_by=user.id
+        )
+
+        db.session.add(quality_test)
+        db.session.commit()
+        return quality_test
+
+    def create_production_schedule(self, user, schedule_data):
+        # For now, return a mock schedule with to_dict method
+        class MockSchedule:
+            def __init__(self):
+                self.id = 1
+                self.schedule_name = schedule_data.get('schedule_name', 'Daily Schedule')
+                self.start_date = schedule_data.get('start_date')
+                self.end_date = schedule_data.get('end_date')
+                self.status = 'active'
+                self.created_by = user.id
+
+            def to_dict(self):
+                return {
+                    'id': self.id,
+                    'schedule_name': self.schedule_name,
+                    'start_date': self.start_date,
+                    'end_date': self.end_date,
+                    'status': self.status,
+                    'created_by': self.created_by
+                }
+
+        return MockSchedule()
+
+    def get_production_analytics(self, days):
+        # Return mock analytics data
+        return {
+            'total_batches': 15,
+            'completed_batches': 12,
+            'average_efficiency': 88.5,
+            'total_output': 12500,
+            'quality_distribution': {
+                'A+': 8,
+                'A': 4,
+                'B+': 0,
+                'B': 0
+            }
+        }
+
+    def log_maintenance(self, user, maintenance_data):
+        # Return mock maintenance record with to_dict method
+        class MockMaintenance:
+            def __init__(self):
+                self.id = 1
+                self.equipment = maintenance_data.get('equipment', 'Unknown')
+                self.maintenance_type = maintenance_data.get('maintenance_type', 'routine')
+                self.description = maintenance_data.get('description', '')
+                self.status = 'completed'
+                self.performed_by = user.id
+                self.date = datetime.now()
+
+            def to_dict(self):
+                return {
+                    'id': self.id,
+                    'equipment': self.equipment,
+                    'maintenance_type': self.maintenance_type,
+                    'description': self.description,
+                    'status': self.status,
+                    'performed_by': self.performed_by,
+                    'date': self.date.isoformat()
+                }
+
+        return MockMaintenance()
+
+    def get_current_production_status(self):
+        # Return current production status
+        return {
+            'active_batches': 3,
+            'total_output_today': 2500,
+            'efficiency_today': 92,
+            'quality_score_today': 95,
+            'alerts': []
+        }
+
+production_service = MockProductionService()
 
 @production_bp.route('/batches', methods=['GET'])
 @jwt_required()

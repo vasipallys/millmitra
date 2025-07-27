@@ -14,6 +14,7 @@ import { useQuery, useQueryClient } from 'react-query';
 import SmartWidget from '../components/SmartWidget';
 import AIInsights from '../components/AIInsights';
 import AlertsPanel from '../components/AlertsPanel';
+import NaturalLanguageQuery from '../components/NaturalLanguageQuery';
 
 const Dashboard = () => {
   const [timeRange, setTimeRange] = useState(7);
@@ -94,6 +95,16 @@ const Dashboard = () => {
       {alerts?.alerts?.length > 0 && (
         <AlertsPanel alerts={alerts.alerts} />
       )}
+
+      {/* Natural Language Query Interface */}
+      <Box mb={3}>
+        <NaturalLanguageQuery
+          onQueryResult={(result) => {
+            console.log('Query result:', result);
+            // Could trigger dashboard updates based on query results
+          }}
+        />
+      </Box>
 
       {/* Key Metrics Summary */}
       <Grid container spacing={3} mb={3}>
