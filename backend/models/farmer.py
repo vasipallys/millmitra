@@ -185,6 +185,67 @@ class Farmer(db.Model):
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
 
+class PaddyProcurement(db.Model):
+    __tablename__ = 'paddy_procurements'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    procurement_number = db.Column(db.String(50), unique=True, nullable=False)
+    farmer_id = db.Column(db.Integer, db.ForeignKey('farmers.id'), nullable=False)
+    
+    # Procurement details
+    variety = db.Column(db.String(50), nullable=False)
+    quantity = db.Column(db.Float, nullable=False)  # in kg
+    moisture_content = db.Column(db.Float)
+    quality_grade = db.Column(db.String(10))
+    price_per_kg = db.Column(db.Float, nullable=False)
+    total_amount = db.Column(db.Float, nullable=False)
+    
+    # Quality parameters
+    broken_percentage = db.Column(db.Float)
+    foreign_matter = db.Column(db.Float)
+    chalky_grains = db.Column(db.Float)
+    
+    # Dates
+    procurement_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    
+    # Status
+    status = db.Column(db.String(20), default='pending')  # pending, completed, rejected
+    payment_status = db.Column(db.String(20), default='pending')  # pending, partial, completed
+    
+    # Notes
+    notes = db.Column(db.Text)
+    
+    # Audit fields
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    farmer = relationship("Farmer")
+    created_by_user = relationship("User")
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'procurement_number': self.procurement_number,
+            'farmer_id': self.farmer_id,
+            'variety': self.variety,
+            'quantity': self.quantity,
+            'moisture_content': self.moisture_content,
+            'quality_grade': self.quality_grade,
+            'price_per_kg': self.price_per_kg,
+            'total_amount': self.total_amount,
+            'broken_percentage': self.broken_percentage,
+            'foreign_matter': self.foreign_matter,
+            'chalky_grains': self.chalky_grains,
+            'procurement_date': self.procurement_date.isoformat() if self.procurement_date else None,
+            'status': self.status,
+            'payment_status': self.payment_status,
+            'notes': self.notes,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
 class FarmerContract(db.Model):
     __tablename__ = 'farmer_contracts'
     
@@ -212,6 +273,8 @@ class FarmerContract(db.Model):
     payment_terms = db.Column(db.String(100))
     penalty_clauses = db.Column(db.Text)
     bonus_clauses = db.Column(db.Text)
+    advance_amount = db.Column(db.Float, default=0.0)
+    contract_date = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Audit fields
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
@@ -240,6 +303,8 @@ class FarmerContract(db.Model):
             'payment_terms': self.payment_terms or 'immediate',
             'penalty_clauses': self.penalty_clauses,
             'bonus_clauses': self.bonus_clauses,
+            'advance_amount': self.advance_amount or 0.0,
+            'contract_date': self.contract_date.isoformat() if self.contract_date else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }

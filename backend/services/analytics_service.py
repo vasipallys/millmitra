@@ -4,10 +4,10 @@ from sqlalchemy import func, and_, or_, text
 from models.analytics import Dashboard, DashboardWidget, Report, KPI, KPIValue, DataAlert
 from models.production import ProductionBatch, QualityTest
 from models.sales import SalesOrder
-from models.finance import Invoice, Payment
+from models.finance import Payment
 from models.inventory import PaddyStock, ProductStock
 from models.user import User
-from database import db
+from extensions import db
 import json
 
 class AnalyticsService:

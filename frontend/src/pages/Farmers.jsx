@@ -13,6 +13,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { useNavigate } from 'react-router-dom';
 import { farmerService } from '../services/farmerService';
+import { useToastNotifications } from '../hooks/useToastNotifications';
 import RegisterFarmerDialog from '../components/farmer/RegisterFarmerDialog';
 import FarmerEditRequestsDialog from '../components/farmer/FarmerEditRequestsDialog';
 import CreateContractDialog from '../components/farmer/CreateContractDialog';
@@ -37,9 +38,17 @@ const Farmers = () => {
   const [selectedFarmerForRequests, setSelectedFarmerForRequests] = useState(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const toast = useToastNotifications();
 
   // Check if user is authenticated
-  const isAuthenticated = !!localStorage.getItem('token');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+  
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    setIsAuthenticated(!!token);
+    setAuthChecked(true);
+  }, []);
 
   // Utility function to format currency
   const formatCurrency = (amount) => {
@@ -53,10 +62,10 @@ const Farmers = () => {
 
   // Redirect to login if not authenticated
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (authChecked && !isAuthenticated) {
       navigate('/login');
     }
-  }, [isAuthenticated, navigate]);
+  }, [authChecked, isAuthenticated, navigate]);
 
   // Queries
   const { data: farmersData, isLoading: farmersLoading, error: farmersError } = useQuery(
@@ -65,6 +74,7 @@ const Farmers = () => {
     {
       refetchInterval: 300000,
       enabled: isAuthenticated,
+      retry: false,
       onSuccess: (data) => {
         console.log('Farmers data received:', data);
         if (data?.farmers?.length > 0) {
@@ -83,6 +93,7 @@ const Farmers = () => {
     {
       refetchInterval: 300000,
       enabled: isAuthenticated,
+      retry: false,
       onSuccess: (data) => {
         console.log('Analytics data received:', data);
         if (data?.analytics) {
@@ -100,7 +111,8 @@ const Farmers = () => {
     () => farmerService.getProcurements({ limit: 10, sort: 'recent' }),
     {
       refetchInterval: 300000,
-      enabled: isAuthenticated
+      enabled: isAuthenticated,
+      retry: false
     }
   );
 
@@ -110,6 +122,7 @@ const Farmers = () => {
     {
       refetchInterval: 300000,
       enabled: isAuthenticated,
+      retry: false,
       onSuccess: (data) => {
         console.log('Contracts data received:', data);
         if (data?.contracts?.length > 0) {
@@ -124,39 +137,47 @@ const Farmers = () => {
 
   // Mutations
   const registerFarmerMutation = useMutation(farmerService.registerFarmer, {
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries('farmers');
       setRegisterDialogOpen(false);
+      toast.farmer.created(data.farmer?.name || 'New Farmer');
     },
     onError: (error) => {
-      console.error('Farmer registration error:', error);
+      toast.farmer.error('Create', error.response?.data?.message || error.message);
     }
   });
 
-  // Handle farmer registration with proper promise handling
-  const handleFarmerRegistration = async (farmerData) => {
-    try {
-      const result = await farmerService.registerFarmer(farmerData);
-      queryClient.invalidateQueries('farmers');
-      setRegisterDialogOpen(false);
-      return result;
-    } catch (error) {
-      console.error('Farmer registration error:', error);
-      throw error;
-    }
-  };
-
   const createContractMutation = useMutation(farmerService.createContract, {
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries(['farmers', 'farmer-analytics']);
       setContractDialogOpen(false);
+      toast.showSuccess(`Contract ${data.contract?.contract_number || 'created'} successfully`, {
+        module: 'farmer',
+        action: 'Create Contract'
+      });
+    },
+    onError: (error) => {
+      toast.showError(`Failed to create contract: ${error.response?.data?.message || error.message}`, {
+        module: 'farmer',
+        action: 'Create Contract'
+      });
     }
   });
 
   const recordProcurementMutation = useMutation(farmerService.recordProcurement, {
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries(['farmers', 'farmer-analytics']);
       setProcurementDialogOpen(false);
+      toast.showSuccess(`Procurement recorded: ${data.procurement?.quantity || 'N/A'} kg`, {
+        module: 'farmer',
+        action: 'Record Procurement'
+      });
+    },
+    onError: (error) => {
+      toast.showError(`Failed to record procurement: ${error.response?.data?.message || error.message}`, {
+        module: 'farmer',
+        action: 'Record Procurement'
+      });
     }
   });
 
@@ -171,20 +192,22 @@ const Farmers = () => {
 
         // Show appropriate message based on verification status
         if (data.auto_approved) {
-          alert('Changes applied successfully (auto-approved)');
+          toast.farmer.updated(selectedFarmer?.name || 'Farmer', 'Auto-approved changes');
         } else if (data.requires_approval) {
-          alert('Edit request submitted for approval. Changes will be applied after verification.');
+          toast.farmer.editRequestSubmitted(selectedFarmer?.name || 'Farmer', data.changes || {});
+        } else {
+          toast.farmer.updated(selectedFarmer?.name || 'Farmer');
         }
       },
       onError: (error) => {
         console.error('Update farmer error:', error);
-        alert('Error submitting edit request: ' + (error.response?.data?.message || error.message));
+        toast.farmer.error('Update', error.response?.data?.message || error.message);
       }
     }
   );
 
   const approveFarmerMutation = useMutation(
-    ({ farmerId, updateData }) => farmerService.updateFarmer(farmerId, updateData),
+    ({ farmerId, updateData }) => farmerService.verifyFarmer(farmerId, updateData),
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['farmers']);
@@ -325,6 +348,15 @@ const Farmers = () => {
       {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
     </div>
   );
+
+  // Show loading during authentication check
+  if (!authChecked) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+        <Typography>Loading...</Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 3 }}>
@@ -1000,7 +1032,7 @@ const Farmers = () => {
       <RegisterFarmerDialog
         open={registerDialogOpen}
         onClose={() => setRegisterDialogOpen(false)}
-        onSubmit={handleFarmerRegistration}
+        onSubmit={registerFarmerMutation.mutate}
         loading={registerFarmerMutation.isLoading}
       />
 

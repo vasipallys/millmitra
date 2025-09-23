@@ -1,0 +1,66 @@
+{
+  "test_summary": {
+    "total_tests": 8,
+    "passed_tests": 0,
+    "failed_tests": 8,
+    "test_date": "2025-07-22T11:21:25.475573"
+  },
+  "test_results": [
+    {
+      "test_name": "Health Check",
+      "success": false,
+      "message": "Health check error: HTTPConnectionPool(host='localhost', port=5000): Max retries exceeded with url: /api/health (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001ECB13C9840>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))",
+      "timestamp": "2025-07-22T11:20:56.999887",
+      "response_data": null
+    },
+    {
+      "test_name": "User Authentication",
+      "success": false,
+      "message": "Authentication error: HTTPConnectionPool(host='localhost', port=5000): Max retries exceeded with url: /api/auth/register (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001ECB13CA0B0>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))",
+      "timestamp": "2025-07-22T11:21:01.037710",
+      "response_data": null
+    },
+    {
+      "test_name": "Database Operations",
+      "success": false,
+      "message": "Database error: HTTPConnectionPool(host='localhost', port=5000): Max retries exceeded with url: /api/health (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001ECB13CA800>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))",
+      "timestamp": "2025-07-22T11:21:05.102167",
+      "response_data": null
+    },
+    {
+      "test_name": "AI Services",
+      "success": false,
+      "message": "AI services error: HTTPConnectionPool(host='localhost', port=5000): Max retries exceeded with url: /api/ai/voice/recognize (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001ECB13CAFE0>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))",
+      "timestamp": "2025-07-22T11:21:09.167694",
+      "response_data": null
+    },
+    {
+      "test_name": "Quality Control",
+      "success": false,
+      "message": "Quality control error: HTTPConnectionPool(host='localhost', port=5000): Max retries exceeded with url: /api/quality/tests/create (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001ECB13CAF80>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))",
+      "timestamp": "2025-07-22T11:21:13.243580",
+      "response_data": null
+    },
+    {
+      "test_name": "Financial Intelligence",
+      "success": false,
+      "message": "Financial intelligence error: HTTPConnectionPool(host='localhost', port=5000): Max retries exceeded with url: /api/financial-intelligence/payments/predict (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001ECB13CA860>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))",
+      "timestamp": "2025-07-22T11:21:17.320769",
+      "response_data": null
+    },
+    {
+      "test_name": "Compliance GST",
+      "success": false,
+      "message": "Compliance GST error: HTTPConnectionPool(host='localhost', port=5000): Max retries exceeded with url: /api/compliance/gst/calculate (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001ECB13CA110>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))",
+      "timestamp": "2025-07-22T11:21:21.386114",
+      "response_data": null
+    },
+    {
+      "test_name": "Analytics Reporting",
+      "success": false,
+      "message": "Analytics reporting error: HTTPConnectionPool(host='localhost', port=5000): Max retries exceeded with url: /api/analytics/kpi/calculate (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001ECB13C8F40>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))",
+      "timestamp": "2025-07-22T11:21:25.474576",
+      "response_data": null
+    }
+  ]
+}

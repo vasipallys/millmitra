@@ -9,7 +9,7 @@ import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import VoiceInterface from './components/VoiceInterface';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
-import { ProgressiveDisclosureProvider } from './components/ProgressiveDisclosure';
+import ToastProvider from './components/common/ToastProvider';
 
 // Pages
 import Login from './pages/Login';
@@ -27,6 +27,7 @@ import QualityControl from './pages/QualityControl';
 import FinancialIntelligence from './pages/FinancialIntelligence';
 import ComplianceGST from './pages/ComplianceGST';
 import AnalyticsReporting from './pages/AnalyticsReporting';
+import ToastDemo from './pages/ToastDemo';
 
 // Services
 import { authService } from './services/authService';
@@ -79,7 +80,27 @@ const theme = createTheme({
   },
 });
 
+// Create QueryClient instance
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
 function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
+    </QueryClientProvider>
+  );
+}
+
+function AppContent() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -149,8 +170,7 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <ProgressiveDisclosureProvider>
-        <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+      <Box sx={{ display: 'flex', minHeight: '100vh' }}>
         {/* Sidebar */}
         <Sidebar
           open={sidebarOpen}
@@ -199,6 +219,7 @@ function App() {
               <Route path="/analytics" element={<AnalyticsReporting />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/toast-demo" element={<ToastDemo />} />
             </Routes>
           </Box>
         </Box>
@@ -208,8 +229,7 @@ function App() {
 
         {/* PWA Install Prompt */}
         <PWAInstallPrompt />
-        </Box>
-      </ProgressiveDisclosureProvider>
+      </Box>
     </ThemeProvider>
   );
 }

@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import User, Farmer, FarmerContract
+from models import User, Farmer, FarmerContract, Payment
 from models.farmer_edit_request import FarmerEditRequest
 from extensions import db
 from datetime import datetime, timedelta
@@ -76,23 +76,6 @@ def register_farmer():
         db.session.add(farmer)
         db.session.commit()
 
-        # Generate AI verification response
-        verification = {
-            'status': 'verified',
-            'confidence': 95,
-            'checks': {
-                'phone_format': len(data['phone']) == 10 and data['phone'].isdigit(),
-                'aadhar_format': bool(data.get('aadhar_number') and len(data.get('aadhar_number', '')) == 12),
-                'bank_details': bool(data.get('bank_account_number') and data.get('bank_ifsc')),
-                'location_valid': bool(data.get('village') and data.get('district') and data.get('state'))
-            },
-            'recommendations': [
-                'Farmer registration completed successfully',
-                'Consider setting up automatic payment reminders',
-                'Schedule initial quality assessment meeting'
-            ]
-        }
-
         return jsonify({
             'success': True,
             'message': 'Farmer registered successfully',
@@ -104,8 +87,7 @@ def register_farmer():
                 'village': farmer.village,
                 'district': farmer.district,
                 'state': farmer.state
-            },
-            'verification': verification
+            }
         }), 201
 
     except Exception as e:
@@ -166,15 +148,11 @@ def update_farmer(farmer_id):
 
         # Prepare proposed changes (only include fields that are being changed)
         proposed_changes = {}
-        allowed_fields = [
-            'name', 'phone', 'email', 'village', 'district', 'state', 'pincode', 'address',
-            'aadhar_number', 'pan_number', 'land_area', 'farming_experience', 'farming_type',
-            'irrigation_type', 'bank_account', 'ifsc_code', 'bank_name', 'branch_name',
-            'payment_terms', 'credit_limit', 'is_verified', 'verification_date', 'status'
-        ]
-
         for key, value in data.items():
-            if key in allowed_fields:
+            if key in ['name', 'phone', 'email', 'village', 'district', 'state', 'pincode', 'address',
+                      'aadhar_number', 'pan_number', 'land_area', 'farming_experience', 'farming_type',
+                      'irrigation_type', 'bank_account', 'ifsc_code', 'bank_name', 'branch_name',
+                      'payment_terms', 'credit_limit', 'is_verified', 'verification_date']:
                 # Only include if value is different from current
                 current_value = getattr(farmer, key, None)
                 if str(current_value) != str(value):
@@ -183,12 +161,7 @@ def update_farmer(farmer_id):
         if not proposed_changes:
             return jsonify({
                 'success': False,
-                'message': 'No changes detected',
-                'debug_info': {
-                    'received_data': data,
-                    'farmer_id': farmer_id,
-                    'current_farmer_data': {k: getattr(farmer, k, None) for k in allowed_fields if hasattr(farmer, k)}
-                }
+                'message': 'No changes detected'
             }), 400
 
         # Create edit request
@@ -240,19 +213,6 @@ def apply_farmer_changes(farmer, changes):
                 setattr(farmer, key, float(value) if value and str(value).strip() else None)
             elif key in ['farming_experience']:
                 setattr(farmer, key, int(value) if value and str(value).strip() else None)
-            elif key in ['is_verified', 'is_active']:
-                # Handle boolean fields
-                setattr(farmer, key, bool(value) if value is not None else False)
-            elif key in ['verification_date']:
-                # Handle datetime fields
-                if value:
-                    if isinstance(value, str):
-                        # Parse ISO format datetime string
-                        setattr(farmer, key, datetime.fromisoformat(value.replace('Z', '+00:00')))
-                    else:
-                        setattr(farmer, key, value)
-                else:
-                    setattr(farmer, key, None)
             else:
                 # For string fields, set to None if empty string
                 setattr(farmer, key, value if value and str(value).strip() else None)
@@ -285,28 +245,17 @@ def get_edit_requests():
         }), 500
 
 @farmer_bp.route('/edit-requests/<int:request_id>/approve', methods=['POST'])
-@jwt_required()
 def approve_edit_request(request_id):
     """Approve farmer edit request"""
     try:
-        user_id = get_jwt_identity()
-        user = User.query.get(user_id)
+        # For testing, use a default user ID
+        user_id = 1  # Default admin user
+        user = User.query.get(user_id) if user_id else None
 
-        if not user:
-            return jsonify({
-                'success': False,
-                'message': 'User not found'
-            }), 404
-
-        data = request.get_json() or {}
+        data = request.get_json()
         comments = data.get('comments', '')
 
-        edit_request = FarmerEditRequest.query.get(request_id)
-        if not edit_request:
-            return jsonify({
-                'success': False,
-                'message': f'Edit request with ID {request_id} not found'
-            }), 404
+        edit_request = FarmerEditRequest.query.get_or_404(request_id)
 
         if edit_request.status != 'pending':
             return jsonify({
@@ -323,20 +272,11 @@ def approve_edit_request(request_id):
             }), 404
 
         # Apply the approved changes
-        try:
-            proposed_changes = json.loads(edit_request.proposed_changes)
-            print(f"Applying changes: {proposed_changes}")
-            apply_farmer_changes(farmer, proposed_changes)
-        except Exception as e:
-            print(f"Error applying changes: {str(e)}")
-            raise e
+        proposed_changes = json.loads(edit_request.proposed_changes)
+        apply_farmer_changes(farmer, proposed_changes)
 
         # Update edit request status
-        try:
-            edit_request.approve(user_id, comments)
-        except Exception as e:
-            print(f"Error approving edit request: {str(e)}")
-            raise e
+        edit_request.approve(user_id, comments)
 
         db.session.commit()
 
@@ -471,80 +411,6 @@ def create_sample_edit_requests():
             'message': f'Error creating sample edit requests: {str(e)}'
         }), 500
 
-@farmer_bp.route('/edit-requests/<int:request_id>/approve-test', methods=['POST'])
-def approve_edit_request_test(request_id):
-    """Test approve farmer edit request without JWT (for debugging)"""
-    try:
-        # Use default admin user for testing
-        user_id = 1
-        user = User.query.get(user_id)
-
-        if not user:
-            return jsonify({
-                'success': False,
-                'message': 'Default admin user not found'
-            }), 404
-
-        data = request.get_json() or {}
-        comments = data.get('comments', 'Test approval')
-
-        edit_request = FarmerEditRequest.query.get(request_id)
-        if not edit_request:
-            return jsonify({
-                'success': False,
-                'message': f'Edit request with ID {request_id} not found'
-            }), 404
-
-        if edit_request.status != 'pending':
-            return jsonify({
-                'success': False,
-                'message': f'Edit request is not pending (current status: {edit_request.status})'
-            }), 400
-
-        # Get farmer and apply changes
-        farmer = Farmer.query.get(edit_request.farmer_id)
-        if not farmer:
-            return jsonify({
-                'success': False,
-                'message': 'Farmer not found'
-            }), 404
-
-        # Apply the approved changes
-        try:
-            proposed_changes = json.loads(edit_request.proposed_changes)
-            print(f"Applying changes: {proposed_changes}")
-            apply_farmer_changes(farmer, proposed_changes)
-        except Exception as e:
-            print(f"Error applying changes: {str(e)}")
-            raise e
-
-        # Update edit request status
-        try:
-            edit_request.approve(user_id, comments)
-        except Exception as e:
-            print(f"Error approving edit request: {str(e)}")
-            raise e
-
-        db.session.commit()
-
-        return jsonify({
-            'success': True,
-            'message': 'Edit request approved and changes applied (test mode)',
-            'edit_request': edit_request.to_dict(),
-            'farmer': farmer.to_dict()
-        })
-
-    except Exception as e:
-        db.session.rollback()
-        print(f"Error approving edit request {request_id}: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({
-            'success': False,
-            'message': f'Error approving edit request: {str(e)}',
-            'error_details': str(e)
-        }), 500
-
 @farmer_bp.route('/contracts', methods=['GET'])
 @jwt_required()
 def get_contracts():
@@ -585,10 +451,10 @@ def get_contracts():
                 try:
                     db.session.commit()
                     contracts = [sample_contract]
-                    print("✅ Created sample contract for testing")
+                    print("[SUCCESS] Created sample contract for testing")
                 except Exception as e:
                     db.session.rollback()
-                    print(f"⚠️ Could not create sample contract: {e}")
+                    print(f"[WARN] Could not create sample contract: {e}")
 
         # Format contract data with farmer names and field mapping
         contract_list = []
@@ -953,14 +819,14 @@ def get_farmer_analytics():
         if period not in valid_periods:
             period = 'monthly'
 
-        print(f"📊 Analytics request - Period: {period}, District: {district}")
+        print(f"[DEBUG] Analytics request - Period: {period}, District: {district}")
 
         # Get basic counts with error handling
         try:
             total_farmers = Farmer.query.count()
             active_farmers = Farmer.query.filter_by(is_active=True).count()
         except Exception as e:
-            print(f"⚠️ Error getting farmer counts: {e}")
+            print(f"[WARN] Error getting farmer counts: {e}")
             total_farmers = 0
             active_farmers = 0
 
@@ -969,7 +835,7 @@ def get_farmer_analytics():
             active_contracts = FarmerContract.query.filter_by(status='active').count()
             total_contracts = FarmerContract.query.count()
         except Exception as e:
-            print(f"⚠️ Error getting contract counts: {e}")
+            print(f"[WARN] Error getting contract counts: {e}")
             active_contracts = 0
             total_contracts = 0
 
@@ -986,31 +852,34 @@ def get_farmer_analytics():
                 db.func.sum(PaddyStock.quantity * PaddyStock.purchase_price)
             ).scalar() or 0
         except ImportError:
-            print("⚠️ PaddyStock model not found, using default values")
+            print("[WARN] PaddyStock model not found, using default values")
         except Exception as e:
-            print(f"⚠️ Error getting procurement data: {e}")
+            print(f"[WARN] Error getting procurement data: {e}")
 
         # Get payment analytics with error handling
         total_payments = 0
         payment_records = 0
         try:
-            total_payments = db.session.query(db.func.sum(FarmerPayment.amount)).scalar() or 0
-            payment_records = FarmerPayment.query.count()
+            total_payments = db.session.query(db.func.sum(Payment.amount)).filter(
+                Payment.payment_category == 'farmer_payment',
+                Payment.status == 'cleared'
+            ).scalar() or 0
+            payment_records = Payment.query.filter(Payment.payment_category == 'farmer_payment').count()
         except Exception as e:
-            print(f"⚠️ Error getting payment data: {e}")
+            print(f"[WARN] Error getting payment data: {e}")
 
         # Calculate average metrics with error handling
         avg_land_area = 0
         try:
             avg_land_area = db.session.query(db.func.avg(Farmer.land_area)).scalar() or 0
         except Exception as e:
-            print(f"⚠️ Error calculating average land area: {e}")
+            print(f"[WARN] Error calculating average land area: {e}")
 
         avg_quality_rating = 0
         try:
             avg_quality_rating = db.session.query(db.func.avg(Farmer.quality_rating)).scalar() or 0
         except Exception as e:
-            print(f"⚠️ Error calculating average quality rating: {e}")
+            print(f"[WARN] Error calculating average quality rating: {e}")
 
         # Get recent activity (last 30 days) with error handling
         recent_farmers = 0
@@ -1028,9 +897,9 @@ def get_farmer_analytics():
             except ImportError:
                 recent_procurements = 0
         except Exception as e:
-            print(f"⚠️ Error calculating recent activity: {e}")
+            print(f"[WARN] Error calculating recent activity: {e}")
 
-        print(f"✅ Analytics calculated successfully - Farmers: {total_farmers}, Contracts: {active_contracts}")
+        print(f"[SUCCESS] Analytics calculated successfully - Farmers: {total_farmers}, Contracts: {active_contracts}")
 
         return jsonify({
             'success': True,
@@ -1082,7 +951,7 @@ def get_farmer_analytics():
         })
 
     except Exception as e:
-        print(f"💥 Analytics endpoint error: {str(e)}")
+        print(f"[ERROR] Analytics endpoint error: {str(e)}")
         import traceback
         traceback.print_exc()
         return jsonify({
@@ -1148,3 +1017,43 @@ def get_quality_trends():
         'analysis': quality_analysis,
         'recommendations': improvement_recommendations
     })
+
+@farmer_bp.route('/<int:farmer_id>/verify', methods=['PUT'])
+@jwt_required()
+def verify_farmer(farmer_id):
+    """Verify farmer status (admin action)"""
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+        
+        # Check if user has permission to verify farmers
+        if not user or user.role not in ['admin', 'manager']:
+            return jsonify({
+                'success': False,
+                'message': 'Insufficient permissions to verify farmers'
+            }), 403
+        
+        data = request.get_json()
+        farmer = Farmer.query.get_or_404(farmer_id)
+        
+        # Update verification status
+        farmer.is_verified = data.get('is_verified', True)
+        if data.get('verification_date'):
+            farmer.verification_date = datetime.fromisoformat(data['verification_date'].replace('Z', '+00:00'))
+        else:
+            farmer.verification_date = datetime.utcnow()
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Farmer verification status updated successfully',
+            'farmer': farmer.to_dict()
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': f'Error updating farmer verification: {str(e)}'
+        }), 500

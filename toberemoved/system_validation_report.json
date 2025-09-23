@@ -1,0 +1,142 @@
+{
+  "environment": [
+    {
+      "test_name": "Environment File (.env)",
+      "status": "pass",
+      "message": "Development environment file exists",
+      "details": {},
+      "timestamp": "2025-07-30T13:23:05.154733"
+    },
+    {
+      "test_name": "Critical Variables (.env)",
+      "status": "pass",
+      "message": "All critical environment variables present",
+      "details": {},
+      "timestamp": "2025-07-30T13:23:05.154733"
+    },
+    {
+      "test_name": "Environment File (.env.production)",
+      "status": "pass",
+      "message": "Production environment file exists",
+      "details": {},
+      "timestamp": "2025-07-30T13:23:05.154733"
+    },
+    {
+      "test_name": "Critical Variables (.env.production)",
+      "status": "pass",
+      "message": "All critical environment variables present",
+      "details": {},
+      "timestamp": "2025-07-30T13:23:05.154733"
+    }
+  ],
+  "backend": [
+    {
+      "test_name": "Health Endpoint",
+      "status": "pass",
+      "message": "Backend health endpoint responding",
+      "details": {
+        "services": {
+          "ai_services": "active",
+          "analytics": "active",
+          "compliance": "active",
+          "database": "connected"
+        },
+        "status": "healthy",
+        "timestamp": "2025-07-30T07:53:05.171862",
+        "version": "1.0.0"
+      },
+      "timestamp": "2025-07-30T13:23:05.173987"
+    },
+    {
+      "test_name": "Service: ai_services",
+      "status": "pass",
+      "message": "Status: active",
+      "details": {},
+      "timestamp": "2025-07-30T13:23:05.173987"
+    },
+    {
+      "test_name": "Service: analytics",
+      "status": "pass",
+      "message": "Status: active",
+      "details": {},
+      "timestamp": "2025-07-30T13:23:05.173987"
+    },
+    {
+      "test_name": "Service: compliance",
+      "status": "pass",
+      "message": "Status: active",
+      "details": {},
+      "timestamp": "2025-07-30T13:23:05.173987"
+    },
+    {
+      "test_name": "Service: database",
+      "status": "pass",
+      "message": "Status: connected",
+      "details": {},
+      "timestamp": "2025-07-30T13:23:05.173987"
+    }
+  ],
+  "ai_services": [
+    {
+      "test_name": "AI Services Health",
+      "status": "pass",
+      "message": "AI services responding correctly",
+      "details": {},
+      "timestamp": "2025-07-30T13:23:05.189118"
+    },
+    {
+      "test_name": "Query Processing",
+      "status": "pass",
+      "message": "AI query processing functional",
+      "details": {},
+      "timestamp": "2025-07-30T13:23:05.197605"
+    }
+  ],
+  "database": [
+    {
+      "test_name": "Database Connection",
+      "status": "pass",
+      "message": "Database connection successful",
+      "details": {},
+      "timestamp": "2025-07-30T13:23:07.550019"
+    },
+    {
+      "test_name": "Model Validation",
+      "status": "pass",
+      "message": "User model working - 5 users in database",
+      "details": {},
+      "timestamp": "2025-07-30T13:23:07.976142"
+    }
+  ],
+  "security": [
+    {
+      "test_name": "Debug Mode",
+      "status": "pass",
+      "message": "Debug mode properly configured",
+      "details": {},
+      "timestamp": "2025-07-30T13:23:07.976142"
+    },
+    {
+      "test_name": "Secret Key",
+      "status": "pass",
+      "message": "Secret key appears to be properly configured",
+      "details": {},
+      "timestamp": "2025-07-30T13:23:07.976142"
+    },
+    {
+      "test_name": "HTTPS Configuration",
+      "status": "pass",
+      "message": "HTTPS enforcement configured for production",
+      "details": {},
+      "timestamp": "2025-07-30T13:23:07.976142"
+    }
+  ],
+  "overall_status": {
+    "status": "excellent",
+    "total_tests": 16,
+    "passed": 16,
+    "failed": 0,
+    "warnings": 0,
+    "pass_rate": 100.0
+  }
+}

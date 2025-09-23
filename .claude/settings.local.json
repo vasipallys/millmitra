@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(move test_*.py toberemoved )",
+      "Bash(move test_*.html toberemoved )",
+      "Bash(move test_*.js toberemoved )",
+      "Bash(move test_*.json toberemoved)",
+      "Bash(cmd /c:*)",
+      "Bash(cmd /c \"move test_*.js toberemoved\\ 2>nul || echo No test js files to move\")",
+      "Bash(mv:*)",
+      "Bash(find:*)",
+      "Bash(rmdir:*)",
+      "Bash(dir:*)",
+      "Bash(grep:*)",
+      "Bash(python:*)",
+      "Bash(npm run dev:*)",
+      "Bash(curl:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

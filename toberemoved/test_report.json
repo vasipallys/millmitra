@@ -1,0 +1,111 @@
+{
+  "test_summary": {
+    "total_tests": 13,
+    "passed_tests": 7,
+    "failed_tests": 6,
+    "test_date": "2025-07-30T17:34:25.975849"
+  },
+  "test_results": [
+    {
+      "test_name": "Health Check",
+      "success": true,
+      "message": "System healthy - healthy",
+      "timestamp": "2025-07-30T17:33:56.506157",
+      "response_data": {
+        "services": {
+          "ai_services": "inactive",
+          "analytics": "active",
+          "compliance": "active",
+          "database": "connected"
+        },
+        "status": "healthy",
+        "timestamp": "2025-07-30T12:03:56.503839",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "test_name": "User Registration",
+      "success": true,
+      "message": "Registration endpoint working",
+      "timestamp": "2025-07-30T17:33:58.544849",
+      "response_data": null
+    },
+    {
+      "test_name": "User Login",
+      "success": true,
+      "message": "Login successful, token received",
+      "timestamp": "2025-07-30T17:34:03.418955",
+      "response_data": null
+    },
+    {
+      "test_name": "Database Connectivity",
+      "success": true,
+      "message": "Database connection verified",
+      "timestamp": "2025-07-30T17:34:07.462733",
+      "response_data": null
+    },
+    {
+      "test_name": "Voice Recognition",
+      "success": false,
+      "message": "Voice recognition failed - Status: 404",
+      "timestamp": "2025-07-30T17:34:09.533585",
+      "response_data": null
+    },
+    {
+      "test_name": "AI Quality Assessment",
+      "success": false,
+      "message": "Quality assessment failed - Status: 404",
+      "timestamp": "2025-07-30T17:34:11.582094",
+      "response_data": null
+    },
+    {
+      "test_name": "Quality Test Creation",
+      "success": false,
+      "message": "Quality test creation failed - Status: 404",
+      "timestamp": "2025-07-30T17:34:13.628557",
+      "response_data": null
+    },
+    {
+      "test_name": "Payment Prediction",
+      "success": false,
+      "message": "Payment prediction failed - Status: 404",
+      "timestamp": "2025-07-30T17:34:15.677477",
+      "response_data": null
+    },
+    {
+      "test_name": "Financial Insights",
+      "success": false,
+      "message": "Financial insights failed - Status: 404",
+      "timestamp": "2025-07-30T17:34:17.748508",
+      "response_data": null
+    },
+    {
+      "test_name": "GST Calculation",
+      "success": true,
+      "message": "GST calculation working",
+      "timestamp": "2025-07-30T17:34:19.823922",
+      "response_data": null
+    },
+    {
+      "test_name": "Compliance Status",
+      "success": true,
+      "message": "Compliance status working",
+      "timestamp": "2025-07-30T17:34:21.873748",
+      "response_data": null
+    },
+    {
+      "test_name": "KPI Calculation",
+      "success": true,
+      "message": "KPI calculation working",
+      "timestamp": "2025-07-30T17:34:23.919077",
+      "response_data": null
+    },
+    {
+      "test_name": "Analytics Dashboard",
+      "success": false,
+      "message": "Analytics dashboard failed - Status: 500",
+      "timestamp": "2025-07-30T17:34:25.975849",
+      "response_data": null
+    }
+  ]
+}

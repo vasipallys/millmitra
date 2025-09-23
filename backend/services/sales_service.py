@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from sqlalchemy import func, and_, or_
 from models.sales import Customer, SalesOrder, SalesOrderItem, Quotation, QuotationItem, SalesLead
-from database import db
+from extensions import db
 import uuid
 
 class SalesService:

@@ -1,0 +1,5 @@
+# AI Coordinator Agent Requirements for Rice Mill Management System
+
+# Core dependencies
+flask>=2.0.0
+redis>=4.0.0

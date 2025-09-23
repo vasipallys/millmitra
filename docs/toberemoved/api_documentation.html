@@ -1,0 +1,1867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rice Mill ERP API Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        .header { background: linear-gradient(135deg, #4caf50, #45a049); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .endpoint { background: #f8f9fa; padding: 15px; margin: 10px 0; border-left: 4px solid #4caf50; border-radius: 4px; }
+        .method { background: #007bff; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+        .path { font-family: monospace; background: #e9ecef; padding: 4px 8px; border-radius: 4px; }
+        pre { background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; overflow-x: auto; }
+        .category { margin: 20px 0; }
+        .toc { background: #e3f2fd; padding: 15px; border-radius: 4px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌾 Rice Mill ERP API Documentation</h1>
+            <p>Version: 1.0.0 | Generated: 2025-08-18T20:23:54.504539</p>
+        </div>
+        
+        <div class="toc">
+            <h3>📋 Table of Contents</h3>
+            <ul>
+                <li><a href="#authentication">Authentication</a></li>
+                <li><a href="#dashboard">Dashboard</a></li>
+                <li><a href="#farmer-management">Farmer Management</a></li>
+                <li><a href="#inventory-management">Inventory Management</a></li>
+                <li><a href="#production-management">Production Management</a></li>
+                <li><a href="#sales-management">Sales Management</a></li>
+                <li><a href="#finance-management">Finance Management</a></li>
+                <li><a href="#customer-management">Customer Management</a></li>
+                <li><a href="#quality-control">Quality Control</a></li>
+                <li><a href="#analytics">Analytics</a></li>
+                <li><a href="#compliance">Compliance</a></li>
+                <li><a href="#supply-chain">Supply Chain</a></li>
+                <li><a href="#logistics">Logistics</a></li>
+                <li><a href="#notifications">Notifications</a></li>
+                <li><a href="#ai-services">AI Services</a></li>
+                <li><a href="#biometric">Biometric</a></li>
+                <li><a href="#quality-vision">Quality Vision</a></li>
+                <li><a href="#financial-intelligence">Financial Intelligence</a></li>
+                <li><a href="#gst-compliance">GST Compliance</a></li>
+                <li><a href="#analytics-reporting">Analytics Reporting</a></li>
+            </ul>
+        </div>
+        
+        <div class="category">
+            <h2>🔐 Authentication</h2>
+            <p>This API uses JWT (JSON Web Token) authentication.</p>
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/auth/login</span>
+                <pre>{
+  "username": "your_username",
+  "password": "your_password"
+}</pre>
+            </div>
+        </div>
+
+        <div class="category" id="authentication">
+            <h2>📊 Authentication</h2>
+            <p><strong>Base Path:</strong> <code>/api/auth</code></p>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/auth/suggest-username</span>
+                <p><strong>Function:</strong> suggest_username</p>
+                <p>AI-powered username suggestions</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/auth/login</span>
+                <p><strong>Function:</strong> login</p>
+                <p>Endpoint for login</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/auth/me</span>
+                <p><strong>Function:</strong> get_current_user</p>
+                <p>Get current user information</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/auth/verify-otp</span>
+                <p><strong>Function:</strong> verify_otp</p>
+                <p>Endpoint for verify_otp</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/auth/logout</span>
+                <p><strong>Function:</strong> logout</p>
+                <p>Logout user and invalidate session</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/auth/voice-login</span>
+                <p><strong>Function:</strong> voice_login</p>
+                <p>Endpoint for voice_login</p>
+            </div>
+
+        <div class="category" id="dashboard">
+            <h2>📊 Dashboard</h2>
+            <p><strong>Base Path:</strong> <code>/api/dashboard</code></p>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/dashboard/overview</span>
+                <p><strong>Function:</strong> get_dashboard_overview</p>
+                <p>Endpoint for get_dashboard_overview</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/dashboard/widgets</span>
+                <p><strong>Function:</strong> get_smart_widgets</p>
+                <p>Endpoint for get_smart_widgets</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/dashboard/insights</span>
+                <p><strong>Function:</strong> get_ai_insights</p>
+                <p>Endpoint for get_ai_insights</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/dashboard/alerts</span>
+                <p><strong>Function:</strong> get_smart_alerts</p>
+                <p>Endpoint for get_smart_alerts</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/dashboard/metrics/production</span>
+                <p><strong>Function:</strong> get_production_metrics</p>
+                <p>Endpoint for get_production_metrics</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/dashboard/metrics/quality</span>
+                <p><strong>Function:</strong> get_quality_metrics</p>
+                <p>Endpoint for get_quality_metrics</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/dashboard/metrics/inventory</span>
+                <p><strong>Function:</strong> get_inventory_metrics</p>
+                <p>Endpoint for get_inventory_metrics</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/dashboard/metrics/financial</span>
+                <p><strong>Function:</strong> get_financial_metrics</p>
+                <p>Endpoint for get_financial_metrics</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/dashboard/predictions</span>
+                <p><strong>Function:</strong> get_predictions</p>
+                <p>Endpoint for get_predictions</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/dashboard/customize</span>
+                <p><strong>Function:</strong> customize_dashboard</p>
+                <p>Endpoint for customize_dashboard</p>
+            </div>
+
+        <div class="category" id="farmer-management">
+            <h2>📊 Farmer Management</h2>
+            <p><strong>Base Path:</strong> <code>/api/farmer</code></p>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/farmer/register</span>
+                <p><strong>Function:</strong> register_farmer</p>
+                <p>Endpoint for register_farmer</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/farmer/list</span>
+                <p><strong>Function:</strong> get_farmers</p>
+                <p>Endpoint for get_farmers</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/farmer/<int:farmer_id></span>
+                <p><strong>Function:</strong> get_farmer_details</p>
+                <p>Endpoint for get_farmer_details</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">PUT</span> <span class="path">/api/farmer/<int:farmer_id></span>
+                <p><strong>Function:</strong> update_farmer</p>
+                <p>Submit farmer information update for verification</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/farmer/edit-requests</span>
+                <p><strong>Function:</strong> get_edit_requests</p>
+                <p>Get farmer edit requests</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/farmer/edit-requests/<int:request_id>/approve</span>
+                <p><strong>Function:</strong> approve_edit_request</p>
+                <p>Approve farmer edit request</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/farmer/edit-requests/<int:request_id>/reject</span>
+                <p><strong>Function:</strong> reject_edit_request</p>
+                <p>Reject farmer edit request</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/farmer/edit-requests/create-sample</span>
+                <p><strong>Function:</strong> create_sample_edit_requests</p>
+                <p>Create sample edit requests for testing</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/farmer/contracts</span>
+                <p><strong>Function:</strong> get_contracts</p>
+                <p>Get farmer contracts with optional filtering</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">PUT</span> <span class="path">/api/farmer/contracts/<int:contract_id></span>
+                <p><strong>Function:</strong> update_contract</p>
+                <p>Update contract information</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/farmer/contracts</span>
+                <p><strong>Function:</strong> create_contract</p>
+                <p>Endpoint for create_contract</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/farmer/procurements</span>
+                <p><strong>Function:</strong> get_procurements</p>
+                <p>Get procurement records with optional filtering</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/farmer/procurements</span>
+                <p><strong>Function:</strong> record_procurement</p>
+                <p>Endpoint for record_procurement</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/farmer/payments</span>
+                <p><strong>Function:</strong> process_payment</p>
+                <p>Endpoint for process_payment</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/farmer/analytics/overview</span>
+                <p><strong>Function:</strong> get_farmer_analytics</p>
+                <p>Get comprehensive farmer analytics overview</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/farmer/analytics/test</span>
+                <p><strong>Function:</strong> test_analytics</p>
+                <p>Simple test endpoint for analytics</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/farmer/seasonal-planning</span>
+                <p><strong>Function:</strong> create_seasonal_plan</p>
+                <p>Endpoint for create_seasonal_plan</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/farmer/quality-trends</span>
+                <p><strong>Function:</strong> get_quality_trends</p>
+                <p>Endpoint for get_quality_trends</p>
+            </div>
+
+        <div class="category" id="inventory-management">
+            <h2>📊 Inventory Management</h2>
+            <p><strong>Base Path:</strong> <code>/api/inventory</code></p>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/inventory/paddy</span>
+                <p><strong>Function:</strong> get_paddy</p>
+                <p>Simple paddy stock endpoint for frontend compatibility</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/inventory/paddy</span>
+                <p><strong>Function:</strong> add_paddy</p>
+                <p>Add new paddy stock</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/inventory/products</span>
+                <p><strong>Function:</strong> get_products</p>
+                <p>Simple product stock endpoint for frontend compatibility</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/inventory/movements</span>
+                <p><strong>Function:</strong> get_movements</p>
+                <p>Get stock movements</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/inventory/paddy-stock</span>
+                <p><strong>Function:</strong> get_paddy_stock</p>
+                <p>Endpoint for get_paddy_stock</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/inventory/paddy-stock</span>
+                <p><strong>Function:</strong> add_paddy_stock</p>
+                <p>Endpoint for add_paddy_stock</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">PUT</span> <span class="path">/api/inventory/paddy-stock/<int:stock_id></span>
+                <p><strong>Function:</strong> update_paddy_stock</p>
+                <p>Endpoint for update_paddy_stock</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/inventory/product-stock</span>
+                <p><strong>Function:</strong> get_product_stock</p>
+                <p>Endpoint for get_product_stock</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/inventory/product-stock</span>
+                <p><strong>Function:</strong> add_product_stock</p>
+                <p>Endpoint for add_product_stock</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/inventory/transactions</span>
+                <p><strong>Function:</strong> get_transactions</p>
+                <p>Endpoint for get_transactions</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/inventory/transactions</span>
+                <p><strong>Function:</strong> create_transaction</p>
+                <p>Endpoint for create_transaction</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/inventory/analytics/overview</span>
+                <p><strong>Function:</strong> get_inventory_overview</p>
+                <p>Endpoint for get_inventory_overview</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/inventory/analytics/turnover</span>
+                <p><strong>Function:</strong> get_inventory_turnover</p>
+                <p>Endpoint for get_inventory_turnover</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/inventory/analytics/valuation</span>
+                <p><strong>Function:</strong> get_inventory_valuation</p>
+                <p>Endpoint for get_inventory_valuation</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/inventory/reorder-rules</span>
+                <p><strong>Function:</strong> get_reorder_rules</p>
+                <p>Endpoint for get_reorder_rules</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/inventory/reorder-rules</span>
+                <p><strong>Function:</strong> create_reorder_rule</p>
+                <p>Endpoint for create_reorder_rule</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/inventory/reorder-alerts</span>
+                <p><strong>Function:</strong> get_reorder_alerts</p>
+                <p>Endpoint for get_reorder_alerts</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/inventory/suppliers</span>
+                <p><strong>Function:</strong> get_suppliers</p>
+                <p>Endpoint for get_suppliers</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/inventory/suppliers</span>
+                <p><strong>Function:</strong> create_supplier</p>
+                <p>Endpoint for create_supplier</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/inventory/ai/demand-forecast</span>
+                <p><strong>Function:</strong> get_ai_demand_forecast</p>
+                <p>Endpoint for get_ai_demand_forecast</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/inventory/ai/optimize-stock-levels</span>
+                <p><strong>Function:</strong> optimize_stock_levels</p>
+                <p>Endpoint for optimize_stock_levels</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/inventory/ai/price-recommendations</span>
+                <p><strong>Function:</strong> get_price_recommendations</p>
+                <p>Endpoint for get_price_recommendations</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/inventory/reports/stock-aging</span>
+                <p><strong>Function:</strong> get_stock_aging_report</p>
+                <p>Endpoint for get_stock_aging_report</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/inventory/reports/movement-summary</span>
+                <p><strong>Function:</strong> get_movement_summary</p>
+                <p>Endpoint for get_movement_summary</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/inventory/reports/low-stock</span>
+                <p><strong>Function:</strong> get_low_stock_report</p>
+                <p>Endpoint for get_low_stock_report</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/inventory/waste-tracking</span>
+                <p><strong>Function:</strong> get_waste_tracking</p>
+                <p>Endpoint for get_waste_tracking</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/inventory/optimization</span>
+                <p><strong>Function:</strong> optimize_inventory</p>
+                <p>Endpoint for optimize_inventory</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/inventory/aging-analysis</span>
+                <p><strong>Function:</strong> get_aging_analysis</p>
+                <p>Endpoint for get_aging_analysis</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/inventory/turnover-analysis</span>
+                <p><strong>Function:</strong> get_turnover_analysis</p>
+                <p>Endpoint for get_turnover_analysis</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/inventory/quality-tracking</span>
+                <p><strong>Function:</strong> get_quality_tracking</p>
+                <p>Endpoint for get_quality_tracking</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/inventory/storage-optimization</span>
+                <p><strong>Function:</strong> get_storage_optimization</p>
+                <p>Endpoint for get_storage_optimization</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/inventory/predictive-maintenance</span>
+                <p><strong>Function:</strong> get_predictive_maintenance</p>
+                <p>Endpoint for get_predictive_maintenance</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/inventory/cost-analysis</span>
+                <p><strong>Function:</strong> get_cost_analysis</p>
+                <p>Endpoint for get_cost_analysis</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/inventory/dashboard</span>
+                <p><strong>Function:</strong> get_inventory_dashboard</p>
+                <p>Endpoint for get_inventory_dashboard</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/inventory/alerts</span>
+                <p><strong>Function:</strong> get_stock_alerts</p>
+                <p>Endpoint for get_stock_alerts</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/inventory/reorder-points</span>
+                <p><strong>Function:</strong> get_reorder_points</p>
+                <p>Endpoint for get_reorder_points</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/inventory/reorder-points</span>
+                <p><strong>Function:</strong> update_reorder_points</p>
+                <p>Endpoint for update_reorder_points</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/inventory/demand-forecast</span>
+                <p><strong>Function:</strong> get_demand_forecast</p>
+                <p>Endpoint for get_demand_forecast</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/inventory/cycle-count</span>
+                <p><strong>Function:</strong> initiate_cycle_count</p>
+                <p>Endpoint for initiate_cycle_count</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/inventory/supplier-performance</span>
+                <p><strong>Function:</strong> get_supplier_performance</p>
+                <p>Endpoint for get_supplier_performance</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/inventory/quality-trends</span>
+                <p><strong>Function:</strong> get_quality_trends</p>
+                <p>Endpoint for get_quality_trends</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/inventory/smart-alerts</span>
+                <p><strong>Function:</strong> get_smart_alerts</p>
+                <p>Endpoint for get_smart_alerts</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/inventory/batch-tracking</span>
+                <p><strong>Function:</strong> get_batch_tracking</p>
+                <p>Endpoint for get_batch_tracking</p>
+            </div>
+
+        <div class="category" id="production-management">
+            <h2>📊 Production Management</h2>
+            <p><strong>Base Path:</strong> <code>/api/production</code></p>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/production/batches</span>
+                <p><strong>Function:</strong> get_batches</p>
+                <p>Endpoint for get_batches</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/production/batches</span>
+                <p><strong>Function:</strong> create_batch</p>
+                <p>Endpoint for create_batch</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/production/batches/<int:batch_id></span>
+                <p><strong>Function:</strong> get_batch_details</p>
+                <p>Endpoint for get_batch_details</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/production/batches/<int:batch_id>/start</span>
+                <p><strong>Function:</strong> start_batch</p>
+                <p>Endpoint for start_batch</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/production/batches/<int:batch_id>/complete</span>
+                <p><strong>Function:</strong> complete_batch</p>
+                <p>Endpoint for complete_batch</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/production/batches/<int:batch_id>/steps</span>
+                <p><strong>Function:</strong> add_production_step</p>
+                <p>Endpoint for add_production_step</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/production/quality-tests</span>
+                <p><strong>Function:</strong> create_quality_test</p>
+                <p>Endpoint for create_quality_test</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/production/quality-tests</span>
+                <p><strong>Function:</strong> get_quality_tests</p>
+                <p>Endpoint for get_quality_tests</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/production/current-status</span>
+                <p><strong>Function:</strong> get_current_status</p>
+                <p>Endpoint for get_current_status</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/production/schedules</span>
+                <p><strong>Function:</strong> get_production_schedules</p>
+                <p>Endpoint for get_production_schedules</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/production/schedules</span>
+                <p><strong>Function:</strong> create_production_schedule</p>
+                <p>Endpoint for create_production_schedule</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/production/optimize</span>
+                <p><strong>Function:</strong> optimize_production</p>
+                <p>Endpoint for optimize_production</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/production/analytics</span>
+                <p><strong>Function:</strong> get_production_analytics</p>
+                <p>Endpoint for get_production_analytics</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/production/recommendations</span>
+                <p><strong>Function:</strong> get_ai_recommendations</p>
+                <p>Endpoint for get_ai_recommendations</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/production/maintenance</span>
+                <p><strong>Function:</strong> get_maintenance_logs</p>
+                <p>Endpoint for get_maintenance_logs</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/production/maintenance</span>
+                <p><strong>Function:</strong> log_maintenance</p>
+                <p>Endpoint for log_maintenance</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/production/maintenance/predictions</span>
+                <p><strong>Function:</strong> get_maintenance_predictions</p>
+                <p>Endpoint for get_maintenance_predictions</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/production/efficiency/analysis</span>
+                <p><strong>Function:</strong> get_efficiency_analysis</p>
+                <p>Endpoint for get_efficiency_analysis</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/production/batches/<int:batch_id>/pause</span>
+                <p><strong>Function:</strong> pause_batch</p>
+                <p>Endpoint for pause_batch</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/production/batches/<int:batch_id>/resume</span>
+                <p><strong>Function:</strong> resume_batch</p>
+                <p>Endpoint for resume_batch</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/production/dashboard</span>
+                <p><strong>Function:</strong> get_production_dashboard</p>
+                <p>Endpoint for get_production_dashboard</p>
+            </div>
+
+        <div class="category" id="sales-management">
+            <h2>📊 Sales Management</h2>
+            <p><strong>Base Path:</strong> <code>/api/sales</code></p>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/sales/analytics</span>
+                <p><strong>Function:</strong> get_sales_analytics</p>
+                <p>General sales analytics endpoint for frontend compatibility</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/sales/dashboard</span>
+                <p><strong>Function:</strong> get_sales_dashboard</p>
+                <p>Endpoint for get_sales_dashboard</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/sales/customers</span>
+                <p><strong>Function:</strong> get_customers</p>
+                <p>Endpoint for get_customers</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/sales/customers</span>
+                <p><strong>Function:</strong> create_customer</p>
+                <p>Endpoint for create_customer</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/sales/customers/<int:customer_id></span>
+                <p><strong>Function:</strong> get_customer_details</p>
+                <p>Endpoint for get_customer_details</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/sales/orders</span>
+                <p><strong>Function:</strong> get_sales_orders</p>
+                <p>Endpoint for get_sales_orders</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/sales/orders</span>
+                <p><strong>Function:</strong> create_sales_order</p>
+                <p>Endpoint for create_sales_order</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">PUT</span> <span class="path">/api/sales/orders/<int:order_id>/status</span>
+                <p><strong>Function:</strong> update_order_status</p>
+                <p>Endpoint for update_order_status</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/sales/quotations</span>
+                <p><strong>Function:</strong> get_quotations</p>
+                <p>Endpoint for get_quotations</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/sales/quotations</span>
+                <p><strong>Function:</strong> create_quotation</p>
+                <p>Endpoint for create_quotation</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/sales/quotations/<int:quotation_id>/convert</span>
+                <p><strong>Function:</strong> convert_quotation_to_order</p>
+                <p>Endpoint for convert_quotation_to_order</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/sales/leads</span>
+                <p><strong>Function:</strong> get_sales_leads</p>
+                <p>Endpoint for get_sales_leads</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/sales/leads</span>
+                <p><strong>Function:</strong> create_sales_lead</p>
+                <p>Endpoint for create_sales_lead</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">PUT</span> <span class="path">/api/sales/leads/<int:lead_id>/status</span>
+                <p><strong>Function:</strong> update_lead_status</p>
+                <p>Endpoint for update_lead_status</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/sales/analytics/revenue</span>
+                <p><strong>Function:</strong> get_revenue_analytics</p>
+                <p>Endpoint for get_revenue_analytics</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/sales/analytics/forecast</span>
+                <p><strong>Function:</strong> get_sales_forecast</p>
+                <p>Endpoint for get_sales_forecast</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/sales/lead-scoring</span>
+                <p><strong>Function:</strong> score_sales_lead</p>
+                <p>Endpoint for score_sales_lead</p>
+            </div>
+
+        <div class="category" id="finance-management">
+            <h2>📊 Finance Management</h2>
+            <p><strong>Base Path:</strong> <code>/api/finance</code></p>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/finance/invoices</span>
+                <p><strong>Function:</strong> get_invoices</p>
+                <p>Get invoices list for frontend compatibility</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/finance/cash-flow</span>
+                <p><strong>Function:</strong> get_cash_flow</p>
+                <p>Get cash flow data for frontend compatibility</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/finance/accounts-receivable</span>
+                <p><strong>Function:</strong> get_accounts_receivable</p>
+                <p>Get accounts receivable for frontend compatibility</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/finance/financial-summary</span>
+                <p><strong>Function:</strong> get_financial_summary</p>
+                <p>Get financial summary for frontend compatibility</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/finance/accounts</span>
+                <p><strong>Function:</strong> create_account</p>
+                <p>Endpoint for create_account</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/finance/journal-entries</span>
+                <p><strong>Function:</strong> create_journal_entry</p>
+                <p>Endpoint for create_journal_entry</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/finance/invoices</span>
+                <p><strong>Function:</strong> create_invoice</p>
+                <p>Endpoint for create_invoice</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/finance/payments</span>
+                <p><strong>Function:</strong> record_payment</p>
+                <p>Endpoint for record_payment</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/finance/summary</span>
+                <p><strong>Function:</strong> get_summary</p>
+                <p>Endpoint for get_summary</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/finance/aging-report</span>
+                <p><strong>Function:</strong> get_aging_report</p>
+                <p>Endpoint for get_aging_report</p>
+            </div>
+
+        <div class="category" id="customer-management">
+            <h2>📊 Customer Management</h2>
+            <p><strong>Base Path:</strong> <code>/api/customers</code></p>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/customers/analytics/overview</span>
+                <p><strong>Function:</strong> get_analytics_overview</p>
+                <p>Customer analytics overview for frontend compatibility</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/customers/analytics/segments</span>
+                <p><strong>Function:</strong> get_analytics_segments</p>
+                <p>Customer segments for frontend compatibility</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/customers/</span>
+                <p><strong>Function:</strong> get_customers</p>
+                <p>Endpoint for get_customers</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/customers/</span>
+                <p><strong>Function:</strong> create_customer</p>
+                <p>Endpoint for create_customer</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/customers/<int:customer_id></span>
+                <p><strong>Function:</strong> get_customer</p>
+                <p>Endpoint for get_customer</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">PUT</span> <span class="path">/api/customers/<int:customer_id></span>
+                <p><strong>Function:</strong> update_customer</p>
+                <p>Endpoint for update_customer</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/customers/<int:customer_id>/interactions</span>
+                <p><strong>Function:</strong> get_customer_interactions</p>
+                <p>Endpoint for get_customer_interactions</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/customers/<int:customer_id>/interactions</span>
+                <p><strong>Function:</strong> create_customer_interaction</p>
+                <p>Endpoint for create_customer_interaction</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/customers/segments</span>
+                <p><strong>Function:</strong> get_customer_segments</p>
+                <p>Endpoint for get_customer_segments</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/customers/segments</span>
+                <p><strong>Function:</strong> create_customer_segment</p>
+                <p>Endpoint for create_customer_segment</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/customers/<int:customer_id>/contracts</span>
+                <p><strong>Function:</strong> get_customer_contracts</p>
+                <p>Endpoint for get_customer_contracts</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/customers/<int:customer_id>/contracts</span>
+                <p><strong>Function:</strong> create_customer_contract</p>
+                <p>Endpoint for create_customer_contract</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/customers/analytics/satisfaction</span>
+                <p><strong>Function:</strong> get_satisfaction_analytics</p>
+                <p>Endpoint for get_satisfaction_analytics</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/customers/analytics/lifetime-value</span>
+                <p><strong>Function:</strong> get_lifetime_value_analytics</p>
+                <p>Endpoint for get_lifetime_value_analytics</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/customers/analytics/churn-prediction</span>
+                <p><strong>Function:</strong> get_churn_prediction</p>
+                <p>Endpoint for get_churn_prediction</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/customers/communication/campaigns</span>
+                <p><strong>Function:</strong> get_communication_campaigns</p>
+                <p>Endpoint for get_communication_campaigns</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/customers/communication/campaigns</span>
+                <p><strong>Function:</strong> create_communication_campaign</p>
+                <p>Endpoint for create_communication_campaign</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/customers/feedback/surveys</span>
+                <p><strong>Function:</strong> get_customer_surveys</p>
+                <p>Endpoint for get_customer_surveys</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/customers/feedback/surveys</span>
+                <p><strong>Function:</strong> create_customer_survey</p>
+                <p>Endpoint for create_customer_survey</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/customers/loyalty/programs</span>
+                <p><strong>Function:</strong> get_loyalty_programs</p>
+                <p>Endpoint for get_loyalty_programs</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/customers/loyalty/programs</span>
+                <p><strong>Function:</strong> create_loyalty_program</p>
+                <p>Endpoint for create_loyalty_program</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/customers/<int:customer_id>/recommendations</span>
+                <p><strong>Function:</strong> get_customer_recommendations</p>
+                <p>Endpoint for get_customer_recommendations</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/customers/analytics/journey-mapping</span>
+                <p><strong>Function:</strong> get_customer_journey_mapping</p>
+                <p>Endpoint for get_customer_journey_mapping</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/customers/support/tickets</span>
+                <p><strong>Function:</strong> get_support_tickets</p>
+                <p>Endpoint for get_support_tickets</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/customers/support/tickets</span>
+                <p><strong>Function:</strong> create_support_ticket</p>
+                <p>Endpoint for create_support_ticket</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/customers/analytics/voice-of-customer</span>
+                <p><strong>Function:</strong> get_voice_of_customer</p>
+                <p>Endpoint for get_voice_of_customer</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/customers/predictive/behavior</span>
+                <p><strong>Function:</strong> get_predictive_behavior</p>
+                <p>Endpoint for get_predictive_behavior</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/customers/<int:customer_id>/feedback</span>
+                <p><strong>Function:</strong> analyze_feedback</p>
+                <p>Endpoint for analyze_feedback</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/customers/ai-recommendations</span>
+                <p><strong>Function:</strong> get_ai_recommendations</p>
+                <p>Endpoint for get_ai_recommendations</p>
+            </div>
+
+        <div class="category" id="quality-control">
+            <h2>📊 Quality Control</h2>
+            <p><strong>Base Path:</strong> <code>/api/quality</code></p>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/quality/standards</span>
+                <p><strong>Function:</strong> get_quality_standards</p>
+                <p>Get all quality standards</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/quality/standards</span>
+                <p><strong>Function:</strong> create_quality_standard</p>
+                <p>Create new quality standard</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/quality/templates</span>
+                <p><strong>Function:</strong> get_test_templates</p>
+                <p>Get all test templates</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/quality/templates</span>
+                <p><strong>Function:</strong> create_test_template</p>
+                <p>Create new test template</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/quality/inspections</span>
+                <p><strong>Function:</strong> get_inspections</p>
+                <p>Get quality inspections with filters</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/quality/inspections</span>
+                <p><strong>Function:</strong> create_inspection</p>
+                <p>Create new quality inspection</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/quality/inspections/<int:inspection_id></span>
+                <p><strong>Function:</strong> get_inspection</p>
+                <p>Get specific inspection details</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/quality/inspections/<int:inspection_id>/approve</span>
+                <p><strong>Function:</strong> approve_inspection</p>
+                <p>Approve quality inspection</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/quality/alerts</span>
+                <p><strong>Function:</strong> get_quality_alerts</p>
+                <p>Get quality alerts</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/quality/alerts/<int:alert_id>/resolve</span>
+                <p><strong>Function:</strong> resolve_quality_alert</p>
+                <p>Resolve quality alert</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/quality/trends</span>
+                <p><strong>Function:</strong> get_quality_trends</p>
+                <p>Get quality trends analysis</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/quality/dashboard</span>
+                <p><strong>Function:</strong> get_quality_dashboard</p>
+                <p>Get quality dashboard data</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/quality/equipment-health</span>
+                <p><strong>Function:</strong> check_equipment_health</p>
+                <p>Check equipment health based on quality patterns</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/quality/batch-analysis</span>
+                <p><strong>Function:</strong> analyze_batch_quality</p>
+                <p>Analyze quality for a specific batch</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/quality/compliance-report</span>
+                <p><strong>Function:</strong> generate_compliance_report</p>
+                <p>Generate compliance report</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/quality/predict-quality</span>
+                <p><strong>Function:</strong> predict_quality</p>
+                <p>Predict quality based on input parameters</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/quality/recommendations</span>
+                <p><strong>Function:</strong> get_quality_recommendations</p>
+                <p>Get AI-powered quality recommendations</p>
+            </div>
+
+        <div class="category" id="analytics">
+            <h2>📊 Analytics</h2>
+            <p><strong>Base Path:</strong> <code>/api/analytics</code></p>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/analytics/dashboards</span>
+                <p><strong>Function:</strong> create_dashboard</p>
+                <p>Endpoint for create_dashboard</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/analytics/dashboards/executive</span>
+                <p><strong>Function:</strong> get_executive_dashboard</p>
+                <p>Endpoint for get_executive_dashboard</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/analytics/dashboards/operational</span>
+                <p><strong>Function:</strong> get_operational_dashboard</p>
+                <p>Endpoint for get_operational_dashboard</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/analytics/kpis</span>
+                <p><strong>Function:</strong> create_kpi</p>
+                <p>Endpoint for create_kpi</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/analytics/kpis/dashboard</span>
+                <p><strong>Function:</strong> get_kpi_dashboard</p>
+                <p>Endpoint for get_kpi_dashboard</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/analytics/reports/financial</span>
+                <p><strong>Function:</strong> generate_financial_report</p>
+                <p>Endpoint for generate_financial_report</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/analytics/reports/production</span>
+                <p><strong>Function:</strong> generate_production_report</p>
+                <p>Endpoint for generate_production_report</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/analytics/trends/revenue</span>
+                <p><strong>Function:</strong> get_revenue_trends</p>
+                <p>Endpoint for get_revenue_trends</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/analytics/insights/business</span>
+                <p><strong>Function:</strong> get_business_insights</p>
+                <p>Endpoint for get_business_insights</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/analytics/alerts/data</span>
+                <p><strong>Function:</strong> create_data_alert</p>
+                <p>Endpoint for create_data_alert</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/analytics/performance/summary</span>
+                <p><strong>Function:</strong> get_performance_summary</p>
+                <p>Endpoint for get_performance_summary</p>
+            </div>
+
+        <div class="category" id="compliance">
+            <h2>📊 Compliance</h2>
+            <p><strong>Base Path:</strong> <code>/api/compliance</code></p>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/compliance/assessments</span>
+                <p><strong>Function:</strong> create_assessment</p>
+                <p>Endpoint for create_assessment</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">PUT</span> <span class="path">/api/compliance/assessments/<int:assessment_id>/results</span>
+                <p><strong>Function:</strong> update_assessment_results</p>
+                <p>Endpoint for update_assessment_results</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/compliance/documents</span>
+                <p><strong>Function:</strong> create_document</p>
+                <p>Endpoint for create_document</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">PUT</span> <span class="path">/api/compliance/action-items/<int:action_item_id>/progress</span>
+                <p><strong>Function:</strong> update_action_progress</p>
+                <p>Endpoint for update_action_progress</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/compliance/dashboard</span>
+                <p><strong>Function:</strong> get_compliance_dashboard</p>
+                <p>Endpoint for get_compliance_dashboard</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/compliance/reports/compliance</span>
+                <p><strong>Function:</strong> generate_compliance_report</p>
+                <p>Endpoint for generate_compliance_report</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/compliance/alerts/check-expiring</span>
+                <p><strong>Function:</strong> check_expiring_documents</p>
+                <p>Endpoint for check_expiring_documents</p>
+            </div>
+
+        <div class="category" id="supply-chain">
+            <h2>📊 Supply Chain</h2>
+            <p><strong>Base Path:</strong> <code>/api/supply-chain</code></p>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/supply-chain/suppliers</span>
+                <p><strong>Function:</strong> create_supplier</p>
+                <p>Endpoint for create_supplier</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/supply-chain/purchase-orders</span>
+                <p><strong>Function:</strong> create_purchase_order</p>
+                <p>Endpoint for create_purchase_order</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/supply-chain/purchase-orders/<int:po_id>/receive</span>
+                <p><strong>Function:</strong> receive_purchase_order</p>
+                <p>Endpoint for receive_purchase_order</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/supply-chain/procurement-requests</span>
+                <p><strong>Function:</strong> create_procurement_request</p>
+                <p>Endpoint for create_procurement_request</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/supply-chain/suppliers/<int:supplier_id>/performance</span>
+                <p><strong>Function:</strong> get_supplier_performance</p>
+                <p>Endpoint for get_supplier_performance</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/supply-chain/optimize-inventory</span>
+                <p><strong>Function:</strong> optimize_inventory</p>
+                <p>Endpoint for optimize_inventory</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/supply-chain/predict-delivery</span>
+                <p><strong>Function:</strong> predict_delivery</p>
+                <p>Endpoint for predict_delivery</p>
+            </div>
+
+        <div class="category" id="logistics">
+            <h2>📊 Logistics</h2>
+            <p><strong>Base Path:</strong> <code>/api/logistics</code></p>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/logistics/shipments</span>
+                <p><strong>Function:</strong> create_shipment</p>
+                <p>Endpoint for create_shipment</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/logistics/shipments/<int:shipment_id>/assign</span>
+                <p><strong>Function:</strong> assign_shipment</p>
+                <p>Endpoint for assign_shipment</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/logistics/shipments/<int:shipment_id>/start</span>
+                <p><strong>Function:</strong> start_shipment</p>
+                <p>Endpoint for start_shipment</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/logistics/shipments/<int:shipment_id>/complete</span>
+                <p><strong>Function:</strong> complete_delivery</p>
+                <p>Endpoint for complete_delivery</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/logistics/track/<shipment_number></span>
+                <p><strong>Function:</strong> track_shipment</p>
+                <p>Endpoint for track_shipment</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/logistics/fleet/status</span>
+                <p><strong>Function:</strong> get_fleet_status</p>
+                <p>Endpoint for get_fleet_status</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/logistics/vehicles</span>
+                <p><strong>Function:</strong> get_vehicles</p>
+                <p>Endpoint for get_vehicles</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/logistics/drivers</span>
+                <p><strong>Function:</strong> get_drivers</p>
+                <p>Endpoint for get_drivers</p>
+            </div>
+
+        <div class="category" id="notifications">
+            <h2>📊 Notifications</h2>
+            <p><strong>Base Path:</strong> <code>/api</code></p>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/notifications</span>
+                <p><strong>Function:</strong> get_notifications</p>
+                <p>Get all notifications</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/notifications/<int:notification_id>/read</span>
+                <p><strong>Function:</strong> mark_notification_read</p>
+                <p>Mark a notification as read</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/notifications/mark-all-read</span>
+                <p><strong>Function:</strong> mark_all_notifications_read</p>
+                <p>Mark all notifications as read</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">DELETE</span> <span class="path">/api/notifications/<int:notification_id></span>
+                <p><strong>Function:</strong> delete_notification</p>
+                <p>Delete a notification</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/notifications</span>
+                <p><strong>Function:</strong> create_notification</p>
+                <p>Create a new notification</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/notifications/categories</span>
+                <p><strong>Function:</strong> get_notification_categories</p>
+                <p>Get notification categories</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/notifications/stats</span>
+                <p><strong>Function:</strong> get_notification_stats</p>
+                <p>Get notification statistics</p>
+            </div>
+
+        <div class="category" id="ai-services">
+            <h2>📊 AI Services</h2>
+            <p><strong>Base Path:</strong> <code>/api/ai</code></p>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/ai/voice/recognize</span>
+                <p><strong>Function:</strong> recognize_voice</p>
+                <p>Process voice command</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/ai/quality/assess</span>
+                <p><strong>Function:</strong> assess_quality</p>
+                <p>Analyze rice quality from image</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/ai/insights/generate</span>
+                <p><strong>Function:</strong> generate_insights</p>
+                <p>Generate AI insights from data</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/ai/demand/predict</span>
+                <p><strong>Function:</strong> predict_demand</p>
+                <p>Predict demand using AI</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/ai/production/optimize</span>
+                <p><strong>Function:</strong> optimize_production</p>
+                <p>Optimize production schedule</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/ai/anomalies/detect</span>
+                <p><strong>Function:</strong> detect_anomalies</p>
+                <p>Detect anomalies in data</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/ai/capabilities</span>
+                <p><strong>Function:</strong> get_ai_capabilities</p>
+                <p>Get AI service capabilities</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/ai/models/status</span>
+                <p><strong>Function:</strong> get_model_status</p>
+                <p>Get AI model status</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/ai/train/model</span>
+                <p><strong>Function:</strong> train_model</p>
+                <p>Train or retrain AI models</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/ai/feedback</span>
+                <p><strong>Function:</strong> submit_feedback</p>
+                <p>Submit feedback for AI predictions</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/ai/health</span>
+                <p><strong>Function:</strong> ai_health_check</p>
+                <p>Health check for AI services</p>
+            </div>
+
+        <div class="category" id="biometric">
+            <h2>📊 Biometric</h2>
+            <p><strong>Base Path:</strong> <code>/api/biometric</code></p>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/biometric/register/face</span>
+                <p><strong>Function:</strong> register_face</p>
+                <p>Register user's face for biometric authentication</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/biometric/verify/face</span>
+                <p><strong>Function:</strong> verify_face</p>
+                <p>Verify user's face for authentication</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/biometric/register/fingerprint</span>
+                <p><strong>Function:</strong> register_fingerprint</p>
+                <p>Register user's fingerprint</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/biometric/verify/fingerprint</span>
+                <p><strong>Function:</strong> verify_fingerprint</p>
+                <p>Verify user's fingerprint</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/biometric/login/voice</span>
+                <p><strong>Function:</strong> voice_login</p>
+                <p>Voice-based login with speech recognition and voice verification</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/biometric/capture/voice</span>
+                <p><strong>Function:</strong> capture_voice</p>
+                <p>Capture voice sample for registration</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/biometric/status/<int:user_id></span>
+                <p><strong>Function:</strong> get_biometric_status</p>
+                <p>Get user's biometric registration status</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/biometric/register/voice</span>
+                <p><strong>Function:</strong> register_voice</p>
+                <p>Register user's voice biometric</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/biometric/verify/voice</span>
+                <p><strong>Function:</strong> verify_voice</p>
+                <p>Verify user's voice biometric</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/biometric/ai/process</span>
+                <p><strong>Function:</strong> process_ai_command</p>
+                <p>Process AI voice commands</p>
+            </div>
+
+        <div class="category" id="quality-vision">
+            <h2>📊 Quality Vision</h2>
+            <p><strong>Base Path:</strong> <code>/api/quality-vision</code></p>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/quality-vision/analyze/image</span>
+                <p><strong>Function:</strong> analyze_quality_image</p>
+                <p>Analyze rice quality from image using AI computer vision</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/quality-vision/dashboard</span>
+                <p><strong>Function:</strong> get_vision_dashboard</p>
+                <p>Get AI vision quality dashboard data</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/quality-vision/recommendations/<test_id></span>
+                <p><strong>Function:</strong> get_ai_recommendations</p>
+                <p>Get AI-generated quality improvement recommendations</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/quality-vision/standards/<variety></span>
+                <p><strong>Function:</strong> get_variety_standards</p>
+                <p>Get quality standards for rice variety</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/quality-vision/batch/<batch_id>/analyze</span>
+                <p><strong>Function:</strong> analyze_batch_samples</p>
+                <p>Analyze multiple samples from a production batch</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/quality-vision/calibrate</span>
+                <p><strong>Function:</strong> calibrate_vision_system</p>
+                <p>Calibrate the AI vision system with reference samples</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/quality-vision/export/analysis/<test_id></span>
+                <p><strong>Function:</strong> export_analysis_report</p>
+                <p>Export detailed AI analysis report</p>
+            </div>
+
+        <div class="category" id="financial-intelligence">
+            <h2>📊 Financial Intelligence</h2>
+            <p><strong>Base Path:</strong> <code>/api/financial-intelligence</code></p>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/financial-intelligence/cash-flow/analyze</span>
+                <p><strong>Function:</strong> analyze_cash_flow</p>
+                <p>Comprehensive cash flow analysis with AI predictions</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/financial-intelligence/payment/schedule</span>
+                <p><strong>Function:</strong> smart_payment_scheduling</p>
+                <p>AI-powered optimal payment scheduling</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/financial-intelligence/forecast</span>
+                <p><strong>Function:</strong> financial_forecasting</p>
+                <p>Advanced financial forecasting using AI</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/financial-intelligence/payment/optimize</span>
+                <p><strong>Function:</strong> payment_optimization</p>
+                <p>Optimize payment processes using AI</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/financial-intelligence/health-score</span>
+                <p><strong>Function:</strong> financial_health_score</p>
+                <p>Calculate comprehensive financial health score</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/financial-intelligence/invoice/process</span>
+                <p><strong>Function:</strong> automated_invoice_processing</p>
+                <p>AI-powered automated invoice processing</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/financial-intelligence/dashboard</span>
+                <p><strong>Function:</strong> financial_dashboard</p>
+                <p>Get comprehensive financial intelligence dashboard</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/financial-intelligence/insights</span>
+                <p><strong>Function:</strong> financial_insights</p>
+                <p>Get AI-generated financial insights and recommendations</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/financial-intelligence/reports/cash-flow</span>
+                <p><strong>Function:</strong> cash_flow_report</p>
+                <p>Generate detailed cash flow report</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/financial-intelligence/reports/financial-health</span>
+                <p><strong>Function:</strong> financial_health_report</p>
+                <p>Generate detailed financial health report</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/financial-intelligence/alerts</span>
+                <p><strong>Function:</strong> financial_alerts</p>
+                <p>Get financial alerts and warnings</p>
+            </div>
+
+        <div class="category" id="gst-compliance">
+            <h2>📊 GST Compliance</h2>
+            <p><strong>Base Path:</strong> <code>/api/compliance</code></p>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/compliance/gst/calculate</span>
+                <p><strong>Function:</strong> calculate_gst</p>
+                <p>Calculate GST for a transaction</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/compliance/invoice/generate</span>
+                <p><strong>Function:</strong> generate_gst_invoice</p>
+                <p>Generate GST-compliant invoice</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/compliance/gstr1/<int:month>/<int:year></span>
+                <p><strong>Function:</strong> generate_gstr1_report</p>
+                <p>Generate GSTR-1 report</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/compliance/gstr3b/<int:month>/<int:year></span>
+                <p><strong>Function:</strong> generate_gstr3b_report</p>
+                <p>Generate GSTR-3B report</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/compliance/compliance/status</span>
+                <p><strong>Function:</strong> check_compliance_status</p>
+                <p>Check overall compliance status</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/compliance/gstin/validate</span>
+                <p><strong>Function:</strong> validate_gstin</p>
+                <p>Validate GSTIN format and checksum</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/compliance/pan/validate</span>
+                <p><strong>Function:</strong> validate_pan</p>
+                <p>Validate PAN format</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/compliance/reports/generate</span>
+                <p><strong>Function:</strong> generate_compliance_report</p>
+                <p>Generate comprehensive compliance report</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/compliance/dashboard</span>
+                <p><strong>Function:</strong> compliance_dashboard</p>
+                <p>Get compliance dashboard data</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/compliance/calendar/<int:year></span>
+                <p><strong>Function:</strong> compliance_calendar</p>
+                <p>Get compliance calendar with due dates</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/compliance/tds/calculate</span>
+                <p><strong>Function:</strong> calculate_tds</p>
+                <p>Calculate TDS for payment</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/compliance/tds/certificate</span>
+                <p><strong>Function:</strong> generate_tds_certificate</p>
+                <p>Generate TDS certificate</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/compliance/export/gst</span>
+                <p><strong>Function:</strong> export_gst_data</p>
+                <p>Export GST data in various formats</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/compliance/reconcile/gst</span>
+                <p><strong>Function:</strong> reconcile_gst_data</p>
+                <p>Reconcile GST data between books and returns</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/compliance/tax/summary</span>
+                <p><strong>Function:</strong> tax_summary</p>
+                <p>Get comprehensive tax summary</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/compliance/reminders</span>
+                <p><strong>Function:</strong> compliance_reminders</p>
+                <p>Get compliance reminders</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/compliance/check/automated</span>
+                <p><strong>Function:</strong> automated_compliance_check</p>
+                <p>Run automated compliance checks</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/compliance/invoice/<invoice_id>/gst-details</span>
+                <p><strong>Function:</strong> get_invoice_gst_details</p>
+                <p>Get GST details for a specific invoice</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/compliance/hsn/codes</span>
+                <p><strong>Function:</strong> get_hsn_codes</p>
+                <p>Get HSN codes for rice products</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/compliance/gst/rates</span>
+                <p><strong>Function:</strong> get_gst_rates</p>
+                <p>Get current GST rates for different products</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/compliance/compliance/requirements</span>
+                <p><strong>Function:</strong> get_compliance_requirements</p>
+                <p>Get compliance requirements for rice mill</p>
+            </div>
+
+        <div class="category" id="analytics-reporting">
+            <h2>📊 Analytics Reporting</h2>
+            <p><strong>Base Path:</strong> <code>/api/analytics</code></p>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/analytics/reports/generate</span>
+                <p><strong>Function:</strong> generate_natural_language_report</p>
+                <p>Generate natural language report with AI insights</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/analytics/predictive/analyze</span>
+                <p><strong>Function:</strong> predictive_analytics</p>
+                <p>Advanced predictive analytics with machine learning</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/analytics/insights/generate</span>
+                <p><strong>Function:</strong> generate_intelligent_insights</p>
+                <p>Generate intelligent insights from multiple data sources</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/analytics/dashboard/custom</span>
+                <p><strong>Function:</strong> generate_custom_dashboard</p>
+                <p>Generate custom dashboard analytics</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/analytics/compare/analyze</span>
+                <p><strong>Function:</strong> comparative_analysis</p>
+                <p>Perform comparative analysis</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/analytics/anomaly/detect</span>
+                <p><strong>Function:</strong> detect_anomalies</p>
+                <p>Detect anomalies in data streams</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/analytics/benchmark/analyze</span>
+                <p><strong>Function:</strong> performance_benchmarking</p>
+                <p>Benchmark performance against standards</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/analytics/realtime/<metric_type></span>
+                <p><strong>Function:</strong> real_time_analytics</p>
+                <p>Generate real-time analytics</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/analytics/dashboard/overview</span>
+                <p><strong>Function:</strong> analytics_dashboard_overview</p>
+                <p>Get comprehensive analytics dashboard overview</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/analytics/reports/templates</span>
+                <p><strong>Function:</strong> get_report_templates</p>
+                <p>Get available report templates</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/analytics/export/report</span>
+                <p><strong>Function:</strong> export_report</p>
+                <p>Export report in various formats</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/analytics/kpi/calculate</span>
+                <p><strong>Function:</strong> calculate_kpis</p>
+                <p>Calculate Key Performance Indicators</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/api/analytics/trends/analyze</span>
+                <p><strong>Function:</strong> analyze_trends</p>
+                <p>Analyze trends in various metrics</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/api/analytics/alerts/smart</span>
+                <p><strong>Function:</strong> get_smart_alerts</p>
+                <p>Get AI-generated smart alerts</p>
+            </div>
+
+        </div>
+        
+        <div class="category">
+            <h2>📞 Support</h2>
+            <p>For API support and questions:</p>
+            <ul>
+                <li>Email: admin@ricemill.com</li>
+                <li>Documentation: <a href="API_DOCUMENTATION.md">Markdown Version</a></li>
+                <li>JSON Schema: <a href="api_documentation.json">JSON Version</a></li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

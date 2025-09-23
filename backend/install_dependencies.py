@@ -37,22 +37,22 @@ def check_python_compatibility():
 def install_package(package_name, fallback=None):
     """Install a package with fallback option"""
     try:
-        print(f"📦 Installing {package_name}...")
+        print(f"Installing {package_name}...")
         subprocess.check_call([sys.executable, "-m", "pip", "install", package_name])
-        print(f"✅ Successfully installed {package_name}")
+        print(f"Successfully installed {package_name}")
         return True
     except subprocess.CalledProcessError:
         if fallback:
-            print(f"⚠️  Failed to install {package_name}, trying fallback: {fallback}")
+            print(f"Failed to install {package_name}, trying fallback: {fallback}")
             try:
                 subprocess.check_call([sys.executable, "-m", "pip", "install", fallback])
-                print(f"✅ Successfully installed {fallback}")
+                print(f"Successfully installed {fallback}")
                 return True
             except subprocess.CalledProcessError:
-                print(f"❌ Failed to install both {package_name} and {fallback}")
+                print(f"Failed to install both {package_name} and {fallback}")
                 return False
         else:
-            print(f"❌ Failed to install {package_name}")
+            print(f"Failed to install {package_name}")
             return False
 
 def install_requirements_file(requirements_file):
@@ -194,7 +194,7 @@ AUTHENTICATION_ENABLED = True
 
 def main():
     """Main installation function"""
-    print("🚀 Rice Mill Management System - Dependency Installation")
+    print("Rice Mill Management System - Dependency Installation")
     print("=" * 60)
     
     # Check Python compatibility
@@ -203,12 +203,12 @@ def main():
         sys.exit(1)
     
     # Upgrade pip first
-    print("📦 Upgrading pip...")
+    print("Upgrading pip...")
     try:
         subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "pip"])
-        print("✅ pip upgraded successfully")
+        print("pip upgraded successfully")
     except subprocess.CalledProcessError:
-        print("⚠️  Failed to upgrade pip, continuing anyway...")
+        print("Failed to upgrade pip, continuing anyway...")
     
     # Choose requirements file based on Python version
     if python_check == "py313":
@@ -249,14 +249,14 @@ def main():
     # Verify installation
     if verify_installation():
         print("\n🎉 Installation completed successfully!")
-        print("✅ Rice Mill Management System is ready to run!")
+        print("Rice Mill Management System is ready to run!")
     else:
-        print("\n⚠️  Installation completed with some issues.")
-        print("📝 Creating fallback configuration...")
+        print("\nInstallation completed with some issues.")
+        print("Creating fallback configuration...")
         create_fallback_config()
-        print("✅ System will run with basic functionality.")
+        print("System will run with basic functionality.")
     
-    print("\n📚 Next steps:")
+    print("\nNext steps:")
     print("1. Set up your environment variables in .env file")
     print("2. Initialize the database: python -c 'from app import create_app; from extensions import db; app = create_app(); app.app_context().push(); db.create_all()'")
     print("3. Run the application: python app.py")

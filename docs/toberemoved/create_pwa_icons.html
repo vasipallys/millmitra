@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWA Icon Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .icon-container { margin: 20px 0; }
+        canvas { border: 1px solid #ddd; margin: 10px; }
+        button { padding: 10px 20px; margin: 5px; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #1565c0; }
+    </style>
+</head>
+<body>
+    <h1>🎨 PWA Icon Generator for Smart Rice Mill ERP</h1>
+    <p>This tool generates proper PWA icons for the Rice Mill application.</p>
+    
+    <div class="icon-container">
+        <h3>192x192 Icon</h3>
+        <canvas id="icon192" width="192" height="192"></canvas>
+        <button onclick="downloadIcon('icon192', 'logo192.png')">Download 192x192</button>
+    </div>
+    
+    <div class="icon-container">
+        <h3>512x512 Icon</h3>
+        <canvas id="icon512" width="512" height="512"></canvas>
+        <button onclick="downloadIcon('icon512', 'logo512.png')">Download 512x512</button>
+    </div>
+    
+    <div class="icon-container">
+        <h3>Favicon (64x64)</h3>
+        <canvas id="favicon" width="64" height="64"></canvas>
+        <button onclick="downloadIcon('favicon', 'favicon.png')">Download Favicon</button>
+    </div>
+    
+    <script>
+        function createIcon(canvasId, size) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, size, size);
+            
+            // Background gradient
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#1976d2');
+            gradient.addColorStop(1, '#42a5f5');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+            
+            // Rice grain icon (simplified)
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const scale = size / 192; // Scale based on 192px base
+            
+            // Draw rice grains
+            ctx.fillStyle = '#ffffff';
+            
+            // Main rice grain (oval)
+            ctx.beginPath();
+            ctx.ellipse(centerX, centerY, 30 * scale, 60 * scale, 0, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Side rice grains
+            ctx.beginPath();
+            ctx.ellipse(centerX - 40 * scale, centerY - 20 * scale, 20 * scale, 40 * scale, -0.3, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.ellipse(centerX + 40 * scale, centerY - 20 * scale, 20 * scale, 40 * scale, 0.3, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Add text for larger icons
+            if (size >= 192) {
+                ctx.fillStyle = '#ffffff';
+                ctx.font = `bold ${16 * scale}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.fillText('SMART', centerX, centerY + 80 * scale);
+                ctx.fillText('MILL', centerX, centerY + 100 * scale);
+            }
+            
+            // Add border
+            ctx.strokeStyle = '#1565c0';
+            ctx.lineWidth = 2 * scale;
+            ctx.strokeRect(0, 0, size, size);
+        }
+        
+        function downloadIcon(canvasId, filename) {
+            const canvas = document.getElementById(canvasId);
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+        
+        // Generate all icons on page load
+        window.onload = function() {
+            createIcon('icon192', 192);
+            createIcon('icon512', 512);
+            createIcon('favicon', 64);
+            
+            console.log('PWA icons generated successfully!');
+            console.log('Click the download buttons to save the icons to your computer.');
+            console.log('Then copy them to the frontend/public/ directory.');
+        };
+        
+        // Auto-generate and download icons
+        function generateAllIcons() {
+            setTimeout(() => downloadIcon('favicon', 'favicon.png'), 100);
+            setTimeout(() => downloadIcon('icon192', 'logo192.png'), 200);
+            setTimeout(() => downloadIcon('icon512', 'logo512.png'), 300);
+        }
+    </script>
+    
+    <div style="margin-top: 30px; padding: 20px; background: #f0f8ff; border-radius: 8px;">
+        <h3>📋 Instructions:</h3>
+        <ol>
+            <li>Click the download buttons above to save each icon</li>
+            <li>Copy the downloaded files to <code>frontend/public/</code> directory</li>
+            <li>Replace the existing placeholder files</li>
+            <li>Restart the frontend server</li>
+        </ol>
+        
+        <button onclick="generateAllIcons()" style="background: #4caf50;">
+            📥 Download All Icons
+        </button>
+    </div>
+    
+    <div style="margin-top: 20px; padding: 15px; background: #fff3e0; border-radius: 8px;">
+        <h4>🔧 Alternative: Use Existing Icons</h4>
+        <p>If you have existing logo files, you can:</p>
+        <ul>
+            <li>Resize them to 192x192 and 512x512 pixels</li>
+            <li>Save as PNG format</li>
+            <li>Name them logo192.png and logo512.png</li>
+            <li>Place in frontend/public/ directory</li>
+        </ul>
+    </div>
+</body>
+</html>

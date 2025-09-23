@@ -3,7 +3,7 @@ from typing import Dict, List
 from sqlalchemy import func, and_, or_
 from models.supply_chain import Supplier, PurchaseOrder, PurchaseOrderItem, SupplierContract, ProcurementRequest
 from models.user import User
-from database import db
+from extensions import db
 
 class SupplyChainService:
     def __init__(self):

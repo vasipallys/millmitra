@@ -1,6 +1,7 @@
 from datetime import datetime
-from sqlalchemy import JSON
-from backend.database import db
+from sqlalchemy import JSON, String, Integer, Float, Date, DateTime, Boolean, Text, ForeignKey
+from sqlalchemy.orm import relationship
+from extensions import db
 
 class Equipment(db.Model):
     __tablename__ = 'equipment'
@@ -200,7 +201,7 @@ class MaintenanceTask(db.Model):
     
     # Relationships
     equipment = db.relationship('Equipment', backref='maintenance_tasks')
-    schedule = db.relationship('MaintenanceSchedule', backref='tasks')
+    schedule = db.relationship('MaintenanceSchedule', backref='maintenance_task_records')
     assignee = db.relationship('User', foreign_keys=[assigned_to], backref='assigned_maintenance_tasks')
     
     def to_dict(self):

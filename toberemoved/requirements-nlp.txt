@@ -1,0 +1,16 @@
+# Enhanced NLP Requirements for Rice Mill Management System
+
+# Core NLP libraries
+spacy>=3.4.0
+en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.4.0/en_core_web_sm-3.4.0-py3-none-any.whl
+
+# Transformers for advanced NLP
+transformers>=4.21.0
+torch>=1.13.0
+tokenizers>=0.12.0
+
+# Additional NLP libraries
+numpy>=1.21.0
+
+# Testing
+pytest>=6.2.0

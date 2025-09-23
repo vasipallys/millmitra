@@ -1,0 +1,194 @@
+# ==================================================
+# Rice Mill Management System - Requirements
+# Versionless, generated on 2025-07-30
+# ==================================================
+
+# --------------------------
+# Core Flask Dependencies
+# --------------------------
+Flask
+Flask-SQLAlchemy
+Flask-JWT-Extended
+Flask-CORS
+Flask-Migrate
+Flask-RESTful
+Flask-Mail
+Flask-Caching
+Flask-Limiter
+Flask-SocketIO
+Flask-Babel
+
+# --------------------------
+# FastAPI & ASGI Support
+# --------------------------
+fastapi
+uvicorn
+aiofiles
+
+# --------------------------
+# Database Drivers
+# --------------------------
+SQLAlchemy
+PyMySQL
+psycopg
+psycopg2-binary
+
+# --------------------------
+# AI, ML, NLP & Embeddings
+# --------------------------
+numpy
+pandas
+scikit-learn
+torch
+transformers
+spacy
+textblob
+nltk
+tokenizers
+en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.4.0/en_core_web_sm-3.4.0-py3-none-any.whl
+
+# --------------------------
+# AI Integration Libraries
+# --------------------------
+openai
+google-generativeai
+google-cloud-aiplatform
+google-cloud-storage
+langchain
+langchain-community
+langchain-google-genai
+langchain-openai
+
+# --------------------------
+# Vector Database
+# --------------------------
+faiss-cpu
+chromadb
+
+# --------------------------
+# Voice & Audio Processing
+# --------------------------
+SpeechRecognition
+pyaudio
+pydub
+soundfile
+
+# --------------------------
+# Vision & Image Processing
+# --------------------------
+opencv-python
+Pillow
+scikit-image
+
+# --------------------------
+# Forecasting & Time Series
+# --------------------------
+statsmodels
+prophet
+
+# --------------------------
+# Data Visualization
+# --------------------------
+matplotlib
+seaborn
+plotly
+
+# --------------------------
+# Financial Calculations
+# --------------------------
+numpy-financial
+
+# --------------------------
+# API Utilities & Async
+# --------------------------
+requests
+httpx
+python-multipart
+python-dotenv
+Werkzeug
+click
+itsdangerous
+MarkupSafe
+
+# --------------------------
+# Background & Task Queue
+# --------------------------
+celery
+dramatiq
+redis
+APScheduler
+
+# --------------------------
+# PDF, Excel & File Handling
+# --------------------------
+reportlab
+weasyprint
+openpyxl
+xlsxwriter
+tablib
+python-magic
+
+# --------------------------
+# Serialization & Validation
+# --------------------------
+marshmallow
+pydantic
+jsonschema
+
+# --------------------------
+# Security & Auth
+# --------------------------
+bcrypt
+cryptography
+PyJWT
+passlib
+
+# --------------------------
+# Time & Localization
+# --------------------------
+python-dateutil
+arrow
+pytz
+Babel
+
+# --------------------------
+# Testing & Quality Tools
+# --------------------------
+pytest
+pytest-flask
+pytest-cov
+pytest-asyncio
+black
+flake8
+isort
+mypy
+
+# --------------------------
+# Monitoring & Logging
+# --------------------------
+sentry-sdk
+structlog
+loguru
+prometheus-client
+psutil
+
+# --------------------------
+# Deployment Tools
+# --------------------------
+gunicorn
+gevent
+eventlet
+supervisor
+docker
+
+# --------------------------
+# Geographic Tools
+# --------------------------
+geopy
+folium
+
+# --------------------------
+# Config Management
+# --------------------------
+dynaconf
+pyyaml

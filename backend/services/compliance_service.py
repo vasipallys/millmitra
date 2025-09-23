@@ -5,7 +5,7 @@ from models.compliance import (
     RegulatoryDocument, ComplianceAlert, AuditTrail
 )
 from models.user import User
-from database import db
+from extensions import db
 
 class ComplianceService:
     def __init__(self):

@@ -166,15 +166,9 @@ class FarmerEditRequest(db.Model):
         auto_approved = False
         
         # Minor fields that can be auto-approved
-        minor_fields = ['email', 'address', 'farming_experience', 'farming_type', 'irrigation_type',
-                       'is_verified', 'verification_date', 'status']
-
-        # Administrative fields that can be auto-approved (status updates)
-        admin_fields = ['is_verified', 'verification_date', 'status', 'is_active']
-
-        if (all(field in minor_fields for field in changed_fields) and len(changed_fields) <= 2) or \
-           all(field in admin_fields for field in changed_fields):
-            # Can be auto-approved for minor changes or administrative updates
+        minor_fields = ['email', 'address', 'farming_experience', 'farming_type', 'irrigation_type']
+        if all(field in minor_fields for field in changed_fields) and len(changed_fields) <= 2:
+            # Can be auto-approved for minor changes
             requires_approval = False
             auto_approved = True
         

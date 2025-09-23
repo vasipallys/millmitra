@@ -78,6 +78,7 @@ const ProfilePanel = ({ open, onClose, user }) => {
     () => authService.getUserProfile(),
     {
       enabled: open,
+      retry: false,
       onSuccess: (data) => {
         if (data.user) {
           setProfileData(prev => ({ ...prev, ...data.user }));

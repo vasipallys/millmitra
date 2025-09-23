@@ -27,6 +27,11 @@ export const farmerService = {
     return response.data;
   },
 
+  verifyFarmer: async (farmerId, verificationData) => {
+    const response = await api.put(`/farmer/${farmerId}/verify`, verificationData);
+    return response.data;
+  },
+
   // Edit request management
   getEditRequests: async (filters = {}) => {
     const params = new URLSearchParams();

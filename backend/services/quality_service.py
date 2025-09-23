@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 from sqlalchemy import and_, or_, func
-from backend.models.quality import QualityStandard, QualityTestTemplate, QualityInspection, QualityAlert, QualityTrend
-from backend.models.production import ProductionBatch
-from backend.database import db
+from models.quality import QualityStandard, QualityTestTemplate, QualityInspection, QualityAlert, QualityTrend
+from models.production import ProductionBatch
+from extensions import db
 import uuid
 
 class QualityService:

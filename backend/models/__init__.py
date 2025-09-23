@@ -45,7 +45,7 @@ except ImportError:
     pass
 
 try:
-    from .farmer import Farmer, FarmerContract
+    from .farmer import Farmer, FarmerContract, PaddyProcurement
 except ImportError:
     pass
 
@@ -74,11 +74,41 @@ try:
 except ImportError:
     pass
 
+try:
+    from .maintenance import Equipment, MaintenanceSchedule, MaintenanceTask, EquipmentReading, SparePart
+except ImportError:
+    pass
+
+try:
+    from .logistics import Vehicle, Driver, Route, Shipment, ShipmentItem, ShipmentTracking, VehicleMaintenance
+except ImportError:
+    pass
+
+try:
+    from .quality import QualityStandard, QualityTestTemplate, QualityInspection, QualityAlert, QualityTrend
+except ImportError:
+    pass
+
+try:
+    from .compliance import ComplianceFramework, ComplianceAssessment, ComplianceActionItem, RegulatoryDocument, ComplianceAlert, AuditTrail
+except ImportError:
+    pass
+
+try:
+    from .analytics import Dashboard, DashboardWidget, Report, ReportExecution, KPI, KPIValue, DataAlert, AlertTrigger
+except ImportError:
+    pass
+
 # Export all models
 __all__ = [
     'User', 'AuthLog', 'AIInteraction', 'UserSession', 'UserPreference',
-    'Farmer', 'FarmerContract', 'PaddyStock', 'ProductStock',
+    'Farmer', 'FarmerContract', 'PaddyProcurement', 'PaddyStock', 'ProductStock',
     'ProductionBatch', 'QualityTest', 'Customer', 'SalesOrder',
     'Payment', 'Expense', 'Budget', 'Transaction', 'Invoice',
-    'FinancialAlert', 'CashFlowForecast', 'FinancialHealthScore', 'PaymentSchedule'
+    'FinancialAlert', 'CashFlowForecast', 'FinancialHealthScore', 'PaymentSchedule',
+    'Equipment', 'MaintenanceSchedule', 'MaintenanceTask', 'EquipmentReading', 'SparePart',
+    'Vehicle', 'Driver', 'Route', 'Shipment', 'ShipmentItem', 'ShipmentTracking', 'VehicleMaintenance',
+    'QualityStandard', 'QualityTestTemplate', 'QualityInspection', 'QualityAlert', 'QualityTrend',
+    'ComplianceFramework', 'ComplianceAssessment', 'ComplianceActionItem', 'RegulatoryDocument', 'ComplianceAlert', 'AuditTrail',
+    'Dashboard', 'DashboardWidget', 'Report', 'ReportExecution', 'KPI', 'KPIValue', 'DataAlert', 'AlertTrigger'
 ]

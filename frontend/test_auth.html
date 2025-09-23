@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auth Test</title>
+</head>
+<body>
+    <h1>Authentication Test</h1>
+    <div id="result"></div>
+    
+    <script>
+        // Simple test to check if token exists
+        const token = localStorage.getItem('token');
+        const result = document.getElementById('result');
+        
+        if (token) {
+            result.innerHTML = `
+                <p style="color: green;">✓ Token found in localStorage</p>
+                <p>Token: ${token.substring(0, 20)}...</p>
+                <p>Authentication should work</p>
+            `;
+        } else {
+            result.innerHTML = `
+                <p style="color: red;">✗ No token found in localStorage</p>
+                <p>User needs to login</p>
+            `;
+        }
+        
+        // Check if we can make an API call
+        fetch('http://localhost:5000/api/auth/me', {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                result.innerHTML += '<p style="color: green;">✓ API authentication working</p>';
+                return response.json();
+            } else {
+                result.innerHTML += '<p style="color: red;">✗ API authentication failed</p>';
+                throw new Error('Auth failed');
+            }
+        })
+        .then(data => {
+            result.innerHTML += `<p>User: ${data.user?.username || 'Unknown'}</p>`;
+        })
+        .catch(error => {
+            result.innerHTML += `<p style="color: red;">Error: ${error.message}</p>`;
+        });
+    </script>
+</body>
+</html>

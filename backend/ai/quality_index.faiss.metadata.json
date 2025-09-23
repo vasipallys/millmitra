@@ -1,0 +1,1906 @@
+{
+  "quality_data": {
+    "0": {
+      "batch_id": "BATCH_0000",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 11.496741989792227,
+        "broken_percentage": 2.133499195174511,
+        "foreign_matter": 1.7905883893841554,
+        "chalky_kernels": 3.757435499059658,
+        "grain_length": 6.648327936753083,
+        "grain_width": 2.9729835956703763,
+        "color_uniformity": 87.99009492803427,
+        "protein_content": 9.053632950323985,
+        "starch_content": 86.729312858644,
+        "amylose_content": 17.140956508535023,
+        "quality_score": 94.1481240322106
+      },
+      "grade": "B",
+      "source": "production_line_1"
+    },
+    "1": {
+      "batch_id": "BATCH_0001",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 13.515364285574613,
+        "broken_percentage": 6.8948219929915195,
+        "foreign_matter": 0.11970035210343721,
+        "chalky_kernels": 0.07324729147034637,
+        "grain_length": 6.322261818094728,
+        "grain_width": 2.1040858749039213,
+        "color_uniformity": 90.14812292464646,
+        "protein_content": 6.1055480061008325,
+        "starch_content": 86.86559555595755,
+        "amylose_content": 24.5494550837889,
+        "quality_score": 74.6559288708722
+      },
+      "grade": "A",
+      "source": "production_line_1"
+    },
+    "2": {
+      "batch_id": "BATCH_0002",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 11.28068506625683,
+        "broken_percentage": 5.969369979671173,
+        "foreign_matter": 1.2821885311876258,
+        "chalky_kernels": 2.704539739409882,
+        "grain_length": 5.134174297080319,
+        "grain_width": 2.09621293581084,
+        "color_uniformity": 91.30274932044172,
+        "protein_content": 9.728719996451357,
+        "starch_content": 88.97004487711932,
+        "amylose_content": 23.02916008645981,
+        "quality_score": 78.13755429742616
+      },
+      "grade": "A+",
+      "source": "production_line_1"
+    },
+    "3": {
+      "batch_id": "BATCH_0003",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 13.359730397171782,
+        "broken_percentage": 2.809885732650751,
+        "foreign_matter": 0.09664435413765005,
+        "chalky_kernels": 2.4614533850118168,
+        "grain_length": 5.734699100855351,
+        "grain_width": 2.500241938024512,
+        "color_uniformity": 85.59436919223748,
+        "protein_content": 7.269652089330151,
+        "starch_content": 85.55398446510624,
+        "amylose_content": 15.12878502197473,
+        "quality_score": 82.37204156989053
+      },
+      "grade": "A+",
+      "source": "production_line_1"
+    },
+    "4": {
+      "batch_id": "BATCH_0004",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 13.987679267933979,
+        "broken_percentage": 5.444863152126058,
+        "foreign_matter": 0.5983533055138972,
+        "chalky_kernels": 0.5234504183650213,
+        "grain_length": 5.512979480606727,
+        "grain_width": 2.2507877659141355,
+        "color_uniformity": 83.24260775617549,
+        "protein_content": 8.915748950152622,
+        "starch_content": 92.71873865120315,
+        "amylose_content": 23.54177489218845,
+        "quality_score": 94.97206128340461
+      },
+      "grade": "D",
+      "source": "production_line_1"
+    },
+    "5": {
+      "batch_id": "BATCH_0005",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 13.590421024933704,
+        "broken_percentage": 7.041780577985052,
+        "foreign_matter": 0.41500206925139005,
+        "chalky_kernels": 0.02213726584747,
+        "grain_length": 6.942160069412401,
+        "grain_width": 2.3496146395602295,
+        "color_uniformity": 84.6890950067584,
+        "protein_content": 7.1345688520716894,
+        "starch_content": 85.15936692786373,
+        "amylose_content": 21.25456404156232,
+        "quality_score": 91.39387526924249
+      },
+      "grade": "A",
+      "source": "production_line_1"
+    },
+    "6": {
+      "batch_id": "BATCH_0006",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 12.74490132802283,
+        "broken_percentage": 4.190707937209303,
+        "foreign_matter": 0.6521850507322773,
+        "chalky_kernels": 4.476937149069339,
+        "grain_length": 5.279767370684894,
+        "grain_width": 2.018415323348507,
+        "color_uniformity": 85.24085506503233,
+        "protein_content": 7.026442174873579,
+        "starch_content": 94.81052356266713,
+        "amylose_content": 18.463766425708013,
+        "quality_score": 90.71730939666998
+      },
+      "grade": "D",
+      "source": "production_line_1"
+    },
+    "7": {
+      "batch_id": "BATCH_0007",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 10.299869262715303,
+        "broken_percentage": 3.4926622353621646,
+        "foreign_matter": 0.7662910730145338,
+        "chalky_kernels": 4.809034352132122,
+        "grain_length": 6.170286465757622,
+        "grain_width": 2.567682414563669,
+        "color_uniformity": 99.67476539440041,
+        "protein_content": 6.415584797397891,
+        "starch_content": 85.16040410757286,
+        "amylose_content": 16.37443187512541,
+        "quality_score": 74.52893478264963
+      },
+      "grade": "D",
+      "source": "production_line_1"
+    },
+    "8": {
+      "batch_id": "BATCH_0008",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 12.163572855679401,
+        "broken_percentage": 4.887287462528285,
+        "foreign_matter": 1.1495178975830975,
+        "chalky_kernels": 1.2681170396413783,
+        "grain_length": 6.7413488328178754,
+        "grain_width": 2.789889944847395,
+        "color_uniformity": 88.50029583502688,
+        "protein_content": 8.018433597445714,
+        "starch_content": 90.46174044264738,
+        "amylose_content": 18.322637993605106,
+        "quality_score": 74.1198048798599
+      },
+      "grade": "D",
+      "source": "production_line_1"
+    },
+    "9": {
+      "batch_id": "BATCH_0009",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 10.527676723217224,
+        "broken_percentage": 6.827425043872193,
+        "foreign_matter": 1.0598333798095512,
+        "chalky_kernels": 3.8878212555728386,
+        "grain_length": 5.406463722707148,
+        "grain_width": 2.6001898508907795,
+        "color_uniformity": 86.96936993819666,
+        "protein_content": 8.005317169057886,
+        "starch_content": 85.38420294444,
+        "amylose_content": 15.995934558066592,
+        "quality_score": 90.62846601141048
+      },
+      "grade": "A",
+      "source": "production_line_1"
+    },
+    "10": {
+      "batch_id": "BATCH_0010",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 14.36696184292092,
+        "broken_percentage": 7.069034197903885,
+        "foreign_matter": 1.5083794724302644,
+        "chalky_kernels": 3.900910428514229,
+        "grain_length": 5.0086235462270565,
+        "grain_width": 2.1219936524705214,
+        "color_uniformity": 90.89750214804616,
+        "protein_content": 9.20430225879177,
+        "starch_content": 85.79832678729942,
+        "amylose_content": 21.381967001571425,
+        "quality_score": 81.22944138712228
+      },
+      "grade": "A+",
+      "source": "production_line_1"
+    },
+    "11": {
+      "batch_id": "BATCH_0011",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 10.608800844126154,
+        "broken_percentage": 3.3869104796279403,
+        "foreign_matter": 1.5063850553122482,
+        "chalky_kernels": 1.9088158007919764,
+        "grain_length": 6.336422492924305,
+        "grain_width": 2.927162516468382,
+        "color_uniformity": 89.4075796536335,
+        "protein_content": 6.079704029137365,
+        "starch_content": 87.20559675473757,
+        "amylose_content": 17.14708340228725,
+        "quality_score": 95.51703469410606
+      },
+      "grade": "B",
+      "source": "production_line_1"
+    },
+    "12": {
+      "batch_id": "BATCH_0012",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 13.905238400019883,
+        "broken_percentage": 5.289762184050734,
+        "foreign_matter": 1.0100329918563486,
+        "chalky_kernels": 1.7617660076935648,
+        "grain_length": 6.12922334554921,
+        "grain_width": 2.97519553335722,
+        "color_uniformity": 83.6836426515647,
+        "protein_content": 6.639847603763877,
+        "starch_content": 93.93110036966887,
+        "amylose_content": 17.943351686975994,
+        "quality_score": 95.3916958087772
+      },
+      "grade": "B",
+      "source": "production_line_1"
+    },
+    "13": {
+      "batch_id": "BATCH_0013",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 11.183151369217454,
+        "broken_percentage": 2.447519728684018,
+        "foreign_matter": 1.9809261180071462,
+        "chalky_kernels": 2.5742668566678892,
+        "grain_length": 6.881863424499111,
+        "grain_width": 2.5575740369420354,
+        "color_uniformity": 83.02724538907225,
+        "protein_content": 6.4428684972107035,
+        "starch_content": 85.32057486083605,
+        "amylose_content": 18.901312579325005,
+        "quality_score": 93.19026231747797
+      },
+      "grade": "A",
+      "source": "production_line_1"
+    },
+    "14": {
+      "batch_id": "BATCH_0014",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 10.00989237170393,
+        "broken_percentage": 1.656061974358976,
+        "foreign_matter": 1.5161422949422079,
+        "chalky_kernels": 0.6240392679855916,
+        "grain_length": 6.009682566908041,
+        "grain_width": 2.259410172768009,
+        "color_uniformity": 88.44616179155084,
+        "protein_content": 7.198678876556572,
+        "starch_content": 94.23471941567823,
+        "amylose_content": 24.879515772731587,
+        "quality_score": 92.81795181512815
+      },
+      "grade": "B",
+      "source": "production_line_1"
+    },
+    "15": {
+      "batch_id": "BATCH_0015",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 10.712527854972333,
+        "broken_percentage": 4.23532556035781,
+        "foreign_matter": 1.4425725766748014,
+        "chalky_kernels": 2.8541353789478414,
+        "grain_length": 5.3730231506292165,
+        "grain_width": 2.585616636559358,
+        "color_uniformity": 82.48613683626955,
+        "protein_content": 6.581645522837517,
+        "starch_content": 86.46978369433788,
+        "amylose_content": 16.151628331494486,
+        "quality_score": 86.75179076948712
+      },
+      "grade": "A+",
+      "source": "production_line_1"
+    },
+    "16": {
+      "batch_id": "BATCH_0016",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 13.451793711104898,
+        "broken_percentage": 7.502871343818631,
+        "foreign_matter": 1.6807696424655774,
+        "chalky_kernels": 2.6472754372928193,
+        "grain_length": 5.2716196152375465,
+        "grain_width": 2.4615312284141035,
+        "color_uniformity": 86.0908339084814,
+        "protein_content": 6.116679218263399,
+        "starch_content": 89.345402261225,
+        "amylose_content": 24.747326257073986,
+        "quality_score": 83.40791268731093
+      },
+      "grade": "D",
+      "source": "production_line_1"
+    },
+    "17": {
+      "batch_id": "BATCH_0017",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 14.769998889670287,
+        "broken_percentage": 2.4734433774249265,
+        "foreign_matter": 0.07232706574984338,
+        "chalky_kernels": 3.0537652746094395,
+        "grain_length": 6.000759339873412,
+        "grain_width": 2.7963305679556227,
+        "color_uniformity": 82.53668172050682,
+        "protein_content": 6.66288982587961,
+        "starch_content": 89.09756232596543,
+        "amylose_content": 16.091848261636425,
+        "quality_score": 76.28292249895392
+      },
+      "grade": "B",
+      "source": "production_line_1"
+    },
+    "18": {
+      "batch_id": "BATCH_0018",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 13.442788496580054,
+        "broken_percentage": 6.5982536894043635,
+        "foreign_matter": 1.5213466327445992,
+        "chalky_kernels": 2.243615822358943,
+        "grain_length": 5.442225647341669,
+        "grain_width": 2.2331271016635017,
+        "color_uniformity": 97.84988532629663,
+        "protein_content": 8.232890904373342,
+        "starch_content": 87.05041614606607,
+        "amylose_content": 17.465414108756942,
+        "quality_score": 75.02639758574419
+      },
+      "grade": "C",
+      "source": "production_line_1"
+    },
+    "19": {
+      "batch_id": "BATCH_0019",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 10.47274054335164,
+        "broken_percentage": 3.0649743990926037,
+        "foreign_matter": 0.7914031462426077,
+        "chalky_kernels": 2.871731891279204,
+        "grain_length": 6.176512916638046,
+        "grain_width": 2.121584489513733,
+        "color_uniformity": 88.74973025845209,
+        "protein_content": 8.779735565377443,
+        "starch_content": 94.28379678988632,
+        "amylose_content": 19.03350630703155,
+        "quality_score": 92.39403444849212
+      },
+      "grade": "B",
+      "source": "production_line_1"
+    },
+    "20": {
+      "batch_id": "BATCH_0020",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 12.158765432998377,
+        "broken_percentage": 3.438121226196335,
+        "foreign_matter": 1.9527467252902984,
+        "chalky_kernels": 1.0023961622877824,
+        "grain_length": 6.296840556814782,
+        "grain_width": 2.0777296338544438,
+        "color_uniformity": 95.69263627029184,
+        "protein_content": 9.904013594754868,
+        "starch_content": 85.39543921218336,
+        "amylose_content": 15.60811599264445,
+        "quality_score": 88.40628444547325
+      },
+      "grade": "A",
+      "source": "production_line_1"
+    },
+    "21": {
+      "batch_id": "BATCH_0021",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 14.264312110631193,
+        "broken_percentage": 0.023271355408229333,
+        "foreign_matter": 1.6658890095307646,
+        "chalky_kernels": 0.7831726646956993,
+        "grain_length": 5.950988261947108,
+        "grain_width": 2.126589479518453,
+        "color_uniformity": 96.16158534735132,
+        "protein_content": 8.364409391633382,
+        "starch_content": 90.32605652811353,
+        "amylose_content": 21.18110935936327,
+        "quality_score": 75.46110464998988
+      },
+      "grade": "A",
+      "source": "production_line_1"
+    },
+    "22": {
+      "batch_id": "BATCH_0022",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 12.596531188613595,
+        "broken_percentage": 6.154407850726497,
+        "foreign_matter": 1.8209551350122095,
+        "chalky_kernels": 2.064495283156794,
+        "grain_length": 6.2113246186634665,
+        "grain_width": 2.985242010104964,
+        "color_uniformity": 96.6449156519881,
+        "protein_content": 8.833459021104048,
+        "starch_content": 87.21857057521794,
+        "amylose_content": 18.646884123530224,
+        "quality_score": 77.1180965969449
+      },
+      "grade": "A",
+      "source": "production_line_1"
+    },
+    "23": {
+      "batch_id": "BATCH_0023",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 10.821517615312267,
+        "broken_percentage": 7.948776376124221,
+        "foreign_matter": 0.4949950630540032,
+        "chalky_kernels": 1.413624313562809,
+        "grain_length": 6.898006342510372,
+        "grain_width": 2.542269191904686,
+        "color_uniformity": 88.34071080405869,
+        "protein_content": 9.346798182844449,
+        "starch_content": 88.79605407913093,
+        "amylose_content": 18.072939544789914,
+        "quality_score": 97.9312953298249
+      },
+      "grade": "A+",
+      "source": "production_line_1"
+    },
+    "24": {
+      "batch_id": "BATCH_0024",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 14.116148643694661,
+        "broken_percentage": 0.6054055939294125,
+        "foreign_matter": 0.47034803553145754,
+        "chalky_kernels": 3.607908912254298,
+        "grain_length": 5.222223045744231,
+        "grain_width": 2.5633775531324514,
+        "color_uniformity": 81.14161117029246,
+        "protein_content": 8.107585679321588,
+        "starch_content": 91.38870626204465,
+        "amylose_content": 17.006546005351602,
+        "quality_score": 76.82389932735751
+      },
+      "grade": "B",
+      "source": "production_line_1"
+    },
+    "25": {
+      "batch_id": "BATCH_0025",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 13.375530567887175,
+        "broken_percentage": 3.420320097655856,
+        "foreign_matter": 0.717491200136384,
+        "chalky_kernels": 3.3769518357579242,
+        "grain_length": 5.9598858515519755,
+        "grain_width": 2.9440865548778428,
+        "color_uniformity": 85.6404756381336,
+        "protein_content": 7.269786079873165,
+        "starch_content": 90.62959133653963,
+        "amylose_content": 21.46602388208555,
+        "quality_score": 76.28958813970382
+      },
+      "grade": "B",
+      "source": "production_line_1"
+    },
+    "26": {
+      "batch_id": "BATCH_0026",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 11.409613840985358,
+        "broken_percentage": 2.983130385328584,
+        "foreign_matter": 0.03668284720084536,
+        "chalky_kernels": 0.5534085429796132,
+        "grain_length": 6.944252850038131,
+        "grain_width": 2.8821209413593234,
+        "color_uniformity": 97.08122069642727,
+        "protein_content": 6.2335971912396015,
+        "starch_content": 88.23497541665886,
+        "amylose_content": 18.335699568618594,
+        "quality_score": 72.98580809815206
+      },
+      "grade": "C",
+      "source": "production_line_1"
+    },
+    "27": {
+      "batch_id": "BATCH_0027",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 11.39139689081764,
+        "broken_percentage": 6.756091564793842,
+        "foreign_matter": 0.825018551216562,
+        "chalky_kernels": 1.0030105149115054,
+        "grain_length": 6.271985529080224,
+        "grain_width": 2.2254752156182462,
+        "color_uniformity": 89.46920701521331,
+        "protein_content": 6.1188300940137035,
+        "starch_content": 93.29938596690099,
+        "amylose_content": 20.382736092166805,
+        "quality_score": 71.90070888160659
+      },
+      "grade": "B",
+      "source": "production_line_1"
+    },
+    "28": {
+      "batch_id": "BATCH_0028",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 13.348429117983013,
+        "broken_percentage": 7.61075282361806,
+        "foreign_matter": 0.6282787336720528,
+        "chalky_kernels": 3.3613840523507488,
+        "grain_length": 6.1312456074750665,
+        "grain_width": 2.154174369963295,
+        "color_uniformity": 86.00350117025474,
+        "protein_content": 9.561862529485587,
+        "starch_content": 92.56501833790807,
+        "amylose_content": 19.748253152895558,
+        "quality_score": 71.91357402931695
+      },
+      "grade": "D",
+      "source": "production_line_1"
+    },
+    "29": {
+      "batch_id": "BATCH_0029",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 14.363024067186323,
+        "broken_percentage": 2.5149602543533787,
+        "foreign_matter": 1.5832598388110415,
+        "chalky_kernels": 1.1778098762494942,
+        "grain_length": 5.6521004439357245,
+        "grain_width": 2.673357393319579,
+        "color_uniformity": 86.76608185364837,
+        "protein_content": 8.817932448646822,
+        "starch_content": 88.84703890208094,
+        "amylose_content": 23.594011151152007,
+        "quality_score": 71.10506153571912
+      },
+      "grade": "D",
+      "source": "production_line_1"
+    },
+    "30": {
+      "batch_id": "BATCH_0030",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 13.987965350833775,
+        "broken_percentage": 0.9261046358002814,
+        "foreign_matter": 1.8869212350698632,
+        "chalky_kernels": 0.5275698656887157,
+        "grain_length": 6.687479303696429,
+        "grain_width": 2.8879865504909996,
+        "color_uniformity": 83.87705043147751,
+        "protein_content": 7.70811220804674,
+        "starch_content": 92.50484457202515,
+        "amylose_content": 16.602454569635558,
+        "quality_score": 91.73000882184527
+      },
+      "grade": "A",
+      "source": "production_line_1"
+    },
+    "31": {
+      "batch_id": "BATCH_0031",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 11.737457033770266,
+        "broken_percentage": 1.444822678900059,
+        "foreign_matter": 1.4394186421508959,
+        "chalky_kernels": 2.789580168254229,
+        "grain_length": 6.3060000340765185,
+        "grain_width": 2.171210207410836,
+        "color_uniformity": 81.58684026410518,
+        "protein_content": 8.811062581942581,
+        "starch_content": 89.95047344287508,
+        "amylose_content": 24.56527928352056,
+        "quality_score": 90.93329921107397
+      },
+      "grade": "D",
+      "source": "production_line_1"
+    },
+    "32": {
+      "batch_id": "BATCH_0032",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 13.563404587767899,
+        "broken_percentage": 3.768877647699928,
+        "foreign_matter": 1.9920066635824114,
+        "chalky_kernels": 1.811242652055265,
+        "grain_length": 5.774584987190098,
+        "grain_width": 2.570912903479251,
+        "color_uniformity": 82.20835539332639,
+        "protein_content": 6.241664230479516,
+        "starch_content": 85.31195573921029,
+        "amylose_content": 20.708408202902337,
+        "quality_score": 93.58403377789331
+      },
+      "grade": "D",
+      "source": "production_line_1"
+    },
+    "33": {
+      "batch_id": "BATCH_0033",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 13.68953813990155,
+        "broken_percentage": 7.561461487148075,
+        "foreign_matter": 1.0973293555892738,
+        "chalky_kernels": 1.8051537661475918,
+        "grain_length": 5.466710683578627,
+        "grain_width": 2.9495434346353484,
+        "color_uniformity": 90.75600643280613,
+        "protein_content": 8.00685157404876,
+        "starch_content": 86.98248668151601,
+        "amylose_content": 22.477417613453145,
+        "quality_score": 96.93019579602434
+      },
+      "grade": "A",
+      "source": "production_line_1"
+    },
+    "34": {
+      "batch_id": "BATCH_0034",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 12.655945393214044,
+        "broken_percentage": 4.554978320413233,
+        "foreign_matter": 1.347215121474455,
+        "chalky_kernels": 1.6086738678047268,
+        "grain_length": 6.375178852711142,
+        "grain_width": 2.4232422438534393,
+        "color_uniformity": 96.48811309188206,
+        "protein_content": 9.886536936003093,
+        "starch_content": 88.98327357117793,
+        "amylose_content": 24.560065338075404,
+        "quality_score": 86.38230767313279
+      },
+      "grade": "B",
+      "source": "production_line_1"
+    },
+    "35": {
+      "batch_id": "BATCH_0035",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 10.368109638858035,
+        "broken_percentage": 7.301033488182415,
+        "foreign_matter": 1.24183741523819,
+        "chalky_kernels": 2.4371049922747674,
+        "grain_length": 6.46525670853258,
+        "grain_width": 2.8449551845132044,
+        "color_uniformity": 88.58515681887825,
+        "protein_content": 6.649428067101681,
+        "starch_content": 92.63007267919781,
+        "amylose_content": 23.03391671221431,
+        "quality_score": 88.50394364826938
+      },
+      "grade": "A",
+      "source": "production_line_1"
+    },
+    "36": {
+      "batch_id": "BATCH_0036",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 13.474353671940923,
+        "broken_percentage": 1.5275633911725386,
+        "foreign_matter": 1.0086145350796278,
+        "chalky_kernels": 4.222098477065468,
+        "grain_length": 6.488181532692214,
+        "grain_width": 2.594269256209021,
+        "color_uniformity": 85.50622853967023,
+        "protein_content": 8.141214642203742,
+        "starch_content": 92.64044911328762,
+        "amylose_content": 20.636177305918547,
+        "quality_score": 83.18792533924051
+      },
+      "grade": "D",
+      "source": "production_line_1"
+    },
+    "37": {
+      "batch_id": "BATCH_0037",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 13.182816798750062,
+        "broken_percentage": 0.8496389979526162,
+        "foreign_matter": 1.9675057134339644,
+        "chalky_kernels": 0.1051047571885938,
+        "grain_length": 6.2386043351805345,
+        "grain_width": 2.9653865617541695,
+        "color_uniformity": 85.06794787030822,
+        "protein_content": 7.228513803261974,
+        "starch_content": 91.87335431686378,
+        "amylose_content": 18.989894400798935,
+        "quality_score": 88.42933866845641
+      },
+      "grade": "B",
+      "source": "production_line_1"
+    },
+    "38": {
+      "batch_id": "BATCH_0038",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 10.808058979812376,
+        "broken_percentage": 6.806343568291775,
+        "foreign_matter": 1.0830984115831634,
+        "chalky_kernels": 2.5116537294038515,
+        "grain_length": 6.7635730930461415,
+        "grain_width": 2.2982257634493046,
+        "color_uniformity": 97.84296301682707,
+        "protein_content": 7.342723685987641,
+        "starch_content": 89.37180290603871,
+        "amylose_content": 21.995603882628323,
+        "quality_score": 94.6550182297213
+      },
+      "grade": "D",
+      "source": "production_line_1"
+    },
+    "39": {
+      "batch_id": "BATCH_0039",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 13.490673038424273,
+        "broken_percentage": 0.26773570822582116,
+        "foreign_matter": 1.7061789716381561,
+        "chalky_kernels": 0.9484218566111408,
+        "grain_length": 6.381456808936267,
+        "grain_width": 2.1293760019161674,
+        "color_uniformity": 98.80590616522161,
+        "protein_content": 8.863466642127209,
+        "starch_content": 91.25698233983123,
+        "amylose_content": 18.298260446874583,
+        "quality_score": 96.90317112951068
+      },
+      "grade": "A",
+      "source": "production_line_1"
+    },
+    "40": {
+      "batch_id": "BATCH_0040",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 10.939486117041357,
+        "broken_percentage": 7.8413780995413624,
+        "foreign_matter": 1.3362851305008578,
+        "chalky_kernels": 2.251337250469587,
+        "grain_length": 6.2558331159558325,
+        "grain_width": 2.398629267610424,
+        "color_uniformity": 94.97605043086396,
+        "protein_content": 8.66167010939936,
+        "starch_content": 88.72126629117848,
+        "amylose_content": 19.141839621151476,
+        "quality_score": 98.19339483893191
+      },
+      "grade": "B",
+      "source": "production_line_1"
+    },
+    "41": {
+      "batch_id": "BATCH_0041",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 13.991034171956805,
+        "broken_percentage": 2.4026275033222024,
+        "foreign_matter": 0.2727334828930623,
+        "chalky_kernels": 0.21069714918401206,
+        "grain_length": 6.066839541821143,
+        "grain_width": 2.771296772236253,
+        "color_uniformity": 99.67737754921168,
+        "protein_content": 9.726802607415944,
+        "starch_content": 85.5514335427283,
+        "amylose_content": 21.99615794758029,
+        "quality_score": 81.96046659998838
+      },
+      "grade": "A+",
+      "source": "production_line_1"
+    },
+    "42": {
+      "batch_id": "BATCH_0042",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 14.796859530597578,
+        "broken_percentage": 0.23832886513425944,
+        "foreign_matter": 0.0410070517095944,
+        "chalky_kernels": 4.6131948884127585,
+        "grain_length": 6.782943561019192,
+        "grain_width": 2.8639852346064028,
+        "color_uniformity": 87.69724917856198,
+        "protein_content": 8.231734161947195,
+        "starch_content": 87.7457004520953,
+        "amylose_content": 21.533928314479667,
+        "quality_score": 73.02234739758535
+      },
+      "grade": "A",
+      "source": "production_line_1"
+    },
+    "43": {
+      "batch_id": "BATCH_0043",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 11.59670714028686,
+        "broken_percentage": 5.48758704561104,
+        "foreign_matter": 0.03549788139791166,
+        "chalky_kernels": 1.925248095423588,
+        "grain_length": 6.41091232854034,
+        "grain_width": 2.915077638849685,
+        "color_uniformity": 86.0904077092286,
+        "protein_content": 8.238796014252229,
+        "starch_content": 90.8326470551197,
+        "amylose_content": 23.839556503770467,
+        "quality_score": 99.29412939331215
+      },
+      "grade": "A",
+      "source": "production_line_1"
+    },
+    "44": {
+      "batch_id": "BATCH_0044",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 12.837487386361172,
+        "broken_percentage": 5.077028525153019,
+        "foreign_matter": 1.8301121260480038,
+        "chalky_kernels": 1.988140201436449,
+        "grain_length": 6.117577827968658,
+        "grain_width": 2.1870751206018717,
+        "color_uniformity": 91.29907791846375,
+        "protein_content": 9.563517387961532,
+        "starch_content": 87.55109494415093,
+        "amylose_content": 15.539718910780872,
+        "quality_score": 98.84030329633734
+      },
+      "grade": "C",
+      "source": "production_line_1"
+    },
+    "45": {
+      "batch_id": "BATCH_0045",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 12.086493066500656,
+        "broken_percentage": 0.7093592568348646,
+        "foreign_matter": 1.1674779412005445,
+        "chalky_kernels": 1.407621849625766,
+        "grain_length": 5.147453784130206,
+        "grain_width": 2.4311288739527472,
+        "color_uniformity": 90.11709930940955,
+        "protein_content": 9.179879481264816,
+        "starch_content": 87.91842759390707,
+        "amylose_content": 22.742745790440743,
+        "quality_score": 91.26292905344002
+      },
+      "grade": "B",
+      "source": "production_line_1"
+    },
+    "46": {
+      "batch_id": "BATCH_0046",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 10.393001567096885,
+        "broken_percentage": 0.9402721192501646,
+        "foreign_matter": 0.9292085661297531,
+        "chalky_kernels": 3.042994722233341,
+        "grain_length": 5.6280257264856965,
+        "grain_width": 2.1460716206471866,
+        "color_uniformity": 87.31535074421865,
+        "protein_content": 7.215609016224795,
+        "starch_content": 86.38322102801224,
+        "amylose_content": 20.613074987124154,
+        "quality_score": 84.8506442897305
+      },
+      "grade": "C",
+      "source": "production_line_1"
+    },
+    "47": {
+      "batch_id": "BATCH_0047",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 11.004598145337035,
+        "broken_percentage": 3.5835727185427286,
+        "foreign_matter": 0.5798484959738146,
+        "chalky_kernels": 2.37718181465596,
+        "grain_length": 6.396512193088775,
+        "grain_width": 2.8923928012475226,
+        "color_uniformity": 82.12481092009372,
+        "protein_content": 9.303514489942533,
+        "starch_content": 92.9470937388116,
+        "amylose_content": 17.248707127784975,
+        "quality_score": 80.44728702500042
+      },
+      "grade": "A+",
+      "source": "production_line_1"
+    },
+    "48": {
+      "batch_id": "BATCH_0048",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 12.478966921533452,
+        "broken_percentage": 4.616610673457872,
+        "foreign_matter": 1.102293541665211,
+        "chalky_kernels": 2.283465936041194,
+        "grain_length": 5.890281824500086,
+        "grain_width": 2.4841380022630735,
+        "color_uniformity": 83.82943292632791,
+        "protein_content": 8.214350557716715,
+        "starch_content": 86.47737861756016,
+        "amylose_content": 20.15183280736906,
+        "quality_score": 82.87242077234629
+      },
+      "grade": "B",
+      "source": "production_line_1"
+    },
+    "49": {
+      "batch_id": "BATCH_0049",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 13.643640126283413,
+        "broken_percentage": 0.07064686449271651,
+        "foreign_matter": 1.2142529528003962,
+        "chalky_kernels": 0.37746108378588106,
+        "grain_length": 6.724676510313486,
+        "grain_width": 2.0276774172190453,
+        "color_uniformity": 82.06746693125574,
+        "protein_content": 6.001336002820632,
+        "starch_content": 89.5237801231951,
+        "amylose_content": 19.30133823885631,
+        "quality_score": 72.7351234323107
+      },
+      "grade": "A+",
+      "source": "production_line_1"
+    },
+    "50": {
+      "batch_id": "BATCH_0050",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 14.116816676815063,
+        "broken_percentage": 2.259334724350759,
+        "foreign_matter": 1.1459944481275934,
+        "chalky_kernels": 3.581187504196045,
+        "grain_length": 6.311811813046129,
+        "grain_width": 2.924330598869498,
+        "color_uniformity": 93.50408951050687,
+        "protein_content": 8.724779717712261,
+        "starch_content": 87.81682125297374,
+        "amylose_content": 24.669469138498158,
+        "quality_score": 98.2575505766977
+      },
+      "grade": "A",
+      "source": "production_line_1"
+    },
+    "51": {
+      "batch_id": "BATCH_0051",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 13.097878813378646,
+        "broken_percentage": 2.116306364653421,
+        "foreign_matter": 1.0428347075150082,
+        "chalky_kernels": 1.8038524297591034,
+        "grain_length": 5.477455632378202,
+        "grain_width": 2.1679656638040576,
+        "color_uniformity": 83.66071907933414,
+        "protein_content": 9.05546484214758,
+        "starch_content": 87.04909000637531,
+        "amylose_content": 24.464293821565402,
+        "quality_score": 92.1816205661166
+      },
+      "grade": "A+",
+      "source": "production_line_1"
+    },
+    "52": {
+      "batch_id": "BATCH_0052",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 14.218500965095012,
+        "broken_percentage": 5.135460182883812,
+        "foreign_matter": 0.9169208528379358,
+        "chalky_kernels": 2.21193517428709,
+        "grain_length": 6.642248785552376,
+        "grain_width": 2.368279873380752,
+        "color_uniformity": 99.1266191608315,
+        "protein_content": 7.250045826809034,
+        "starch_content": 89.21972233632349,
+        "amylose_content": 15.282517118692544,
+        "quality_score": 78.79134096215246
+      },
+      "grade": "B",
+      "source": "production_line_1"
+    },
+    "53": {
+      "batch_id": "BATCH_0053",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 13.279537820216456,
+        "broken_percentage": 7.09299943932367,
+        "foreign_matter": 1.8069809983735652,
+        "chalky_kernels": 1.3296785559950186,
+        "grain_length": 5.828933785586033,
+        "grain_width": 2.27796529903987,
+        "color_uniformity": 82.26585292402814,
+        "protein_content": 6.3997988899671245,
+        "starch_content": 88.56821498377685,
+        "amylose_content": 18.53844830045466,
+        "quality_score": 90.22555989889908
+      },
+      "grade": "A+",
+      "source": "production_line_1"
+    },
+    "54": {
+      "batch_id": "BATCH_0054",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 10.99383312714465,
+        "broken_percentage": 7.13249860995682,
+        "foreign_matter": 0.4604407140724094,
+        "chalky_kernels": 1.633828402449284,
+        "grain_length": 5.1513930460399635,
+        "grain_width": 2.5449704809924323,
+        "color_uniformity": 83.56334897714312,
+        "protein_content": 6.077935774695904,
+        "starch_content": 85.40215430936598,
+        "amylose_content": 21.23242569505479,
+        "quality_score": 81.66421951866971
+      },
+      "grade": "A+",
+      "source": "production_line_1"
+    },
+    "55": {
+      "batch_id": "BATCH_0055",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 13.874313289886553,
+        "broken_percentage": 6.675932886692606,
+        "foreign_matter": 1.342682569027435,
+        "chalky_kernels": 1.8634056080593253,
+        "grain_length": 5.038705551339806,
+        "grain_width": 2.318690375082646,
+        "color_uniformity": 91.72552618646718,
+        "protein_content": 6.802650304314323,
+        "starch_content": 86.46154314157327,
+        "amylose_content": 21.088303150608596,
+        "quality_score": 80.45963084373611
+      },
+      "grade": "C",
+      "source": "production_line_1"
+    },
+    "56": {
+      "batch_id": "BATCH_0056",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 13.651954613534295,
+        "broken_percentage": 3.4480724999303725,
+        "foreign_matter": 1.9381871485316366,
+        "chalky_kernels": 1.2783758614387768,
+        "grain_length": 5.96387494334308,
+        "grain_width": 2.1607523765203664,
+        "color_uniformity": 95.78255943587288,
+        "protein_content": 6.274799313709668,
+        "starch_content": 88.59731816041135,
+        "amylose_content": 20.8485291078591,
+        "quality_score": 79.52382302136225
+      },
+      "grade": "D",
+      "source": "production_line_1"
+    },
+    "57": {
+      "batch_id": "BATCH_0057",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 13.2223546265366,
+        "broken_percentage": 2.122598472509968,
+        "foreign_matter": 0.420063612218859,
+        "chalky_kernels": 1.2529864482976938,
+        "grain_length": 5.5881338752210725,
+        "grain_width": 2.7901921232174596,
+        "color_uniformity": 87.71668563953455,
+        "protein_content": 6.023197761062502,
+        "starch_content": 93.50754211591438,
+        "amylose_content": 16.52478070251463,
+        "quality_score": 73.11287447475814
+      },
+      "grade": "A",
+      "source": "production_line_1"
+    },
+    "58": {
+      "batch_id": "BATCH_0058",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 12.595284121492753,
+        "broken_percentage": 6.863259919884315,
+        "foreign_matter": 0.7246088186403621,
+        "chalky_kernels": 3.7390321878826582,
+        "grain_length": 5.865372346835972,
+        "grain_width": 2.2790019564189103,
+        "color_uniformity": 97.75386500927834,
+        "protein_content": 8.188930668967213,
+        "starch_content": 90.2248246081631,
+        "amylose_content": 20.26028654074883,
+        "quality_score": 76.9670845286625
+      },
+      "grade": "A",
+      "source": "production_line_1"
+    },
+    "59": {
+      "batch_id": "BATCH_0059",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 13.949525168881474,
+        "broken_percentage": 3.4289016215995805,
+        "foreign_matter": 1.372557744428606,
+        "chalky_kernels": 0.7982723542254777,
+        "grain_length": 5.364659390859719,
+        "grain_width": 2.4821204775419896,
+        "color_uniformity": 95.58678159391528,
+        "protein_content": 7.963217991115364,
+        "starch_content": 88.03071162555872,
+        "amylose_content": 16.940397598678697,
+        "quality_score": 87.26661117244188
+      },
+      "grade": "A",
+      "source": "production_line_1"
+    },
+    "60": {
+      "batch_id": "BATCH_0060",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 13.5833784725484,
+        "broken_percentage": 1.7350130258729966,
+        "foreign_matter": 0.968070044792136,
+        "chalky_kernels": 4.310327845985947,
+        "grain_length": 5.756377723120436,
+        "grain_width": 2.8626879584712315,
+        "color_uniformity": 87.03286672213389,
+        "protein_content": 6.681850678256266,
+        "starch_content": 94.06750721306331,
+        "amylose_content": 19.15567451551275,
+        "quality_score": 71.53505455910056
+      },
+      "grade": "C",
+      "source": "production_line_1"
+    },
+    "61": {
+      "batch_id": "BATCH_0061",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 10.451683903393002,
+        "broken_percentage": 6.99816129827451,
+        "foreign_matter": 1.5188788745978155,
+        "chalky_kernels": 0.9487090035019885,
+        "grain_length": 6.541692180661103,
+        "grain_width": 2.3987431757276125,
+        "color_uniformity": 80.062982239563,
+        "protein_content": 8.005653966042237,
+        "starch_content": 88.328791723958,
+        "amylose_content": 24.729426578899684,
+        "quality_score": 89.03213325623334
+      },
+      "grade": "C",
+      "source": "production_line_1"
+    },
+    "62": {
+      "batch_id": "BATCH_0062",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 13.579869499290176,
+        "broken_percentage": 4.323631844870311,
+        "foreign_matter": 0.28029760689087446,
+        "chalky_kernels": 4.0898289645680785,
+        "grain_length": 5.714813722498367,
+        "grain_width": 2.7035220290358466,
+        "color_uniformity": 93.31676634002544,
+        "protein_content": 8.640952609312071,
+        "starch_content": 87.10573058665675,
+        "amylose_content": 23.162508919477503,
+        "quality_score": 79.85151566655709
+      },
+      "grade": "C",
+      "source": "production_line_1"
+    },
+    "63": {
+      "batch_id": "BATCH_0063",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 13.953126024877696,
+        "broken_percentage": 1.1460617372843176,
+        "foreign_matter": 0.08582677517818338,
+        "chalky_kernels": 1.7279782574645925,
+        "grain_length": 6.761461956035619,
+        "grain_width": 2.7003355895046837,
+        "color_uniformity": 90.13803668900007,
+        "protein_content": 7.34196997469632,
+        "starch_content": 88.47635230151178,
+        "amylose_content": 19.065252812411295,
+        "quality_score": 94.60310001211371
+      },
+      "grade": "A+",
+      "source": "production_line_1"
+    },
+    "64": {
+      "batch_id": "BATCH_0064",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 14.454392307608229,
+        "broken_percentage": 4.77358678696011,
+        "foreign_matter": 1.9158819479384663,
+        "chalky_kernels": 1.1983755599896746,
+        "grain_length": 5.146353221080621,
+        "grain_width": 2.568919731247096,
+        "color_uniformity": 97.78315401585184,
+        "protein_content": 7.930488558420086,
+        "starch_content": 85.23172948035617,
+        "amylose_content": 15.558805194039937,
+        "quality_score": 93.74164981259737
+      },
+      "grade": "A",
+      "source": "production_line_1"
+    },
+    "65": {
+      "batch_id": "BATCH_0065",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 12.73929170941872,
+        "broken_percentage": 2.501560711965407,
+        "foreign_matter": 1.5454968145741728,
+        "chalky_kernels": 4.848327408922914,
+        "grain_length": 6.405609102348617,
+        "grain_width": 2.901381559227225,
+        "color_uniformity": 87.85154537858863,
+        "protein_content": 6.713102794589317,
+        "starch_content": 90.69262401687689,
+        "amylose_content": 20.492428567293235,
+        "quality_score": 75.43450127116941
+      },
+      "grade": "D",
+      "source": "production_line_1"
+    },
+    "66": {
+      "batch_id": "BATCH_0066",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 10.783775334676907,
+        "broken_percentage": 2.7393521898841904,
+        "foreign_matter": 0.8225400635748159,
+        "chalky_kernels": 4.699167101380041,
+        "grain_length": 5.768977552757145,
+        "grain_width": 2.920090251174992,
+        "color_uniformity": 93.47151432894117,
+        "protein_content": 6.001816536439385,
+        "starch_content": 85.86849401891621,
+        "amylose_content": 24.185556269885332,
+        "quality_score": 92.42769006914668
+      },
+      "grade": "B",
+      "source": "production_line_1"
+    },
+    "67": {
+      "batch_id": "BATCH_0067",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 13.89101046929255,
+        "broken_percentage": 2.737568441857599,
+        "foreign_matter": 1.8852474969243156,
+        "chalky_kernels": 4.298254879140531,
+        "grain_length": 6.606964122457401,
+        "grain_width": 2.286914988301458,
+        "color_uniformity": 88.08161256195987,
+        "protein_content": 8.2675954626616,
+        "starch_content": 88.13641818915877,
+        "amylose_content": 16.17382432574551,
+        "quality_score": 83.8947818102613
+      },
+      "grade": "A",
+      "source": "production_line_1"
+    },
+    "68": {
+      "batch_id": "BATCH_0068",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 10.115787765827456,
+        "broken_percentage": 6.979378696585669,
+        "foreign_matter": 1.5998972442119535,
+        "chalky_kernels": 4.729607271289468,
+        "grain_length": 6.263125063947063,
+        "grain_width": 2.64680002720404,
+        "color_uniformity": 95.12225890480285,
+        "protein_content": 9.501353828350211,
+        "starch_content": 89.43462995924499,
+        "amylose_content": 17.109226831190053,
+        "quality_score": 85.365072738864
+      },
+      "grade": "A+",
+      "source": "production_line_1"
+    },
+    "69": {
+      "batch_id": "BATCH_0069",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 14.125736712332618,
+        "broken_percentage": 1.6511568616574097,
+        "foreign_matter": 0.9080741153724139,
+        "chalky_kernels": 0.4622373241231298,
+        "grain_length": 5.727779541266603,
+        "grain_width": 2.7112855236531006,
+        "color_uniformity": 84.9149411357834,
+        "protein_content": 6.5261789257601945,
+        "starch_content": 87.75292631812769,
+        "amylose_content": 16.683801275179093,
+        "quality_score": 90.10777067072472
+      },
+      "grade": "B",
+      "source": "production_line_1"
+    },
+    "70": {
+      "batch_id": "BATCH_0070",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 11.494199196094028,
+        "broken_percentage": 3.311559120176942,
+        "foreign_matter": 0.7278667092094417,
+        "chalky_kernels": 3.976591784179173,
+        "grain_length": 6.24287967721307,
+        "grain_width": 2.0339462185349,
+        "color_uniformity": 96.8471666210822,
+        "protein_content": 9.778912023429712,
+        "starch_content": 90.3283746237442,
+        "amylose_content": 18.18126930778626,
+        "quality_score": 88.66615814646163
+      },
+      "grade": "A",
+      "source": "production_line_1"
+    },
+    "71": {
+      "batch_id": "BATCH_0071",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 13.235841854125795,
+        "broken_percentage": 5.5753767614960905,
+        "foreign_matter": 0.725583060481922,
+        "chalky_kernels": 4.937727230577448,
+        "grain_length": 5.1914858817875915,
+        "grain_width": 2.1825431233388617,
+        "color_uniformity": 99.82028955519992,
+        "protein_content": 7.508917098588499,
+        "starch_content": 89.43095266765528,
+        "amylose_content": 21.362521455117538,
+        "quality_score": 90.92963036008646
+      },
+      "grade": "C",
+      "source": "production_line_1"
+    },
+    "72": {
+      "batch_id": "BATCH_0072",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 10.465033180721283,
+        "broken_percentage": 6.045063624601772,
+        "foreign_matter": 1.773097883752917,
+        "chalky_kernels": 2.3774675171093786,
+        "grain_length": 6.184077809237894,
+        "grain_width": 2.12020020495062,
+        "color_uniformity": 91.42129799328262,
+        "protein_content": 8.520301908102013,
+        "starch_content": 90.42897886038276,
+        "amylose_content": 21.275913003029284,
+        "quality_score": 81.3528303089574
+      },
+      "grade": "C",
+      "source": "production_line_1"
+    },
+    "73": {
+      "batch_id": "BATCH_0073",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 12.992429527054266,
+        "broken_percentage": 4.85356477564528,
+        "foreign_matter": 1.8784903661138752,
+        "chalky_kernels": 4.438191498665848,
+        "grain_length": 6.438759655829023,
+        "grain_width": 2.3598100900065386,
+        "color_uniformity": 80.50204679722953,
+        "protein_content": 9.047858197586072,
+        "starch_content": 91.4482617396123,
+        "amylose_content": 15.813541738290164,
+        "quality_score": 86.73281032816772
+      },
+      "grade": "A+",
+      "source": "production_line_1"
+    },
+    "74": {
+      "batch_id": "BATCH_0074",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 11.157150279076147,
+        "broken_percentage": 6.934327925838326,
+        "foreign_matter": 1.0704417437043074,
+        "chalky_kernels": 4.132115660130136,
+        "grain_length": 5.601554129056678,
+        "grain_width": 2.257833002163159,
+        "color_uniformity": 95.8465807987022,
+        "protein_content": 9.744932222426382,
+        "starch_content": 86.92292058926189,
+        "amylose_content": 16.999875829864024,
+        "quality_score": 79.2847044086388
+      },
+      "grade": "A",
+      "source": "production_line_1"
+    },
+    "75": {
+      "batch_id": "BATCH_0075",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 11.342711455067052,
+        "broken_percentage": 0.3330595104588969,
+        "foreign_matter": 0.2143744826971712,
+        "chalky_kernels": 2.891205768572738,
+        "grain_length": 5.726192369772696,
+        "grain_width": 2.72494813948191,
+        "color_uniformity": 86.87087724601449,
+        "protein_content": 8.731086319224096,
+        "starch_content": 94.12587659434365,
+        "amylose_content": 20.73966208615059,
+        "quality_score": 77.65918252701701
+      },
+      "grade": "D",
+      "source": "production_line_1"
+    },
+    "76": {
+      "batch_id": "BATCH_0076",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 10.470372094848889,
+        "broken_percentage": 4.583031954177248,
+        "foreign_matter": 1.3325646201425292,
+        "chalky_kernels": 0.9835580245806658,
+        "grain_length": 5.567667945654389,
+        "grain_width": 2.406639198632008,
+        "color_uniformity": 92.78038091866735,
+        "protein_content": 8.202930991691613,
+        "starch_content": 90.77599579839729,
+        "amylose_content": 23.67850580215089,
+        "quality_score": 88.39273573451597
+      },
+      "grade": "D",
+      "source": "production_line_1"
+    },
+    "77": {
+      "batch_id": "BATCH_0077",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 14.063534987023086,
+        "broken_percentage": 6.155371092398244,
+        "foreign_matter": 1.8589839341539043,
+        "chalky_kernels": 1.4257360494498679,
+        "grain_length": 6.518359102662154,
+        "grain_width": 2.6513526224141586,
+        "color_uniformity": 94.69855606902391,
+        "protein_content": 8.07451215430904,
+        "starch_content": 90.49609420815696,
+        "amylose_content": 15.5476801303093,
+        "quality_score": 78.83637499661717
+      },
+      "grade": "A",
+      "source": "production_line_1"
+    },
+    "78": {
+      "batch_id": "BATCH_0078",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 11.896569109511361,
+        "broken_percentage": 0.6818870770969667,
+        "foreign_matter": 0.0918355126439463,
+        "chalky_kernels": 4.15100576212888,
+        "grain_length": 5.945495944242835,
+        "grain_width": 2.7948083214703052,
+        "color_uniformity": 90.93027881760402,
+        "protein_content": 8.395166218314335,
+        "starch_content": 91.19462014585241,
+        "amylose_content": 20.035927079951694,
+        "quality_score": 79.39303256515919
+      },
+      "grade": "B",
+      "source": "production_line_1"
+    },
+    "79": {
+      "batch_id": "BATCH_0079",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 12.353022795397964,
+        "broken_percentage": 4.203004000966265,
+        "foreign_matter": 1.8522154599957286,
+        "chalky_kernels": 1.376697124351403,
+        "grain_length": 6.765051397184089,
+        "grain_width": 2.2438251608465176,
+        "color_uniformity": 96.391649084259,
+        "protein_content": 7.239231938758616,
+        "starch_content": 91.5088913700807,
+        "amylose_content": 20.792001362657217,
+        "quality_score": 96.96593086459993
+      },
+      "grade": "D",
+      "source": "production_line_1"
+    },
+    "80": {
+      "batch_id": "BATCH_0080",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 12.302482146027144,
+        "broken_percentage": 5.9329606343774985,
+        "foreign_matter": 0.6230662335105517,
+        "chalky_kernels": 3.6041193612542655,
+        "grain_length": 5.663189929311354,
+        "grain_width": 2.252020453057309,
+        "color_uniformity": 96.69894970711965,
+        "protein_content": 8.98562870531376,
+        "starch_content": 88.5481827947911,
+        "amylose_content": 21.723140854818816,
+        "quality_score": 90.1019544444249
+      },
+      "grade": "A+",
+      "source": "production_line_1"
+    },
+    "81": {
+      "batch_id": "BATCH_0081",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 13.752338427525034,
+        "broken_percentage": 0.6133352870759667,
+        "foreign_matter": 0.4595651442142388,
+        "chalky_kernels": 2.5156451281315695,
+        "grain_length": 5.064250084843561,
+        "grain_width": 2.6293227559888708,
+        "color_uniformity": 92.40033563050645,
+        "protein_content": 6.165969632234539,
+        "starch_content": 93.69308386908399,
+        "amylose_content": 24.96929989001297,
+        "quality_score": 86.32339734954586
+      },
+      "grade": "B",
+      "source": "production_line_1"
+    },
+    "82": {
+      "batch_id": "BATCH_0082",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 11.344470313021514,
+        "broken_percentage": 6.304464545133303,
+        "foreign_matter": 0.7704245205468598,
+        "chalky_kernels": 3.116287565871258,
+        "grain_length": 6.20421639219161,
+        "grain_width": 2.591480171636345,
+        "color_uniformity": 88.22725844732796,
+        "protein_content": 7.750650391433698,
+        "starch_content": 86.37939727124615,
+        "amylose_content": 23.673068874152,
+        "quality_score": 81.55676341224444
+      },
+      "grade": "C",
+      "source": "production_line_1"
+    },
+    "83": {
+      "batch_id": "BATCH_0083",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 12.236279528742305,
+        "broken_percentage": 0.4239530184542213,
+        "foreign_matter": 1.4444826916547098,
+        "chalky_kernels": 0.8309300067071657,
+        "grain_length": 6.545553705807619,
+        "grain_width": 2.2226246117239152,
+        "color_uniformity": 93.57454587699277,
+        "protein_content": 9.889842785460257,
+        "starch_content": 94.59672947088289,
+        "amylose_content": 24.544609360615766,
+        "quality_score": 79.10989984257725
+      },
+      "grade": "A",
+      "source": "production_line_1"
+    },
+    "84": {
+      "batch_id": "BATCH_0084",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 12.264417144003021,
+        "broken_percentage": 6.324663230391092,
+        "foreign_matter": 0.25328774050471115,
+        "chalky_kernels": 1.192136494751776,
+        "grain_length": 6.3102882977085075,
+        "grain_width": 2.7817554928824855,
+        "color_uniformity": 89.04575484583451,
+        "protein_content": 9.47183381238503,
+        "starch_content": 91.3829923647248,
+        "amylose_content": 22.387056612421247,
+        "quality_score": 77.29195488682389
+      },
+      "grade": "C",
+      "source": "production_line_1"
+    },
+    "85": {
+      "batch_id": "BATCH_0085",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 10.052704690280596,
+        "broken_percentage": 6.143644405081197,
+        "foreign_matter": 0.667493759443345,
+        "chalky_kernels": 0.26436095221895994,
+        "grain_length": 5.732802039179841,
+        "grain_width": 2.772639246296639,
+        "color_uniformity": 85.17325584120962,
+        "protein_content": 6.53122087168828,
+        "starch_content": 91.49409293634142,
+        "amylose_content": 19.90602893052474,
+        "quality_score": 91.76389326268561
+      },
+      "grade": "C",
+      "source": "production_line_1"
+    },
+    "86": {
+      "batch_id": "BATCH_0086",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 12.272477034107553,
+        "broken_percentage": 4.815242721086565,
+        "foreign_matter": 1.443184150388427,
+        "chalky_kernels": 3.167325290873111,
+        "grain_length": 6.2307328691687625,
+        "grain_width": 2.6672034353724317,
+        "color_uniformity": 88.21271565351742,
+        "protein_content": 7.332375487511604,
+        "starch_content": 88.98288431229278,
+        "amylose_content": 23.464153961825353,
+        "quality_score": 87.39048946984713
+      },
+      "grade": "A",
+      "source": "production_line_1"
+    },
+    "87": {
+      "batch_id": "BATCH_0087",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 14.688927116756012,
+        "broken_percentage": 1.5156846997122262,
+        "foreign_matter": 1.0098668060486855,
+        "chalky_kernels": 1.9101135872906387,
+        "grain_length": 5.268233726342089,
+        "grain_width": 2.6833778586904544,
+        "color_uniformity": 85.54563012837426,
+        "protein_content": 7.041857468794289,
+        "starch_content": 92.05984799830698,
+        "amylose_content": 24.669053971705353,
+        "quality_score": 75.68082740056055
+      },
+      "grade": "A",
+      "source": "production_line_1"
+    },
+    "88": {
+      "batch_id": "BATCH_0088",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 12.082514287405962,
+        "broken_percentage": 4.717548500009241,
+        "foreign_matter": 1.2486368410054653,
+        "chalky_kernels": 0.42375182360027297,
+        "grain_length": 6.052043035421186,
+        "grain_width": 2.518473611731762,
+        "color_uniformity": 89.60107498955192,
+        "protein_content": 9.799775039583984,
+        "starch_content": 90.06446531540107,
+        "amylose_content": 19.818294605009115,
+        "quality_score": 73.94618724553912
+      },
+      "grade": "B",
+      "source": "production_line_1"
+    },
+    "89": {
+      "batch_id": "BATCH_0089",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 13.782726008676747,
+        "broken_percentage": 7.067953618016678,
+        "foreign_matter": 1.0528698700982129,
+        "chalky_kernels": 3.8515767235986575,
+        "grain_length": 5.671796767793461,
+        "grain_width": 2.7091670047636045,
+        "color_uniformity": 88.39131039413292,
+        "protein_content": 9.44237990726292,
+        "starch_content": 89.8714052979167,
+        "amylose_content": 19.372697258463006,
+        "quality_score": 89.0406647438266
+      },
+      "grade": "A",
+      "source": "production_line_1"
+    },
+    "90": {
+      "batch_id": "BATCH_0090",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 12.759993846066987,
+        "broken_percentage": 4.726645185264572,
+        "foreign_matter": 1.300189360449471,
+        "chalky_kernels": 2.664606014778301,
+        "grain_length": 5.305977918166831,
+        "grain_width": 2.4886888305773756,
+        "color_uniformity": 93.74293777330344,
+        "protein_content": 9.591806463588785,
+        "starch_content": 86.34865009321395,
+        "amylose_content": 24.983243057524213,
+        "quality_score": 74.87691600672794
+      },
+      "grade": "D",
+      "source": "production_line_1"
+    },
+    "91": {
+      "batch_id": "BATCH_0091",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 10.32493310450131,
+        "broken_percentage": 5.438564397464322,
+        "foreign_matter": 0.035372317187733815,
+        "chalky_kernels": 0.1287000857779258,
+        "grain_length": 6.566997835400615,
+        "grain_width": 2.4292064202835064,
+        "color_uniformity": 97.63730356166343,
+        "protein_content": 7.777404675239788,
+        "starch_content": 93.73099097070666,
+        "amylose_content": 21.851704288852574,
+        "quality_score": 83.58844303282939
+      },
+      "grade": "B",
+      "source": "production_line_1"
+    },
+    "92": {
+      "batch_id": "BATCH_0092",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 11.609333932012422,
+        "broken_percentage": 2.8786808375105366,
+        "foreign_matter": 1.0356454808944795,
+        "chalky_kernels": 1.528236309069374,
+        "grain_length": 6.567445133547388,
+        "grain_width": 2.348323590318464,
+        "color_uniformity": 80.15529289099901,
+        "protein_content": 9.491600492095252,
+        "starch_content": 87.16577274640701,
+        "amylose_content": 19.249551254837996,
+        "quality_score": 76.93072928806558
+      },
+      "grade": "D",
+      "source": "production_line_1"
+    },
+    "93": {
+      "batch_id": "BATCH_0093",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 12.746797686324754,
+        "broken_percentage": 0.345426885334037,
+        "foreign_matter": 0.42084181027776,
+        "chalky_kernels": 1.4331015352529375,
+        "grain_length": 6.208385004237952,
+        "grain_width": 2.380495065427843,
+        "color_uniformity": 90.0794963161908,
+        "protein_content": 8.792132154744355,
+        "starch_content": 92.4306925414745,
+        "amylose_content": 22.957707107089014,
+        "quality_score": 94.3454186138277
+      },
+      "grade": "A",
+      "source": "production_line_1"
+    },
+    "94": {
+      "batch_id": "BATCH_0094",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 14.823075550268978,
+        "broken_percentage": 4.142995219212536,
+        "foreign_matter": 0.7559854546140359,
+        "chalky_kernels": 4.080654780019505,
+        "grain_length": 5.089648115532894,
+        "grain_width": 2.610701031220178,
+        "color_uniformity": 90.84558101403908,
+        "protein_content": 8.598969130488046,
+        "starch_content": 93.99744894165892,
+        "amylose_content": 18.064703778853676,
+        "quality_score": 93.51673719929812
+      },
+      "grade": "A",
+      "source": "production_line_1"
+    },
+    "95": {
+      "batch_id": "BATCH_0095",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 14.54255701223626,
+        "broken_percentage": 6.895969651511379,
+        "foreign_matter": 0.7453569870826229,
+        "chalky_kernels": 0.6863743234242681,
+        "grain_length": 5.613419880343078,
+        "grain_width": 2.3738631743303644,
+        "color_uniformity": 85.24659400879536,
+        "protein_content": 8.795130117148254,
+        "starch_content": 86.37108604125784,
+        "amylose_content": 23.043107477866837,
+        "quality_score": 75.25420061272368
+      },
+      "grade": "A+",
+      "source": "production_line_1"
+    },
+    "96": {
+      "batch_id": "BATCH_0096",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 14.000954391539889,
+        "broken_percentage": 3.9626699954114164,
+        "foreign_matter": 0.5118469912993291,
+        "chalky_kernels": 4.805131266710105,
+        "grain_length": 6.797776782053271,
+        "grain_width": 2.3972153631444546,
+        "color_uniformity": 86.05553557481939,
+        "protein_content": 6.828501352710813,
+        "starch_content": 88.85850049132449,
+        "amylose_content": 22.790298657391965,
+        "quality_score": 76.76370138157313
+      },
+      "grade": "C",
+      "source": "production_line_1"
+    },
+    "97": {
+      "batch_id": "BATCH_0097",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 12.294833834699032,
+        "broken_percentage": 6.988774582010762,
+        "foreign_matter": 0.3993969018865642,
+        "chalky_kernels": 3.686565660065276,
+        "grain_length": 6.8082488056486525,
+        "grain_width": 2.201211457514884,
+        "color_uniformity": 98.87262588794339,
+        "protein_content": 7.576516203721731,
+        "starch_content": 87.2377653972045,
+        "amylose_content": 22.420817814349682,
+        "quality_score": 89.78012344676787
+      },
+      "grade": "D",
+      "source": "production_line_1"
+    },
+    "98": {
+      "batch_id": "BATCH_0098",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 13.714976678709345,
+        "broken_percentage": 7.470869385522914,
+        "foreign_matter": 1.4162973705431698,
+        "chalky_kernels": 4.417876988716663,
+        "grain_length": 5.309925416332559,
+        "grain_width": 2.225702887482301,
+        "color_uniformity": 91.69011517582142,
+        "protein_content": 9.507062227369762,
+        "starch_content": 93.77392758387371,
+        "amylose_content": 24.091886451956032,
+        "quality_score": 71.04755880560212
+      },
+      "grade": "A+",
+      "source": "production_line_1"
+    },
+    "99": {
+      "batch_id": "BATCH_0099",
+      "timestamp": "2025-07-30T14:24:20.627308",
+      "quality_metrics": {
+        "moisture_content": 11.606428195561321,
+        "broken_percentage": 7.416488083748161,
+        "foreign_matter": 0.9818811509573688,
+        "chalky_kernels": 0.48661550285966415,
+        "grain_length": 6.037149435705276,
+        "grain_width": 2.291817370239597,
+        "color_uniformity": 94.98789985826804,
+        "protein_content": 7.670741424429059,
+        "starch_content": 85.40187890738487,
+        "amylose_content": 20.820243398970174,
+        "quality_score": 94.02249202987458
+      },
+      "grade": "C",
+      "source": "production_line_1"
+    }
+  },
+  "id_counter": 100,
+  "dimension": 12
+}

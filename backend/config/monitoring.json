@@ -1,0 +1,26 @@
+{
+  "health_checks": {
+    "database": {
+      "enabled": true,
+      "timeout": 5,
+      "query": "SELECT 1"
+    },
+    "redis": {
+      "enabled": true,
+      "timeout": 3
+    },
+    "disk_space": {
+      "enabled": true,
+      "threshold_percent": 85
+    },
+    "memory": {
+      "enabled": true,
+      "threshold_percent": 90
+    }
+  },
+  "monitoring": {
+    "response_time_threshold": 2000,
+    "error_rate_threshold": 0.05,
+    "alert_email": "admin@ricemill.com"
+  }
+}

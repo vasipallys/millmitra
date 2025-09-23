@@ -1,10 +1,10 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from backend.models.user import User
-from backend.models.quality import QualityStandard, QualityTestTemplate, QualityInspection, QualityAlert, QualityTrend
-from backend.services.quality_service import QualityService
-from backend.ai.quality_ai import QualityAI
-from backend.database import db
+from models.user import User
+from models.quality import QualityStandard, QualityTestTemplate, QualityInspection, QualityAlert, QualityTrend
+from services.quality_service import QualityService
+from ai.quality_ai import QualityAI
+from extensions import db
 
 quality_bp = Blueprint('quality', __name__)
 quality_service = QualityService()

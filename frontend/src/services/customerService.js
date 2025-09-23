@@ -3,12 +3,12 @@ import api from './api';
 export const customerService = {
   // Customer Management
   async getCustomers(params = {}) {
-    const response = await api.get('/customers', { params });
+    const response = await api.get('/customers/', { params });
     return response.data;
   },
 
   async createCustomer(customerData) {
-    const response = await api.post('/customers', customerData);
+    const response = await api.post('/customers/', customerData);
     return response.data;
   },
 
@@ -41,12 +41,12 @@ export const customerService = {
 
   // Order Management
   async getOrders(params = {}) {
-    const response = await api.get('/orders', { params });
+    const response = await api.get('/orders/', { params });
     return response.data;
   },
 
   async createOrder(orderData) {
-    const response = await api.post('/orders', orderData);
+    const response = await api.post('/orders/', orderData);
     return response.data;
   },
 

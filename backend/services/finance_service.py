@@ -3,7 +3,7 @@ from typing import Dict, List
 from sqlalchemy import func, and_, or_
 from models.finance import ChartOfAccounts, JournalEntry, Invoice, Payment, Budget
 from models.user import User
-from database import db
+from extensions import db
 
 class FinanceService:
     def __init__(self):

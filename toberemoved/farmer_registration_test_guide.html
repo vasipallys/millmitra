@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farmer Registration Test Guide - Smart Rice Mill ERP</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success-banner {
+            background: linear-gradient(135deg, #4caf50, #45a049);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .step-item {
+            background-color: #e3f2fd;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #2196f3;
+            border-radius: 4px;
+        }
+        .test-data {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        .expected-log {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            font-size: 14px;
+            border-left: 4px solid #00ff00;
+        }
+        .warning-item {
+            background-color: #fff3e0;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #ff9800;
+            border-radius: 4px;
+        }
+        .navigation-item {
+            background-color: #f3e5f5;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #9c27b0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="success-banner">
+            <h1>🧪 Farmer Registration Test Guide</h1>
+            <p>Step-by-step guide to test the fixed farmer registration system</p>
+        </div>
+        
+        <h2>🎯 Complete Test Process:</h2>
+        
+        <div class="navigation-item">
+            <strong>📍 Step 1: Navigate to Farmer Management</strong>
+            <ol>
+                <li>Go to your Smart Rice Mill ERP application</li>
+                <li>Navigate to <strong>"Farmer Management"</strong> page</li>
+                <li>You should see a page with farmer statistics and a "Register Farmer" button</li>
+            </ol>
+        </div>
+        
+        <div class="navigation-item">
+            <strong>📍 Step 2: Open Registration Dialog</strong>
+            <ol>
+                <li>Click the <strong>"Register Farmer"</strong> button (blue button with PersonAdd icon)</li>
+                <li>A multi-step dialog should open with 4 steps:
+                    <ul>
+                        <li>Step 1: Basic Information</li>
+                        <li>Step 2: Contact Details</li>
+                        <li>Step 3: Farm Details</li>
+                        <li>Step 4: Bank Details</li>
+                    </ul>
+                </li>
+                <li><strong>Open Browser Console:</strong> Press F12 → Console tab</li>
+            </ol>
+        </div>
+        
+        <h2>📝 Test Data to Use:</h2>
+        
+        <div class="step-item">
+            <strong>🔹 Step 1: Basic Information</strong>
+            <div class="test-data">
+Name: Test Farmer Registration
+Phone: 9876543210
+Email: testfarmer@example.com
+            </div>
+            <p>Fill these fields and click <strong>"Next"</strong></p>
+        </div>
+        
+        <div class="step-item">
+            <strong>🔹 Step 2: Contact Details</strong>
+            <div class="test-data">
+Aadhar Number: 123456789012
+            </div>
+            <p>Fill this field and click <strong>"Next"</strong></p>
+        </div>
+        
+        <div class="step-item">
+            <strong>🔹 Step 3: Farm Details</strong>
+            <div class="test-data">
+Total Land Area: 5
+            </div>
+            <p>Fill this field and click <strong>"Next"</strong></p>
+        </div>
+        
+        <div class="step-item">
+            <strong>🔹 Step 4: Bank Details</strong>
+            <div class="test-data">
+Bank Account Number: 12345678901
+IFSC Code: SBIN0001234
+            </div>
+            <p>Fill these fields and click <strong>"Register Farmer"</strong></p>
+        </div>
+        
+        <h2>🔍 Expected Console Logs:</h2>
+        
+        <div class="step-item">
+            <strong>✅ What You Should See in Console:</strong>
+            
+            <div class="expected-log">
+RegisterFarmerDialog.jsx:XXX Form submission triggered with values: {
+  name: 'Test Farmer Registration',
+  phone: '9876543210',
+  email: 'testfarmer@example.com',
+  aadhar_number: '123456789012',
+  total_land_area: '5',
+  bank_account_number: '12345678901',
+  bank_ifsc: 'SBIN0001234',
+  village: 'Not Specified',  ← Default value added
+  district: 'Not Specified', ← Default value added
+  state: 'Not Specified',    ← Default value added
+  ...
+}
+
+RegisterFarmerDialog.jsx:XXX Validation passed, proceeding with submission
+
+RegisterFarmerDialog.jsx:XXX Submitting farmer registration: {
+  name: 'Test Farmer Registration',
+  village: 'Not Specified',
+  district: 'Not Specified',
+  state: 'Not Specified',
+  ...
+}
+
+RegisterFarmerDialog.jsx:XXX Registration result: {
+  success: true,
+  message: 'Farmer registered successfully',
+  farmer: {
+    id: X,
+    farmer_code: 'NOTXXX',
+    name: 'Test Farmer Registration',
+    ...
+  }
+}
+            </div>
+        </div>
+        
+        <h2>🎊 Expected Success Indicators:</h2>
+        
+        <div class="step-item">
+            <strong>✅ Visual Success Signs:</strong>
+            <ol>
+                <li><strong>Success Toast:</strong> Green notification saying "Farmer registered successfully"</li>
+                <li><strong>Dialog Closes:</strong> Registration dialog automatically closes</li>
+                <li><strong>Farmer List Updates:</strong> New farmer appears in the farmer list</li>
+                <li><strong>No Error Messages:</strong> No red error notifications</li>
+            </ol>
+        </div>
+        
+        <div class="step-item">
+            <strong>✅ Backend Success Signs:</strong>
+            <p>In your backend terminal, you should see:</p>
+            <div class="expected-log">
+127.0.0.1 - - [24/Jul/2025 XX:XX:XX] "OPTIONS /api/farmer/register HTTP/1.1" 200 -
+127.0.0.1 - - [24/Jul/2025 XX:XX:XX] "POST /api/farmer/register HTTP/1.1" 201 -  ← SUCCESS!
+            </div>
+        </div>
+        
+        <h2>🚨 Troubleshooting:</h2>
+        
+        <div class="warning-item">
+            <strong>⚠️ If Dialog Doesn't Open:</strong>
+            <ul>
+                <li>Check if you're on the correct "Farmer Management" page</li>
+                <li>Look for JavaScript errors in console</li>
+                <li>Try refreshing the page (Ctrl+F5)</li>
+                <li>Check if the "Register Farmer" button is visible and clickable</li>
+            </ul>
+        </div>
+        
+        <div class="warning-item">
+            <strong>⚠️ If Step Validation Fails:</strong>
+            <ul>
+                <li>Make sure all required fields are filled exactly as shown</li>
+                <li>Phone number must be exactly 10 digits</li>
+                <li>Email must be valid format</li>
+                <li>Aadhar must be exactly 12 digits</li>
+                <li>IFSC must match format (4 letters + 0 + 6 alphanumeric)</li>
+            </ul>
+        </div>
+        
+        <div class="warning-item">
+            <strong>⚠️ If Backend Returns 400 Error:</strong>
+            <ul>
+                <li>Check if backend server is running</li>
+                <li>Look for specific error message in console</li>
+                <li>Verify that default values are being added for village/district/state</li>
+                <li>Check if phone number already exists in database</li>
+            </ul>
+        </div>
+        
+        <div class="warning-item">
+            <strong>⚠️ If No Console Logs Appear:</strong>
+            <ul>
+                <li>Make sure you have the browser console open (F12)</li>
+                <li>Check if you're looking at the correct tab (Console, not Network or Elements)</li>
+                <li>Try clearing console and testing again</li>
+                <li>Refresh the page and try again</li>
+            </ul>
+        </div>
+        
+        <h2>🔧 Alternative Test Method:</h2>
+        
+        <div class="step-item">
+            <strong>🎯 If Main Test Doesn't Work:</strong>
+            <ol>
+                <li><strong>Check Network Tab:</strong> 
+                    <ul>
+                        <li>Open F12 → Network tab</li>
+                        <li>Try registration again</li>
+                        <li>Look for POST request to <code>/api/farmer/register</code></li>
+                        <li>Check the response status (should be 201)</li>
+                    </ul>
+                </li>
+                <li><strong>Check Backend Logs:</strong>
+                    <ul>
+                        <li>Look at your backend terminal</li>
+                        <li>Should see POST request with status 201</li>
+                        <li>If status is 400, check the error message</li>
+                    </ul>
+                </li>
+                <li><strong>Test with Minimal Data:</strong>
+                    <ul>
+                        <li>Fill only the absolutely required fields</li>
+                        <li>Skip optional fields like father_name, alternate_phone</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+        
+        <div class="success-banner">
+            <h2>🎯 Ready to Test!</h2>
+            <p><strong>Follow the steps above and report what happens!</strong></p>
+            
+            <div style="text-align: left; margin-top: 20px;">
+                <h4>📋 Quick Checklist:</h4>
+                <ul style="margin: 0; padding-left: 20px;">
+                    <li>✅ Navigate to Farmer Management page</li>
+                    <li>✅ Click "Register Farmer" button</li>
+                    <li>✅ Open browser console (F12)</li>
+                    <li>✅ Fill all 4 steps with test data</li>
+                    <li>✅ Click "Register Farmer" in final step</li>
+                    <li>✅ Watch console logs and success indicators</li>
+                    <li>✅ Report results</li>
+                </ul>
+            </div>
+        </div>
+        
+        <p><em>The farmer registration system is now fully configured and should work end-to-end. Let's test it!</em></p>
+    </div>
+</body>
+</html>

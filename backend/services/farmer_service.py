@@ -2,8 +2,10 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from sqlalchemy import func, and_, or_
 from extensions import db
-from models.farmer import Farmer, FarmerContract
+from models.farmer import Farmer, FarmerContract, PaddyProcurement
 from models.user import User
+from models.finance import Payment
+from models.inventory import PaddyStock
 
 class FarmerService:
     
@@ -79,16 +81,17 @@ class FarmerService:
         
         # Create advance payment if specified
         if contract.advance_amount > 0:
-            advance_payment = FarmerPayment(
-                payment_number=self._generate_payment_number(),
+            advance_payment = Payment(
+                payment_id=self._generate_payment_number(),
                 farmer_id=contract.farmer_id,
-                contract_id=contract.id,
-                payment_type='advance',
+                payment_type='paid',
+                payment_category='farmer_payment',
                 amount=contract.advance_amount,
                 payment_method=contract_data.get('advance_payment_method', 'bank_transfer'),
                 payment_date=contract.contract_date,
                 description=f"Advance payment for contract {contract_number}",
-                created_by=user.id
+                created_by=user.id,
+                status='cleared'
             )
             db.session.add(advance_payment)
         
@@ -166,18 +169,15 @@ class FarmerService:
         
         payment_number = self._generate_payment_number()
         
-        payment = FarmerPayment(
-            payment_number=payment_number,
+        payment = Payment(
+            payment_id=payment_number,
             farmer_id=payment_data['farmer_id'],
-            procurement_id=payment_data.get('procurement_id'),
-            contract_id=payment_data.get('contract_id'),
-            payment_type=payment_data['payment_type'],
+            payment_type='paid',
+            payment_category='farmer_payment',
             amount=payment_data['amount'],
             payment_method=payment_data['payment_method'],
-            payment_date=datetime.strptime(payment_data['payment_date'], '%Y-%m-%d').date(),
-            transaction_reference=payment_data.get('transaction_reference'),
-            bank_account_number=payment_data.get('bank_account_number'),
-            bank_ifsc=payment_data.get('bank_ifsc'),
+            payment_date=datetime.strptime(payment_data['payment_date'], '%Y-%m-%d'),
+            reference_number=payment_data.get('transaction_reference'),
             description=payment_data.get('description'),
             notes=payment_data.get('notes'),
             created_by=user.id
@@ -186,11 +186,13 @@ class FarmerService:
         db.session.add(payment)
         
         # Update procurement payment status if linked
-        if payment.procurement_id:
-            procurement = PaddyProcurement.query.get(payment.procurement_id)
-            total_paid = db.session.query(func.sum(FarmerPayment.amount)).filter(
-                FarmerPayment.procurement_id == procurement.id,
-                FarmerPayment.status == 'completed'
+        procurement_id = payment_data.get('procurement_id')
+        if procurement_id:
+            procurement = PaddyProcurement.query.get(procurement_id)
+            total_paid = db.session.query(func.sum(Payment.amount)).filter(
+                Payment.payment_category == 'farmer_payment',
+                Payment.description.like(f'%procurement {procurement.id}%'),
+                Payment.status == 'cleared'
             ).scalar() or 0
             
             total_paid += payment.amount
@@ -231,9 +233,10 @@ class FarmerService:
         ).order_by(PaddyProcurement.procurement_date.desc()).limit(10).all()
         
         # Payment summary
-        total_payments = db.session.query(func.sum(FarmerPayment.amount)).filter(
-            FarmerPayment.farmer_id == farmer_id,
-            FarmerPayment.status == 'completed'
+        total_payments = db.session.query(func.sum(Payment.amount)).filter(
+            Payment.farmer_id == farmer_id,
+            Payment.payment_category == 'farmer_payment',
+            Payment.status == 'cleared'
         ).scalar() or 0
         
         pending_payments = db.session.query(func.sum(PaddyProcurement.total_amount)).filter(
@@ -340,12 +343,13 @@ class FarmerService:
         today = datetime.now()
         prefix = f"FPAY-{today.year}{today.month:02d}"
         
-        last_payment = FarmerPayment.query.filter(
-            FarmerPayment.payment_number.like(f"{prefix}%")
-        ).order_by(FarmerPayment.id.desc()).first()
+        last_payment = Payment.query.filter(
+            Payment.payment_category == 'farmer_payment',
+            Payment.payment_id.like(f"{prefix}%")
+        ).order_by(Payment.id.desc()).first()
         
         if last_payment:
-            last_num = int(last_payment.payment_number.split('-')[-1])
+            last_num = int(last_payment.payment_id.split('-')[-1])
             return f"{prefix}-{last_num + 1:04d}"
         else:
             return f"{prefix}-0001"

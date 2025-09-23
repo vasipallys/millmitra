@@ -15,15 +15,11 @@ const SmartWidget = ({ widget }) => {
   // Fetch widget data if it has an endpoint
   const { data: widgetData, isLoading } = useQuery(
     [`widget-${widget.id}`, refreshKey],
-    () => {
-      if (!widget.data?.endpoint) {
-        return Promise.resolve(null);
-      }
-      return api.get(widget.data.endpoint).then(res => res.data);
-    },
+    () => api.get(widget.data.endpoint).then(res => res.data),
     {
       enabled: !!widget.data?.endpoint,
-      refetchInterval: widget.refresh_interval || 60000
+      refetchInterval: widget.refresh_interval || 60000,
+      retry: false
     }
   );
 

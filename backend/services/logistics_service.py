@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List
 from models.logistics import Vehicle, Driver, Shipment, ShipmentItem, ShipmentTracking, Route
 from models.user import User
-from database import db
+from extensions import db
 import uuid
 
 class LogisticsService:

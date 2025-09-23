@@ -4,7 +4,6 @@ import {
   TextField, Button, FormControl, InputLabel, Select,
   MenuItem, Box, Typography, Chip, Alert
 } from '@mui/material';
-import { useQuery } from 'react-query';
 import { customerService } from '../services/customerService';
 
 const InteractionDialog = ({ open, onClose, customer, onSubmit, loading }) => {

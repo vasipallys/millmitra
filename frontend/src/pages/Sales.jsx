@@ -32,6 +32,7 @@ import {
   AttachMoney as RevenueIcon,
   People as CustomerIcon,
 } from '@mui/icons-material';
+import { Portal } from '@mui/material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
 const Sales = () => {
@@ -320,14 +321,16 @@ const Sales = () => {
       </Card>
 
       {/* Floating Action Button */}
-      <Fab
-        color="primary"
-        aria-label="add"
-        sx={{ position: 'fixed', bottom: 16, right: 16 }}
-        onClick={handleCreateOrder}
-      >
-        <AddIcon />
-      </Fab>
+      <Portal>
+        <Fab
+          color="primary"
+          aria-label="add new order"
+          sx={{ position: 'fixed', bottom: 16, right: 16, zIndex: 1300 }}
+          onClick={handleCreateOrder}
+        >
+          <AddIcon />
+        </Fab>
+      </Portal>
 
       {/* Order Dialog */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>

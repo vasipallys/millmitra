@@ -1,112 +1,14 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import User, Payment, Expense, Budget
-from extensions import db
-from datetime import datetime, timedelta
-import json
-
 # Temporarily disabled until services are fixed
 # from services.finance_service import FinanceService
 # from services.ai_finance_service import AIFinanceService
 
 finance_bp = Blueprint('finance', __name__)
-
-# Mock AI Finance Service
-class MockAIFinanceService:
-    def analyze_financial_impact(self, data):
-        return {
-            'impact_score': 85,
-            'risk_level': 'low',
-            'recommendations': ['Monitor cash flow', 'Review payment terms'],
-            'predicted_outcome': 'positive'
-        }
-
-    def analyze_financial_trends(self, summary):
-        return {
-            'trends': ['Revenue increasing', 'Expenses stable'],
-            'predictions': ['Next month revenue: +15%', 'Cash flow: positive'],
-            'alerts': [],
-            'recommendations': ['Continue current strategy', 'Monitor market conditions']
-        }
-
-# Mock Finance Service
-class MockFinanceService:
-    def create_chart_of_accounts(self, user, data):
-        class MockAccount:
-            def __init__(self):
-                self.id = 1
-                self.account_name = data.get('account_name', 'New Account')
-                self.account_type = data.get('account_type', 'asset')
-                self.account_code = data.get('account_code', '1000')
-                self.created_by = user.id
-                self.created_at = datetime.now()
-
-        return MockAccount()
-
-    def create_journal_entry(self, user, data):
-        class MockJournalEntry:
-            def __init__(self):
-                self.id = 1
-                self.entry_number = f"JE{datetime.now().strftime('%Y%m%d%H%M%S')}"
-                self.description = data.get('description', 'Journal Entry')
-                self.amount = float(data.get('amount', 0))
-                self.created_by = user.id
-                self.created_at = datetime.now()
-
-        return MockJournalEntry()
-
-    def create_invoice(self, user, data):
-        class MockInvoice:
-            def __init__(self):
-                self.id = 1
-                self.invoice_number = f"INV{datetime.now().strftime('%Y%m%d%H%M%S')}"
-                self.customer_name = data.get('customer_name', 'Customer')
-                self.amount = float(data.get('amount', 0))
-                self.due_date = data.get('due_date')
-                self.status = 'pending'
-                self.created_by = user.id
-                self.created_at = datetime.now()
-
-        return MockInvoice()
-
-    def record_payment(self, user, data):
-        # Create actual Payment record
-        payment = Payment(
-            amount=float(data.get('amount', 0)),
-            payment_method=data.get('payment_method', 'cash'),
-            payment_date=datetime.now(),
-            description=data.get('description', 'Payment'),
-            created_by=user.id
-        )
-
-        db.session.add(payment)
-        db.session.commit()
-        return payment
-
-    def get_financial_summary(self, start_date, end_date):
-        # Return mock financial summary
-        return {
-            'total_revenue': 500000,
-            'total_expenses': 350000,
-            'net_profit': 150000,
-            'cash_flow': 75000,
-            'outstanding_receivables': 125000,
-            'outstanding_payables': 85000
-        }
-
-    def get_aging_report(self, report_type):
-        # Return mock aging report
-        return {
-            '0-30': 50000,
-            '31-60': 25000,
-            '61-90': 15000,
-            '90+': 10000,
-            'total': 100000
-        }
-
-# Initialize services
-finance_service = MockFinanceService()
-ai_finance = MockAIFinanceService()
+# Temporarily disabled until services are fixed
+# finance_service = FinanceService()
+# ai_finance = AIFinanceService()
 
 # Simple endpoints for frontend compatibility
 @finance_bp.route('/invoices', methods=['GET'])

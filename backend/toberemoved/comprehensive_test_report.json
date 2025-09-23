@@ -1,0 +1,154 @@
+{
+  "test_summary": {
+    "total_tests": 7,
+    "passed_tests": 3,
+    "failed_tests": 4,
+    "success_rate": 42.857142857142854,
+    "test_date": "2025-08-18T20:45:21.829404"
+  },
+  "test_results": [
+    {
+      "test_name": "Health Check",
+      "success": true,
+      "message": "System healthy - healthy",
+      "timestamp": "2025-08-18T20:44:38.729680",
+      "response_data": {
+        "status": "healthy",
+        "timestamp": "2025-08-18T15:14:38.724853+00:00"
+      }
+    },
+    {
+      "test_name": "Authentication",
+      "success": false,
+      "message": "Registration failed - Status: 405",
+      "timestamp": "2025-08-18T20:44:40.794288",
+      "response_data": null
+    },
+    {
+      "test_name": "API - Dashboard Metrics",
+      "success": false,
+      "message": "Endpoint failed - Status: 404",
+      "timestamp": "2025-08-18T20:44:42.846507",
+      "response_data": null
+    },
+    {
+      "test_name": "API - Farmer List",
+      "success": false,
+      "message": "Endpoint failed - Status: 404",
+      "timestamp": "2025-08-18T20:44:44.903889",
+      "response_data": null
+    },
+    {
+      "test_name": "API - Inventory Stock",
+      "success": false,
+      "message": "Endpoint failed - Status: 404",
+      "timestamp": "2025-08-18T20:44:46.977690",
+      "response_data": null
+    },
+    {
+      "test_name": "API - Production Batches",
+      "success": false,
+      "message": "Endpoint failed - Status: 404",
+      "timestamp": "2025-08-18T20:44:49.037015",
+      "response_data": null
+    },
+    {
+      "test_name": "API - Sales Orders",
+      "success": false,
+      "message": "Endpoint failed - Status: 404",
+      "timestamp": "2025-08-18T20:44:51.066265",
+      "response_data": null
+    },
+    {
+      "test_name": "API - Finance Transactions",
+      "success": false,
+      "message": "Endpoint failed - Status: 404",
+      "timestamp": "2025-08-18T20:44:53.105913",
+      "response_data": null
+    },
+    {
+      "test_name": "API - Customer List",
+      "success": false,
+      "message": "Endpoint failed - Status: 404",
+      "timestamp": "2025-08-18T20:44:55.135144",
+      "response_data": null
+    },
+    {
+      "test_name": "API - Notifications",
+      "success": false,
+      "message": "Endpoint failed - Status: 404",
+      "timestamp": "2025-08-18T20:44:57.185950",
+      "response_data": null
+    },
+    {
+      "test_name": "API - Analytics KPI",
+      "success": false,
+      "message": "Endpoint failed - Status: 404",
+      "timestamp": "2025-08-18T20:44:59.221267",
+      "response_data": null
+    },
+    {
+      "test_name": "API - Quality Tests",
+      "success": false,
+      "message": "Endpoint failed - Status: 404",
+      "timestamp": "2025-08-18T20:45:01.287343",
+      "response_data": null
+    },
+    {
+      "test_name": "API - Compliance Status",
+      "success": false,
+      "message": "Endpoint failed - Status: 404",
+      "timestamp": "2025-08-18T20:45:03.329991",
+      "response_data": null
+    },
+    {
+      "test_name": "API - Supply Chain Status",
+      "success": false,
+      "message": "Endpoint failed - Status: 404",
+      "timestamp": "2025-08-18T20:45:05.377286",
+      "response_data": null
+    },
+    {
+      "test_name": "API - Logistics Deliveries",
+      "success": false,
+      "message": "Endpoint failed - Status: 404",
+      "timestamp": "2025-08-18T20:45:07.428423",
+      "response_data": null
+    },
+    {
+      "test_name": "AI Services",
+      "success": false,
+      "message": "AI services error: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /health (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001DE9D25A580>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))",
+      "timestamp": "2025-08-18T20:45:11.506818",
+      "response_data": null
+    },
+    {
+      "test_name": "Database Operations",
+      "success": false,
+      "message": "Farmer creation failed - Status: 405",
+      "timestamp": "2025-08-18T20:45:13.573306",
+      "response_data": null
+    },
+    {
+      "test_name": "Performance Test",
+      "success": true,
+      "message": "Performance good - 10/10 requests in 4.12s",
+      "timestamp": "2025-08-18T20:45:17.697127",
+      "response_data": null
+    },
+    {
+      "test_name": "Security - Unauthorized Access",
+      "success": false,
+      "message": "Security issue - Status: 404",
+      "timestamp": "2025-08-18T20:45:19.777256",
+      "response_data": null
+    },
+    {
+      "test_name": "Security - SQL Injection",
+      "success": true,
+      "message": "SQL injection attempt blocked",
+      "timestamp": "2025-08-18T20:45:21.828634",
+      "response_data": null
+    }
+  ]
+}

@@ -2,7 +2,7 @@ import numpy as np
 from datetime import datetime, timedelta
 from models.sales import Customer, SalesOrder, SalesLead
 from models.inventory import InventoryItem
-from database import db
+from extensions import db
 import google.generativeai as genai
 
 class SalesAI:

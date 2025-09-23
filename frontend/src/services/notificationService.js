@@ -18,10 +18,10 @@ class NotificationService {
    */
   setupEventSource() {
     // In a real implementation, this would connect to a WebSocket or SSE endpoint
-    // For now, we'll simulate with periodic polling
-    this.pollInterval = setInterval(() => {
-      this.fetchNotifications();
-    }, 30000); // Poll every 30 seconds
+    // For now, we'll only fetch on application start, not poll continuously
+    // this.pollInterval = setInterval(() => {
+    //   this.fetchNotifications();
+    // }, 30000); // Disabled automatic polling
   }
 
   /**
@@ -34,9 +34,10 @@ class NotificationService {
         this.notifications = response.data.notifications;
         this.unreadCount = response.data.unread_count;
         this.notifyListeners();
+        console.log('Notifications loaded successfully from API');
       }
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      console.log('API not available, using mock notifications:', error.message);
       // Fallback to mock data if API fails
       this.loadMockNotifications();
     }
@@ -275,7 +276,8 @@ class NotificationService {
    * Initialize service
    */
   init() {
-    this.loadMockNotifications();
+    // Load notifications once on application start
+    this.fetchNotifications();
   }
 
   /**

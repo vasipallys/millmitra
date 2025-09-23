@@ -8,6 +8,7 @@ import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { productionAPI, inventoryAPI } from '../../services/api';
+import ValidationErrorDisplay, { useValidation } from '../common/ValidationErrorDisplay';
 
 const validationSchema = Yup.object({
   paddy_variety: Yup.string().required('Paddy variety is required'),
@@ -22,6 +23,7 @@ const CreateBatchDialog = ({ open, onClose, onSuccess }) => {
   const [aiRecommendations, setAiRecommendations] = useState(null);
   const [paddyStock, setPaddyStock] = useState([]);
   const [machineSettings, setMachineSettings] = useState({});
+  const validation = useValidation();
 
   useEffect(() => {
     if (open) {
@@ -117,6 +119,14 @@ const CreateBatchDialog = ({ open, onClose, onSuccess }) => {
       <DialogTitle>Create New Production Batch</DialogTitle>
       <form onSubmit={formik.handleSubmit}>
         <DialogContent>
+          {/* Validation Error Display */}
+          <ValidationErrorDisplay
+            errors={validation.errors}
+            warnings={validation.warnings}
+            title="Production Batch Validation"
+            onClose={() => validation.clearAll()}
+          />
+
           <Grid container spacing={3}>
             {/* Basic Information */}
             <Grid item xs={12}>

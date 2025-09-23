@@ -1,6 +1,6 @@
 from datetime import datetime
 from sqlalchemy import JSON
-from backend.database import db
+from extensions import db
 
 class QualityStandard(db.Model):
     __tablename__ = 'quality_standards'

@@ -1,5 +1,5 @@
-from models.customer import Customer, CustomerInteraction, CustomerSegment, CustomerFeedback
-from models.order import Order
+from models.sales import Customer
+from models.sales import SalesOrder
 from models.user import User
 from extensions import db
 from datetime import datetime, timedelta
@@ -28,10 +28,14 @@ class CustomerService:
             query = query.filter(search_filter)
         
         if segment:
-            query = query.filter(Customer.segment == segment)
+            # Use customer_type as segment for now since segment field doesn't exist
+            query = query.filter(Customer.customer_type == segment)
         
         if status != 'all':
-            query = query.filter(Customer.status == status)
+            if status == 'active':
+                query = query.filter(Customer.is_active == True)
+            elif status == 'inactive':
+                query = query.filter(Customer.is_active == False)
         
         # Apply sorting
         if sort_by == 'name':
@@ -165,8 +169,8 @@ class CustomerService:
     
     def get_customer_orders(self, customer_id: int, page: int = 1, per_page: int = 10):
         """Get customer orders with pagination"""
-        orders = Order.query.filter_by(customer_id=customer_id)\
-                           .order_by(Order.order_date.desc())\
+        orders = SalesOrder.query.filter_by(customer_id=customer_id)\
+                           .order_by(SalesOrder.order_date.desc())\
                            .paginate(page=page, per_page=per_page, error_out=False)
         
         return {
@@ -190,17 +194,17 @@ class CustomerService:
         start_date = datetime.utcnow() - timedelta(days=days)
         
         # Basic metrics
-        total_customers = Customer.query.filter_by(status='active').count()
+        total_customers = Customer.query.filter_by(is_active=True).count()
         new_customers = Customer.query.filter(
             Customer.created_at >= start_date,
-            Customer.status == 'active'
+            Customer.is_active == True
         ).count()
         
         # Segment distribution
         segments = db.session.query(
-            Customer.segment,
+            Customer.customer_type,
             db.func.count(Customer.id).label('count')
-        ).filter_by(status='active').group_by(Customer.segment).all()
+        ).filter_by(is_active=True).group_by(Customer.customer_type).all()
         
         segment_distribution = {segment: count for segment, count in segments}
         
@@ -210,7 +214,7 @@ class CustomerService:
         ).count()
         
         # Top customers by value
-        top_customers = Customer.query.filter_by(status='active').order_by(
+        top_customers = Customer.query.filter_by(is_active=True).order_by(
             Customer.lifetime_value.desc()
         ).limit(10).all()
         
@@ -218,7 +222,7 @@ class CustomerService:
         thirty_days_ago = datetime.utcnow() - timedelta(days=30)
         inactive_customers = Customer.query.filter(
             Customer.last_order_date < thirty_days_ago,
-            Customer.status == 'active'
+            Customer.is_active == True
         ).count()
         
         return {
@@ -310,15 +314,15 @@ class CustomerService:
         period_start = current_date - timedelta(days=period_days)
         
         # Customers who had orders in the period
-        active_customers = db.session.query(Customer.id).join(Order).filter(
-            Order.order_date >= period_start,
-            Order.status != 'cancelled'
+        active_customers = db.session.query(Customer.id).join(SalesOrder).filter(
+            SalesOrder.order_date >= period_start,
+            SalesOrder.status != 'cancelled'
         ).distinct().count()
         
         # Total customers at start of period
         total_customers = Customer.query.filter(
             Customer.created_at < period_start,
-            Customer.status == 'active'
+            Customer.is_active == True
         ).count()
         
         retention_rate = 0
@@ -435,9 +439,12 @@ class CustomerService:
         # Apply filters if provided
         if filters:
             if filters.get('segment'):
-                query = query.filter(Customer.segment == filters['segment'])
+                query = query.filter(Customer.customer_type == filters['segment'])
             if filters.get('status'):
-                query = query.filter(Customer.status == filters['status'])
+                if filters['status'] == 'active':
+                    query = query.filter(Customer.is_active == True)
+                elif filters['status'] == 'inactive':
+                    query = query.filter(Customer.is_active == False)
         
         customers = query.all()
         
@@ -549,17 +556,17 @@ class CustomerService:
         last_month_start = (this_month_start - timedelta(days=1)).replace(day=1)
         
         # Current month stats
-        total_customers = Customer.query.filter_by(status='active').count()
+        total_customers = Customer.query.filter_by(is_active=True).count()
         new_this_month = Customer.query.filter(
             Customer.created_at >= this_month_start,
-            Customer.status == 'active'
+            Customer.is_active == True
         ).count()
         
         # Last month for comparison
         new_last_month = Customer.query.filter(
             Customer.created_at >= last_month_start,
             Customer.created_at < this_month_start,
-            Customer.status == 'active'
+            Customer.is_active == True
         ).count()
         
         # Interactions this month
@@ -576,14 +583,14 @@ class CustomerService:
         # High-value customers
         high_value_customers = Customer.query.filter(
             Customer.lifetime_value > 100000,
-            Customer.status == 'active'
+            Customer.is_active == True
         ).count()
         
         # Inactive customers (no orders in 60 days)
         sixty_days_ago = datetime.utcnow() - timedelta(days=60)
         inactive_customers = Customer.query.filter(
             Customer.last_order_date < sixty_days_ago,
-            Customer.status == 'active'
+            Customer.is_active == True
         ).count()
         
         return {

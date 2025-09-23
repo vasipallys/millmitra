@@ -30,6 +30,7 @@ const NaturalLanguageQuery = ({ onQueryResult }) => {
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef(null);
@@ -77,28 +78,41 @@ const NaturalLanguageQuery = ({ onQueryResult }) => {
     }
   }, [query]);
 
-  const handleSubmit = async (queryText = query) => {
-    if (!queryText.trim()) return;
+  const handleSubmit = async (e) => {
+    if (e && typeof e.preventDefault === "function") {
+      e.preventDefault();
+    }
+    const queryText = query.trim();
+    if (!queryText) return;
 
     setIsLoading(true);
+    setResult(null);
+    setError(null);
     setShowSuggestions(false);
 
     try {
-      // Call the AI services endpoint
-      const response = await fetch('/api/ai/natural-query', {
+      // Call the real AI services endpoint
+      const response = await fetch('http://localhost:8000/process-query', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ query: queryText })
+        body: JSON.stringify({
+          query: queryText,
+          context: {
+            user_id: localStorage.getItem('user_id'),
+            timestamp: new Date().toISOString(),
+            active_batches: 3,
+            current_date: new Date().toISOString().split('T')[0]
+          }
+        })
       });
 
       if (response.ok) {
         const data = await response.json();
-        setResult(data);
+        setResult(data.response);
         if (onQueryResult) {
-          onQueryResult(data);
+          onQueryResult(data.response);
         }
       } else {
         // Fallback to mock response for demo
@@ -110,6 +124,7 @@ const NaturalLanguageQuery = ({ onQueryResult }) => {
       }
     } catch (error) {
       console.error('Query error:', error);
+      setError('Failed to process query. Please try again.');
       // Fallback to mock response
       const mockResponse = generateMockResponse(queryText);
       setResult(mockResponse);

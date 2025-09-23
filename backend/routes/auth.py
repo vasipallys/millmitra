@@ -40,11 +40,11 @@ def login():
         login_method = data.get('method', 'password')  # password, voice, biometric
         device_info = data.get('device_info', {})
 
-        print(f"🔍 Login attempt: {username}")
+        print(f"[DEBUG] Login attempt: {username}")
 
         # AI-powered input validation and correction
         username = ai_auth.normalize_username(username)
-        print(f"🔄 Normalized username: {username}")
+        print(f"[DEBUG] Normalized username: {username}")
 
         # Find user by username, email, or phone
         user = User.query.filter(
@@ -53,34 +53,34 @@ def login():
             (User.phone == username)
         ).first()
 
-        print(f"👤 User found: {user.username if user else 'None'}")
+        print(f"[DEBUG] User found: {user.username if user else 'None'}")
 
         if not user or not user.is_active:
-            print(f"❌ User not found or inactive")
+            print(f"[ERROR] User not found or inactive")
             try:
                 ai_auth.log_failed_attempt(username, 'user_not_found', device_info)
             except Exception as e:
-                print(f"⚠️ Error logging failed attempt: {e}")
+                print(f"[WARN] Error logging failed attempt: {e}")
             return jsonify({'error': 'Invalid credentials'}), 401
 
         # AI risk assessment
         try:
             risk_score = ai_auth.assess_login_risk(user, device_info)
-            print(f"🎯 Risk score: {risk_score}")
+            print(f"[DEBUG] Risk score: {risk_score}")
         except Exception as e:
-            print(f"⚠️ Error assessing risk: {e}")
+            print(f"[WARN] Error assessing risk: {e}")
             risk_score = 0.0
 
         # Authenticate based on method
         if login_method == 'password':
             password_valid = user.check_password(password)
-            print(f"🔑 Password valid: {password_valid}")
+            print(f"[DEBUG] Password valid: {password_valid}")
             if not password_valid:
-                print(f"❌ Wrong password")
+                print(f"[ERROR] Wrong password")
                 try:
                     ai_auth.log_failed_attempt(username, 'wrong_password', device_info)
                 except Exception as e:
-                    print(f"⚠️ Error logging failed attempt: {e}")
+                    print(f"[WARN] Error logging failed attempt: {e}")
                 return jsonify({'error': 'Invalid credentials'}), 401
         elif login_method == 'voice':
             voice_data = data.get('voice_data')
@@ -106,7 +106,7 @@ def login():
 
         # Create access token
         access_token = create_access_token(
-            identity=user.id,
+            identity=str(user.id),
             expires_delta=timedelta(hours=8)
         )
 
@@ -126,11 +126,11 @@ def login():
         try:
             ai_auth.log_successful_login(user, device_info, risk_score)
         except Exception as e:
-            print(f"⚠️ Error logging successful login: {e}")
+            print(f"[WARN] Error logging successful login: {e}")
 
         db.session.commit()
 
-        print(f"✅ Login successful for {username}")
+        print(f"[SUCCESS] Login successful for {username}")
 
         return jsonify({
             'access_token': access_token,
@@ -146,7 +146,7 @@ def login():
         })
 
     except Exception as e:
-        print(f"💥 Login error: {str(e)}")
+        print(f"[ERROR] Login error: {str(e)}")
         import traceback
         traceback.print_exc()
         return jsonify({'error': 'Login failed due to server error'}), 500
@@ -173,7 +173,7 @@ def get_current_user():
         })
 
     except Exception as e:
-        print(f"💥 Get current user error: {str(e)}")
+        print(f"[ERROR] Get current user error: {str(e)}")
         return jsonify({'error': 'Failed to get user information'}), 500
 
 @auth_bp.route('/verify-otp', methods=['POST'])
@@ -211,7 +211,7 @@ def logout():
         })
 
     except Exception as e:
-        print(f"💥 Logout error: {str(e)}")
+        print(f"[ERROR] Logout error: {str(e)}")
         return jsonify({
             'success': False,
             'message': 'Logout failed'

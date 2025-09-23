@@ -1,0 +1,2428 @@
+{
+  "info": {
+    "title": "Rice Mill ERP API",
+    "version": "1.0.0",
+    "description": "Comprehensive API for Rice Mill Management System",
+    "generated_at": "2025-08-18T20:23:54.504539"
+  },
+  "base_url": "http://localhost:5000",
+  "authentication": {
+    "type": "Bearer Token (JWT)",
+    "header": "Authorization: Bearer <token>",
+    "login_endpoint": "/api/auth/login"
+  },
+  "endpoints": {
+    "Authentication": {
+      "prefix": "/api/auth",
+      "routes": [
+        {
+          "path": "/suggest-username",
+          "methods": [
+            "POST"
+          ],
+          "function": "suggest_username",
+          "description": "AI-powered username suggestions"
+        },
+        {
+          "path": "/login",
+          "methods": [
+            "POST"
+          ],
+          "function": "login",
+          "description": "Endpoint for login"
+        },
+        {
+          "path": "/me",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_current_user",
+          "description": "Get current user information"
+        },
+        {
+          "path": "/verify-otp",
+          "methods": [
+            "POST"
+          ],
+          "function": "verify_otp",
+          "description": "Endpoint for verify_otp"
+        },
+        {
+          "path": "/logout",
+          "methods": [
+            "POST"
+          ],
+          "function": "logout",
+          "description": "Logout user and invalidate session"
+        },
+        {
+          "path": "/voice-login",
+          "methods": [
+            "POST"
+          ],
+          "function": "voice_login",
+          "description": "Endpoint for voice_login"
+        }
+      ],
+      "samples": {
+        "login": {
+          "request": {
+            "username": "admin",
+            "password": "admin123"
+          },
+          "response": {
+            "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+            "user": {
+              "id": 1,
+              "username": "admin",
+              "role": "admin"
+            }
+          }
+        }
+      }
+    },
+    "Dashboard": {
+      "prefix": "/api/dashboard",
+      "routes": [
+        {
+          "path": "/overview",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_dashboard_overview",
+          "description": "Endpoint for get_dashboard_overview"
+        },
+        {
+          "path": "/widgets",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_smart_widgets",
+          "description": "Endpoint for get_smart_widgets"
+        },
+        {
+          "path": "/insights",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_ai_insights",
+          "description": "Endpoint for get_ai_insights"
+        },
+        {
+          "path": "/alerts",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_smart_alerts",
+          "description": "Endpoint for get_smart_alerts"
+        },
+        {
+          "path": "/metrics/production",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_production_metrics",
+          "description": "Endpoint for get_production_metrics"
+        },
+        {
+          "path": "/metrics/quality",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_quality_metrics",
+          "description": "Endpoint for get_quality_metrics"
+        },
+        {
+          "path": "/metrics/inventory",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_inventory_metrics",
+          "description": "Endpoint for get_inventory_metrics"
+        },
+        {
+          "path": "/metrics/financial",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_financial_metrics",
+          "description": "Endpoint for get_financial_metrics"
+        },
+        {
+          "path": "/predictions",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_predictions",
+          "description": "Endpoint for get_predictions"
+        },
+        {
+          "path": "/customize",
+          "methods": [
+            "POST"
+          ],
+          "function": "customize_dashboard",
+          "description": "Endpoint for customize_dashboard"
+        }
+      ]
+    },
+    "Farmer Management": {
+      "prefix": "/api/farmer",
+      "routes": [
+        {
+          "path": "/register",
+          "methods": [
+            "POST"
+          ],
+          "function": "register_farmer",
+          "description": "Endpoint for register_farmer"
+        },
+        {
+          "path": "/list",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_farmers",
+          "description": "Endpoint for get_farmers"
+        },
+        {
+          "path": "/<int:farmer_id>",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_farmer_details",
+          "description": "Endpoint for get_farmer_details"
+        },
+        {
+          "path": "/<int:farmer_id>",
+          "methods": [
+            "PUT"
+          ],
+          "function": "update_farmer",
+          "description": "Submit farmer information update for verification"
+        },
+        {
+          "path": "/edit-requests",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_edit_requests",
+          "description": "Get farmer edit requests"
+        },
+        {
+          "path": "/edit-requests/<int:request_id>/approve",
+          "methods": [
+            "POST"
+          ],
+          "function": "approve_edit_request",
+          "description": "Approve farmer edit request"
+        },
+        {
+          "path": "/edit-requests/<int:request_id>/reject",
+          "methods": [
+            "POST"
+          ],
+          "function": "reject_edit_request",
+          "description": "Reject farmer edit request"
+        },
+        {
+          "path": "/edit-requests/create-sample",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_sample_edit_requests",
+          "description": "Create sample edit requests for testing"
+        },
+        {
+          "path": "/contracts",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_contracts",
+          "description": "Get farmer contracts with optional filtering"
+        },
+        {
+          "path": "/contracts/<int:contract_id>",
+          "methods": [
+            "PUT"
+          ],
+          "function": "update_contract",
+          "description": "Update contract information"
+        },
+        {
+          "path": "/contracts",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_contract",
+          "description": "Endpoint for create_contract"
+        },
+        {
+          "path": "/procurements",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_procurements",
+          "description": "Get procurement records with optional filtering"
+        },
+        {
+          "path": "/procurements",
+          "methods": [
+            "POST"
+          ],
+          "function": "record_procurement",
+          "description": "Endpoint for record_procurement"
+        },
+        {
+          "path": "/payments",
+          "methods": [
+            "POST"
+          ],
+          "function": "process_payment",
+          "description": "Endpoint for process_payment"
+        },
+        {
+          "path": "/analytics/overview",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_farmer_analytics",
+          "description": "Get comprehensive farmer analytics overview"
+        },
+        {
+          "path": "/analytics/test",
+          "methods": [
+            "GET"
+          ],
+          "function": "test_analytics",
+          "description": "Simple test endpoint for analytics"
+        },
+        {
+          "path": "/seasonal-planning",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_seasonal_plan",
+          "description": "Endpoint for create_seasonal_plan"
+        },
+        {
+          "path": "/quality-trends",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_quality_trends",
+          "description": "Endpoint for get_quality_trends"
+        }
+      ],
+      "samples": {
+        "create_farmer": {
+          "request": {
+            "name": "John Doe",
+            "phone": "9876543210",
+            "address": "123 Farm Road, Village",
+            "email": "john@example.com"
+          },
+          "response": {
+            "id": 1,
+            "name": "John Doe",
+            "phone": "9876543210",
+            "status": "active"
+          }
+        }
+      }
+    },
+    "Inventory Management": {
+      "prefix": "/api/inventory",
+      "routes": [
+        {
+          "path": "/paddy",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_paddy",
+          "description": "Simple paddy stock endpoint for frontend compatibility"
+        },
+        {
+          "path": "/paddy",
+          "methods": [
+            "POST"
+          ],
+          "function": "add_paddy",
+          "description": "Add new paddy stock"
+        },
+        {
+          "path": "/products",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_products",
+          "description": "Simple product stock endpoint for frontend compatibility"
+        },
+        {
+          "path": "/movements",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_movements",
+          "description": "Get stock movements"
+        },
+        {
+          "path": "/paddy-stock",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_paddy_stock",
+          "description": "Endpoint for get_paddy_stock"
+        },
+        {
+          "path": "/paddy-stock",
+          "methods": [
+            "POST"
+          ],
+          "function": "add_paddy_stock",
+          "description": "Endpoint for add_paddy_stock"
+        },
+        {
+          "path": "/paddy-stock/<int:stock_id>",
+          "methods": [
+            "PUT"
+          ],
+          "function": "update_paddy_stock",
+          "description": "Endpoint for update_paddy_stock"
+        },
+        {
+          "path": "/product-stock",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_product_stock",
+          "description": "Endpoint for get_product_stock"
+        },
+        {
+          "path": "/product-stock",
+          "methods": [
+            "POST"
+          ],
+          "function": "add_product_stock",
+          "description": "Endpoint for add_product_stock"
+        },
+        {
+          "path": "/transactions",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_transactions",
+          "description": "Endpoint for get_transactions"
+        },
+        {
+          "path": "/transactions",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_transaction",
+          "description": "Endpoint for create_transaction"
+        },
+        {
+          "path": "/analytics/overview",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_inventory_overview",
+          "description": "Endpoint for get_inventory_overview"
+        },
+        {
+          "path": "/analytics/turnover",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_inventory_turnover",
+          "description": "Endpoint for get_inventory_turnover"
+        },
+        {
+          "path": "/analytics/valuation",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_inventory_valuation",
+          "description": "Endpoint for get_inventory_valuation"
+        },
+        {
+          "path": "/reorder-rules",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_reorder_rules",
+          "description": "Endpoint for get_reorder_rules"
+        },
+        {
+          "path": "/reorder-rules",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_reorder_rule",
+          "description": "Endpoint for create_reorder_rule"
+        },
+        {
+          "path": "/reorder-alerts",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_reorder_alerts",
+          "description": "Endpoint for get_reorder_alerts"
+        },
+        {
+          "path": "/suppliers",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_suppliers",
+          "description": "Endpoint for get_suppliers"
+        },
+        {
+          "path": "/suppliers",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_supplier",
+          "description": "Endpoint for create_supplier"
+        },
+        {
+          "path": "/ai/demand-forecast",
+          "methods": [
+            "POST"
+          ],
+          "function": "get_ai_demand_forecast",
+          "description": "Endpoint for get_ai_demand_forecast"
+        },
+        {
+          "path": "/ai/optimize-stock-levels",
+          "methods": [
+            "POST"
+          ],
+          "function": "optimize_stock_levels",
+          "description": "Endpoint for optimize_stock_levels"
+        },
+        {
+          "path": "/ai/price-recommendations",
+          "methods": [
+            "POST"
+          ],
+          "function": "get_price_recommendations",
+          "description": "Endpoint for get_price_recommendations"
+        },
+        {
+          "path": "/reports/stock-aging",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_stock_aging_report",
+          "description": "Endpoint for get_stock_aging_report"
+        },
+        {
+          "path": "/reports/movement-summary",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_movement_summary",
+          "description": "Endpoint for get_movement_summary"
+        },
+        {
+          "path": "/reports/low-stock",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_low_stock_report",
+          "description": "Endpoint for get_low_stock_report"
+        },
+        {
+          "path": "/waste-tracking",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_waste_tracking",
+          "description": "Endpoint for get_waste_tracking"
+        },
+        {
+          "path": "/optimization",
+          "methods": [
+            "POST"
+          ],
+          "function": "optimize_inventory",
+          "description": "Endpoint for optimize_inventory"
+        },
+        {
+          "path": "/aging-analysis",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_aging_analysis",
+          "description": "Endpoint for get_aging_analysis"
+        },
+        {
+          "path": "/turnover-analysis",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_turnover_analysis",
+          "description": "Endpoint for get_turnover_analysis"
+        },
+        {
+          "path": "/quality-tracking",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_quality_tracking",
+          "description": "Endpoint for get_quality_tracking"
+        },
+        {
+          "path": "/storage-optimization",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_storage_optimization",
+          "description": "Endpoint for get_storage_optimization"
+        },
+        {
+          "path": "/predictive-maintenance",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_predictive_maintenance",
+          "description": "Endpoint for get_predictive_maintenance"
+        },
+        {
+          "path": "/cost-analysis",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_cost_analysis",
+          "description": "Endpoint for get_cost_analysis"
+        },
+        {
+          "path": "/dashboard",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_inventory_dashboard",
+          "description": "Endpoint for get_inventory_dashboard"
+        },
+        {
+          "path": "/alerts",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_stock_alerts",
+          "description": "Endpoint for get_stock_alerts"
+        },
+        {
+          "path": "/reorder-points",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_reorder_points",
+          "description": "Endpoint for get_reorder_points"
+        },
+        {
+          "path": "/reorder-points",
+          "methods": [
+            "POST"
+          ],
+          "function": "update_reorder_points",
+          "description": "Endpoint for update_reorder_points"
+        },
+        {
+          "path": "/demand-forecast",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_demand_forecast",
+          "description": "Endpoint for get_demand_forecast"
+        },
+        {
+          "path": "/cycle-count",
+          "methods": [
+            "POST"
+          ],
+          "function": "initiate_cycle_count",
+          "description": "Endpoint for initiate_cycle_count"
+        },
+        {
+          "path": "/supplier-performance",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_supplier_performance",
+          "description": "Endpoint for get_supplier_performance"
+        },
+        {
+          "path": "/quality-trends",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_quality_trends",
+          "description": "Endpoint for get_quality_trends"
+        },
+        {
+          "path": "/smart-alerts",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_smart_alerts",
+          "description": "Endpoint for get_smart_alerts"
+        },
+        {
+          "path": "/batch-tracking",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_batch_tracking",
+          "description": "Endpoint for get_batch_tracking"
+        }
+      ]
+    },
+    "Production Management": {
+      "prefix": "/api/production",
+      "routes": [
+        {
+          "path": "/batches",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_batches",
+          "description": "Endpoint for get_batches"
+        },
+        {
+          "path": "/batches",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_batch",
+          "description": "Endpoint for create_batch"
+        },
+        {
+          "path": "/batches/<int:batch_id>",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_batch_details",
+          "description": "Endpoint for get_batch_details"
+        },
+        {
+          "path": "/batches/<int:batch_id>/start",
+          "methods": [
+            "POST"
+          ],
+          "function": "start_batch",
+          "description": "Endpoint for start_batch"
+        },
+        {
+          "path": "/batches/<int:batch_id>/complete",
+          "methods": [
+            "POST"
+          ],
+          "function": "complete_batch",
+          "description": "Endpoint for complete_batch"
+        },
+        {
+          "path": "/batches/<int:batch_id>/steps",
+          "methods": [
+            "POST"
+          ],
+          "function": "add_production_step",
+          "description": "Endpoint for add_production_step"
+        },
+        {
+          "path": "/quality-tests",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_quality_test",
+          "description": "Endpoint for create_quality_test"
+        },
+        {
+          "path": "/quality-tests",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_quality_tests",
+          "description": "Endpoint for get_quality_tests"
+        },
+        {
+          "path": "/current-status",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_current_status",
+          "description": "Endpoint for get_current_status"
+        },
+        {
+          "path": "/schedules",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_production_schedules",
+          "description": "Endpoint for get_production_schedules"
+        },
+        {
+          "path": "/schedules",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_production_schedule",
+          "description": "Endpoint for create_production_schedule"
+        },
+        {
+          "path": "/optimize",
+          "methods": [
+            "POST"
+          ],
+          "function": "optimize_production",
+          "description": "Endpoint for optimize_production"
+        },
+        {
+          "path": "/analytics",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_production_analytics",
+          "description": "Endpoint for get_production_analytics"
+        },
+        {
+          "path": "/recommendations",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_ai_recommendations",
+          "description": "Endpoint for get_ai_recommendations"
+        },
+        {
+          "path": "/maintenance",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_maintenance_logs",
+          "description": "Endpoint for get_maintenance_logs"
+        },
+        {
+          "path": "/maintenance",
+          "methods": [
+            "POST"
+          ],
+          "function": "log_maintenance",
+          "description": "Endpoint for log_maintenance"
+        },
+        {
+          "path": "/maintenance/predictions",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_maintenance_predictions",
+          "description": "Endpoint for get_maintenance_predictions"
+        },
+        {
+          "path": "/efficiency/analysis",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_efficiency_analysis",
+          "description": "Endpoint for get_efficiency_analysis"
+        },
+        {
+          "path": "/batches/<int:batch_id>/pause",
+          "methods": [
+            "POST"
+          ],
+          "function": "pause_batch",
+          "description": "Endpoint for pause_batch"
+        },
+        {
+          "path": "/batches/<int:batch_id>/resume",
+          "methods": [
+            "POST"
+          ],
+          "function": "resume_batch",
+          "description": "Endpoint for resume_batch"
+        },
+        {
+          "path": "/dashboard",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_production_dashboard",
+          "description": "Endpoint for get_production_dashboard"
+        }
+      ]
+    },
+    "Sales Management": {
+      "prefix": "/api/sales",
+      "routes": [
+        {
+          "path": "/analytics",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_sales_analytics",
+          "description": "General sales analytics endpoint for frontend compatibility"
+        },
+        {
+          "path": "/dashboard",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_sales_dashboard",
+          "description": "Endpoint for get_sales_dashboard"
+        },
+        {
+          "path": "/customers",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_customers",
+          "description": "Endpoint for get_customers"
+        },
+        {
+          "path": "/customers",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_customer",
+          "description": "Endpoint for create_customer"
+        },
+        {
+          "path": "/customers/<int:customer_id>",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_customer_details",
+          "description": "Endpoint for get_customer_details"
+        },
+        {
+          "path": "/orders",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_sales_orders",
+          "description": "Endpoint for get_sales_orders"
+        },
+        {
+          "path": "/orders",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_sales_order",
+          "description": "Endpoint for create_sales_order"
+        },
+        {
+          "path": "/orders/<int:order_id>/status",
+          "methods": [
+            "PUT"
+          ],
+          "function": "update_order_status",
+          "description": "Endpoint for update_order_status"
+        },
+        {
+          "path": "/quotations",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_quotations",
+          "description": "Endpoint for get_quotations"
+        },
+        {
+          "path": "/quotations",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_quotation",
+          "description": "Endpoint for create_quotation"
+        },
+        {
+          "path": "/quotations/<int:quotation_id>/convert",
+          "methods": [
+            "POST"
+          ],
+          "function": "convert_quotation_to_order",
+          "description": "Endpoint for convert_quotation_to_order"
+        },
+        {
+          "path": "/leads",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_sales_leads",
+          "description": "Endpoint for get_sales_leads"
+        },
+        {
+          "path": "/leads",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_sales_lead",
+          "description": "Endpoint for create_sales_lead"
+        },
+        {
+          "path": "/leads/<int:lead_id>/status",
+          "methods": [
+            "PUT"
+          ],
+          "function": "update_lead_status",
+          "description": "Endpoint for update_lead_status"
+        },
+        {
+          "path": "/analytics/revenue",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_revenue_analytics",
+          "description": "Endpoint for get_revenue_analytics"
+        },
+        {
+          "path": "/analytics/forecast",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_sales_forecast",
+          "description": "Endpoint for get_sales_forecast"
+        },
+        {
+          "path": "/lead-scoring",
+          "methods": [
+            "POST"
+          ],
+          "function": "score_sales_lead",
+          "description": "Endpoint for score_sales_lead"
+        }
+      ]
+    },
+    "Finance Management": {
+      "prefix": "/api/finance",
+      "routes": [
+        {
+          "path": "/invoices",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_invoices",
+          "description": "Get invoices list for frontend compatibility"
+        },
+        {
+          "path": "/cash-flow",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_cash_flow",
+          "description": "Get cash flow data for frontend compatibility"
+        },
+        {
+          "path": "/accounts-receivable",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_accounts_receivable",
+          "description": "Get accounts receivable for frontend compatibility"
+        },
+        {
+          "path": "/financial-summary",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_financial_summary",
+          "description": "Get financial summary for frontend compatibility"
+        },
+        {
+          "path": "/accounts",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_account",
+          "description": "Endpoint for create_account"
+        },
+        {
+          "path": "/journal-entries",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_journal_entry",
+          "description": "Endpoint for create_journal_entry"
+        },
+        {
+          "path": "/invoices",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_invoice",
+          "description": "Endpoint for create_invoice"
+        },
+        {
+          "path": "/payments",
+          "methods": [
+            "POST"
+          ],
+          "function": "record_payment",
+          "description": "Endpoint for record_payment"
+        },
+        {
+          "path": "/summary",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_summary",
+          "description": "Endpoint for get_summary"
+        },
+        {
+          "path": "/aging-report",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_aging_report",
+          "description": "Endpoint for get_aging_report"
+        }
+      ]
+    },
+    "Customer Management": {
+      "prefix": "/api/customers",
+      "routes": [
+        {
+          "path": "/analytics/overview",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_analytics_overview",
+          "description": "Customer analytics overview for frontend compatibility"
+        },
+        {
+          "path": "/analytics/segments",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_analytics_segments",
+          "description": "Customer segments for frontend compatibility"
+        },
+        {
+          "path": "/",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_customers",
+          "description": "Endpoint for get_customers"
+        },
+        {
+          "path": "/",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_customer",
+          "description": "Endpoint for create_customer"
+        },
+        {
+          "path": "/<int:customer_id>",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_customer",
+          "description": "Endpoint for get_customer"
+        },
+        {
+          "path": "/<int:customer_id>",
+          "methods": [
+            "PUT"
+          ],
+          "function": "update_customer",
+          "description": "Endpoint for update_customer"
+        },
+        {
+          "path": "/<int:customer_id>/interactions",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_customer_interactions",
+          "description": "Endpoint for get_customer_interactions"
+        },
+        {
+          "path": "/<int:customer_id>/interactions",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_customer_interaction",
+          "description": "Endpoint for create_customer_interaction"
+        },
+        {
+          "path": "/segments",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_customer_segments",
+          "description": "Endpoint for get_customer_segments"
+        },
+        {
+          "path": "/segments",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_customer_segment",
+          "description": "Endpoint for create_customer_segment"
+        },
+        {
+          "path": "/<int:customer_id>/contracts",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_customer_contracts",
+          "description": "Endpoint for get_customer_contracts"
+        },
+        {
+          "path": "/<int:customer_id>/contracts",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_customer_contract",
+          "description": "Endpoint for create_customer_contract"
+        },
+        {
+          "path": "/analytics/satisfaction",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_satisfaction_analytics",
+          "description": "Endpoint for get_satisfaction_analytics"
+        },
+        {
+          "path": "/analytics/lifetime-value",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_lifetime_value_analytics",
+          "description": "Endpoint for get_lifetime_value_analytics"
+        },
+        {
+          "path": "/analytics/churn-prediction",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_churn_prediction",
+          "description": "Endpoint for get_churn_prediction"
+        },
+        {
+          "path": "/communication/campaigns",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_communication_campaigns",
+          "description": "Endpoint for get_communication_campaigns"
+        },
+        {
+          "path": "/communication/campaigns",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_communication_campaign",
+          "description": "Endpoint for create_communication_campaign"
+        },
+        {
+          "path": "/feedback/surveys",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_customer_surveys",
+          "description": "Endpoint for get_customer_surveys"
+        },
+        {
+          "path": "/feedback/surveys",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_customer_survey",
+          "description": "Endpoint for create_customer_survey"
+        },
+        {
+          "path": "/loyalty/programs",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_loyalty_programs",
+          "description": "Endpoint for get_loyalty_programs"
+        },
+        {
+          "path": "/loyalty/programs",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_loyalty_program",
+          "description": "Endpoint for create_loyalty_program"
+        },
+        {
+          "path": "/<int:customer_id>/recommendations",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_customer_recommendations",
+          "description": "Endpoint for get_customer_recommendations"
+        },
+        {
+          "path": "/analytics/journey-mapping",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_customer_journey_mapping",
+          "description": "Endpoint for get_customer_journey_mapping"
+        },
+        {
+          "path": "/support/tickets",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_support_tickets",
+          "description": "Endpoint for get_support_tickets"
+        },
+        {
+          "path": "/support/tickets",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_support_ticket",
+          "description": "Endpoint for create_support_ticket"
+        },
+        {
+          "path": "/analytics/voice-of-customer",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_voice_of_customer",
+          "description": "Endpoint for get_voice_of_customer"
+        },
+        {
+          "path": "/predictive/behavior",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_predictive_behavior",
+          "description": "Endpoint for get_predictive_behavior"
+        },
+        {
+          "path": "/<int:customer_id>/feedback",
+          "methods": [
+            "POST"
+          ],
+          "function": "analyze_feedback",
+          "description": "Endpoint for analyze_feedback"
+        },
+        {
+          "path": "/ai-recommendations",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_ai_recommendations",
+          "description": "Endpoint for get_ai_recommendations"
+        }
+      ]
+    },
+    "Quality Control": {
+      "prefix": "/api/quality",
+      "routes": [
+        {
+          "path": "/standards",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_quality_standards",
+          "description": "Get all quality standards"
+        },
+        {
+          "path": "/standards",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_quality_standard",
+          "description": "Create new quality standard"
+        },
+        {
+          "path": "/templates",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_test_templates",
+          "description": "Get all test templates"
+        },
+        {
+          "path": "/templates",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_test_template",
+          "description": "Create new test template"
+        },
+        {
+          "path": "/inspections",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_inspections",
+          "description": "Get quality inspections with filters"
+        },
+        {
+          "path": "/inspections",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_inspection",
+          "description": "Create new quality inspection"
+        },
+        {
+          "path": "/inspections/<int:inspection_id>",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_inspection",
+          "description": "Get specific inspection details"
+        },
+        {
+          "path": "/inspections/<int:inspection_id>/approve",
+          "methods": [
+            "POST"
+          ],
+          "function": "approve_inspection",
+          "description": "Approve quality inspection"
+        },
+        {
+          "path": "/alerts",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_quality_alerts",
+          "description": "Get quality alerts"
+        },
+        {
+          "path": "/alerts/<int:alert_id>/resolve",
+          "methods": [
+            "POST"
+          ],
+          "function": "resolve_quality_alert",
+          "description": "Resolve quality alert"
+        },
+        {
+          "path": "/trends",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_quality_trends",
+          "description": "Get quality trends analysis"
+        },
+        {
+          "path": "/dashboard",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_quality_dashboard",
+          "description": "Get quality dashboard data"
+        },
+        {
+          "path": "/equipment-health",
+          "methods": [
+            "GET"
+          ],
+          "function": "check_equipment_health",
+          "description": "Check equipment health based on quality patterns"
+        },
+        {
+          "path": "/batch-analysis",
+          "methods": [
+            "POST"
+          ],
+          "function": "analyze_batch_quality",
+          "description": "Analyze quality for a specific batch"
+        },
+        {
+          "path": "/compliance-report",
+          "methods": [
+            "GET"
+          ],
+          "function": "generate_compliance_report",
+          "description": "Generate compliance report"
+        },
+        {
+          "path": "/predict-quality",
+          "methods": [
+            "POST"
+          ],
+          "function": "predict_quality",
+          "description": "Predict quality based on input parameters"
+        },
+        {
+          "path": "/recommendations",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_quality_recommendations",
+          "description": "Get AI-powered quality recommendations"
+        }
+      ]
+    },
+    "Analytics": {
+      "prefix": "/api/analytics",
+      "routes": [
+        {
+          "path": "/dashboards",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_dashboard",
+          "description": "Endpoint for create_dashboard"
+        },
+        {
+          "path": "/dashboards/executive",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_executive_dashboard",
+          "description": "Endpoint for get_executive_dashboard"
+        },
+        {
+          "path": "/dashboards/operational",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_operational_dashboard",
+          "description": "Endpoint for get_operational_dashboard"
+        },
+        {
+          "path": "/kpis",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_kpi",
+          "description": "Endpoint for create_kpi"
+        },
+        {
+          "path": "/kpis/dashboard",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_kpi_dashboard",
+          "description": "Endpoint for get_kpi_dashboard"
+        },
+        {
+          "path": "/reports/financial",
+          "methods": [
+            "GET"
+          ],
+          "function": "generate_financial_report",
+          "description": "Endpoint for generate_financial_report"
+        },
+        {
+          "path": "/reports/production",
+          "methods": [
+            "GET"
+          ],
+          "function": "generate_production_report",
+          "description": "Endpoint for generate_production_report"
+        },
+        {
+          "path": "/trends/revenue",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_revenue_trends",
+          "description": "Endpoint for get_revenue_trends"
+        },
+        {
+          "path": "/insights/business",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_business_insights",
+          "description": "Endpoint for get_business_insights"
+        },
+        {
+          "path": "/alerts/data",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_data_alert",
+          "description": "Endpoint for create_data_alert"
+        },
+        {
+          "path": "/performance/summary",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_performance_summary",
+          "description": "Endpoint for get_performance_summary"
+        }
+      ]
+    },
+    "Compliance": {
+      "prefix": "/api/compliance",
+      "routes": [
+        {
+          "path": "/assessments",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_assessment",
+          "description": "Endpoint for create_assessment"
+        },
+        {
+          "path": "/assessments/<int:assessment_id>/results",
+          "methods": [
+            "PUT"
+          ],
+          "function": "update_assessment_results",
+          "description": "Endpoint for update_assessment_results"
+        },
+        {
+          "path": "/documents",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_document",
+          "description": "Endpoint for create_document"
+        },
+        {
+          "path": "/action-items/<int:action_item_id>/progress",
+          "methods": [
+            "PUT"
+          ],
+          "function": "update_action_progress",
+          "description": "Endpoint for update_action_progress"
+        },
+        {
+          "path": "/dashboard",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_compliance_dashboard",
+          "description": "Endpoint for get_compliance_dashboard"
+        },
+        {
+          "path": "/reports/compliance",
+          "methods": [
+            "GET"
+          ],
+          "function": "generate_compliance_report",
+          "description": "Endpoint for generate_compliance_report"
+        },
+        {
+          "path": "/alerts/check-expiring",
+          "methods": [
+            "GET"
+          ],
+          "function": "check_expiring_documents",
+          "description": "Endpoint for check_expiring_documents"
+        }
+      ]
+    },
+    "Supply Chain": {
+      "prefix": "/api/supply-chain",
+      "routes": [
+        {
+          "path": "/suppliers",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_supplier",
+          "description": "Endpoint for create_supplier"
+        },
+        {
+          "path": "/purchase-orders",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_purchase_order",
+          "description": "Endpoint for create_purchase_order"
+        },
+        {
+          "path": "/purchase-orders/<int:po_id>/receive",
+          "methods": [
+            "POST"
+          ],
+          "function": "receive_purchase_order",
+          "description": "Endpoint for receive_purchase_order"
+        },
+        {
+          "path": "/procurement-requests",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_procurement_request",
+          "description": "Endpoint for create_procurement_request"
+        },
+        {
+          "path": "/suppliers/<int:supplier_id>/performance",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_supplier_performance",
+          "description": "Endpoint for get_supplier_performance"
+        },
+        {
+          "path": "/optimize-inventory",
+          "methods": [
+            "POST"
+          ],
+          "function": "optimize_inventory",
+          "description": "Endpoint for optimize_inventory"
+        },
+        {
+          "path": "/predict-delivery",
+          "methods": [
+            "POST"
+          ],
+          "function": "predict_delivery",
+          "description": "Endpoint for predict_delivery"
+        }
+      ]
+    },
+    "Logistics": {
+      "prefix": "/api/logistics",
+      "routes": [
+        {
+          "path": "/shipments",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_shipment",
+          "description": "Endpoint for create_shipment"
+        },
+        {
+          "path": "/shipments/<int:shipment_id>/assign",
+          "methods": [
+            "POST"
+          ],
+          "function": "assign_shipment",
+          "description": "Endpoint for assign_shipment"
+        },
+        {
+          "path": "/shipments/<int:shipment_id>/start",
+          "methods": [
+            "POST"
+          ],
+          "function": "start_shipment",
+          "description": "Endpoint for start_shipment"
+        },
+        {
+          "path": "/shipments/<int:shipment_id>/complete",
+          "methods": [
+            "POST"
+          ],
+          "function": "complete_delivery",
+          "description": "Endpoint for complete_delivery"
+        },
+        {
+          "path": "/track/<shipment_number>",
+          "methods": [
+            "GET"
+          ],
+          "function": "track_shipment",
+          "description": "Endpoint for track_shipment"
+        },
+        {
+          "path": "/fleet/status",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_fleet_status",
+          "description": "Endpoint for get_fleet_status"
+        },
+        {
+          "path": "/vehicles",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_vehicles",
+          "description": "Endpoint for get_vehicles"
+        },
+        {
+          "path": "/drivers",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_drivers",
+          "description": "Endpoint for get_drivers"
+        }
+      ]
+    },
+    "Notifications": {
+      "prefix": "/api",
+      "routes": [
+        {
+          "path": "/notifications",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_notifications",
+          "description": "Get all notifications"
+        },
+        {
+          "path": "/notifications/<int:notification_id>/read",
+          "methods": [
+            "POST"
+          ],
+          "function": "mark_notification_read",
+          "description": "Mark a notification as read"
+        },
+        {
+          "path": "/notifications/mark-all-read",
+          "methods": [
+            "POST"
+          ],
+          "function": "mark_all_notifications_read",
+          "description": "Mark all notifications as read"
+        },
+        {
+          "path": "/notifications/<int:notification_id>",
+          "methods": [
+            "DELETE"
+          ],
+          "function": "delete_notification",
+          "description": "Delete a notification"
+        },
+        {
+          "path": "/notifications",
+          "methods": [
+            "POST"
+          ],
+          "function": "create_notification",
+          "description": "Create a new notification"
+        },
+        {
+          "path": "/notifications/categories",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_notification_categories",
+          "description": "Get notification categories"
+        },
+        {
+          "path": "/notifications/stats",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_notification_stats",
+          "description": "Get notification statistics"
+        }
+      ]
+    },
+    "AI Services": {
+      "prefix": "/api/ai",
+      "routes": [
+        {
+          "path": "/voice/recognize",
+          "methods": [
+            "POST"
+          ],
+          "function": "recognize_voice",
+          "description": "Process voice command"
+        },
+        {
+          "path": "/quality/assess",
+          "methods": [
+            "POST"
+          ],
+          "function": "assess_quality",
+          "description": "Analyze rice quality from image"
+        },
+        {
+          "path": "/insights/generate",
+          "methods": [
+            "POST"
+          ],
+          "function": "generate_insights",
+          "description": "Generate AI insights from data"
+        },
+        {
+          "path": "/demand/predict",
+          "methods": [
+            "POST"
+          ],
+          "function": "predict_demand",
+          "description": "Predict demand using AI"
+        },
+        {
+          "path": "/production/optimize",
+          "methods": [
+            "POST"
+          ],
+          "function": "optimize_production",
+          "description": "Optimize production schedule"
+        },
+        {
+          "path": "/anomalies/detect",
+          "methods": [
+            "POST"
+          ],
+          "function": "detect_anomalies",
+          "description": "Detect anomalies in data"
+        },
+        {
+          "path": "/capabilities",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_ai_capabilities",
+          "description": "Get AI service capabilities"
+        },
+        {
+          "path": "/models/status",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_model_status",
+          "description": "Get AI model status"
+        },
+        {
+          "path": "/train/model",
+          "methods": [
+            "POST"
+          ],
+          "function": "train_model",
+          "description": "Train or retrain AI models"
+        },
+        {
+          "path": "/feedback",
+          "methods": [
+            "POST"
+          ],
+          "function": "submit_feedback",
+          "description": "Submit feedback for AI predictions"
+        },
+        {
+          "path": "/health",
+          "methods": [
+            "GET"
+          ],
+          "function": "ai_health_check",
+          "description": "Health check for AI services"
+        }
+      ]
+    },
+    "Biometric": {
+      "prefix": "/api/biometric",
+      "routes": [
+        {
+          "path": "/register/face",
+          "methods": [
+            "POST"
+          ],
+          "function": "register_face",
+          "description": "Register user's face for biometric authentication"
+        },
+        {
+          "path": "/verify/face",
+          "methods": [
+            "POST"
+          ],
+          "function": "verify_face",
+          "description": "Verify user's face for authentication"
+        },
+        {
+          "path": "/register/fingerprint",
+          "methods": [
+            "POST"
+          ],
+          "function": "register_fingerprint",
+          "description": "Register user's fingerprint"
+        },
+        {
+          "path": "/verify/fingerprint",
+          "methods": [
+            "POST"
+          ],
+          "function": "verify_fingerprint",
+          "description": "Verify user's fingerprint"
+        },
+        {
+          "path": "/login/voice",
+          "methods": [
+            "POST"
+          ],
+          "function": "voice_login",
+          "description": "Voice-based login with speech recognition and voice verification"
+        },
+        {
+          "path": "/capture/voice",
+          "methods": [
+            "POST"
+          ],
+          "function": "capture_voice",
+          "description": "Capture voice sample for registration"
+        },
+        {
+          "path": "/status/<int:user_id>",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_biometric_status",
+          "description": "Get user's biometric registration status"
+        },
+        {
+          "path": "/register/voice",
+          "methods": [
+            "POST"
+          ],
+          "function": "register_voice",
+          "description": "Register user's voice biometric"
+        },
+        {
+          "path": "/verify/voice",
+          "methods": [
+            "POST"
+          ],
+          "function": "verify_voice",
+          "description": "Verify user's voice biometric"
+        },
+        {
+          "path": "/ai/process",
+          "methods": [
+            "POST"
+          ],
+          "function": "process_ai_command",
+          "description": "Process AI voice commands"
+        }
+      ]
+    },
+    "Quality Vision": {
+      "prefix": "/api/quality-vision",
+      "routes": [
+        {
+          "path": "/analyze/image",
+          "methods": [
+            "POST"
+          ],
+          "function": "analyze_quality_image",
+          "description": "Analyze rice quality from image using AI computer vision"
+        },
+        {
+          "path": "/dashboard",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_vision_dashboard",
+          "description": "Get AI vision quality dashboard data"
+        },
+        {
+          "path": "/recommendations/<test_id>",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_ai_recommendations",
+          "description": "Get AI-generated quality improvement recommendations"
+        },
+        {
+          "path": "/standards/<variety>",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_variety_standards",
+          "description": "Get quality standards for rice variety"
+        },
+        {
+          "path": "/batch/<batch_id>/analyze",
+          "methods": [
+            "POST"
+          ],
+          "function": "analyze_batch_samples",
+          "description": "Analyze multiple samples from a production batch"
+        },
+        {
+          "path": "/calibrate",
+          "methods": [
+            "POST"
+          ],
+          "function": "calibrate_vision_system",
+          "description": "Calibrate the AI vision system with reference samples"
+        },
+        {
+          "path": "/export/analysis/<test_id>",
+          "methods": [
+            "GET"
+          ],
+          "function": "export_analysis_report",
+          "description": "Export detailed AI analysis report"
+        }
+      ]
+    },
+    "Financial Intelligence": {
+      "prefix": "/api/financial-intelligence",
+      "routes": [
+        {
+          "path": "/cash-flow/analyze",
+          "methods": [
+            "POST"
+          ],
+          "function": "analyze_cash_flow",
+          "description": "Comprehensive cash flow analysis with AI predictions"
+        },
+        {
+          "path": "/payment/schedule",
+          "methods": [
+            "POST"
+          ],
+          "function": "smart_payment_scheduling",
+          "description": "AI-powered optimal payment scheduling"
+        },
+        {
+          "path": "/forecast",
+          "methods": [
+            "GET"
+          ],
+          "function": "financial_forecasting",
+          "description": "Advanced financial forecasting using AI"
+        },
+        {
+          "path": "/payment/optimize",
+          "methods": [
+            "GET"
+          ],
+          "function": "payment_optimization",
+          "description": "Optimize payment processes using AI"
+        },
+        {
+          "path": "/health-score",
+          "methods": [
+            "GET"
+          ],
+          "function": "financial_health_score",
+          "description": "Calculate comprehensive financial health score"
+        },
+        {
+          "path": "/invoice/process",
+          "methods": [
+            "POST"
+          ],
+          "function": "automated_invoice_processing",
+          "description": "AI-powered automated invoice processing"
+        },
+        {
+          "path": "/dashboard",
+          "methods": [
+            "GET"
+          ],
+          "function": "financial_dashboard",
+          "description": "Get comprehensive financial intelligence dashboard"
+        },
+        {
+          "path": "/insights",
+          "methods": [
+            "GET"
+          ],
+          "function": "financial_insights",
+          "description": "Get AI-generated financial insights and recommendations"
+        },
+        {
+          "path": "/reports/cash-flow",
+          "methods": [
+            "GET"
+          ],
+          "function": "cash_flow_report",
+          "description": "Generate detailed cash flow report"
+        },
+        {
+          "path": "/reports/financial-health",
+          "methods": [
+            "GET"
+          ],
+          "function": "financial_health_report",
+          "description": "Generate detailed financial health report"
+        },
+        {
+          "path": "/alerts",
+          "methods": [
+            "GET"
+          ],
+          "function": "financial_alerts",
+          "description": "Get financial alerts and warnings"
+        }
+      ]
+    },
+    "GST Compliance": {
+      "prefix": "/api/compliance",
+      "routes": [
+        {
+          "path": "/gst/calculate",
+          "methods": [
+            "POST"
+          ],
+          "function": "calculate_gst",
+          "description": "Calculate GST for a transaction"
+        },
+        {
+          "path": "/invoice/generate",
+          "methods": [
+            "POST"
+          ],
+          "function": "generate_gst_invoice",
+          "description": "Generate GST-compliant invoice"
+        },
+        {
+          "path": "/gstr1/<int:month>/<int:year>",
+          "methods": [
+            "GET"
+          ],
+          "function": "generate_gstr1_report",
+          "description": "Generate GSTR-1 report"
+        },
+        {
+          "path": "/gstr3b/<int:month>/<int:year>",
+          "methods": [
+            "GET"
+          ],
+          "function": "generate_gstr3b_report",
+          "description": "Generate GSTR-3B report"
+        },
+        {
+          "path": "/compliance/status",
+          "methods": [
+            "GET"
+          ],
+          "function": "check_compliance_status",
+          "description": "Check overall compliance status"
+        },
+        {
+          "path": "/gstin/validate",
+          "methods": [
+            "POST"
+          ],
+          "function": "validate_gstin",
+          "description": "Validate GSTIN format and checksum"
+        },
+        {
+          "path": "/pan/validate",
+          "methods": [
+            "POST"
+          ],
+          "function": "validate_pan",
+          "description": "Validate PAN format"
+        },
+        {
+          "path": "/reports/generate",
+          "methods": [
+            "POST"
+          ],
+          "function": "generate_compliance_report",
+          "description": "Generate comprehensive compliance report"
+        },
+        {
+          "path": "/dashboard",
+          "methods": [
+            "GET"
+          ],
+          "function": "compliance_dashboard",
+          "description": "Get compliance dashboard data"
+        },
+        {
+          "path": "/calendar/<int:year>",
+          "methods": [
+            "GET"
+          ],
+          "function": "compliance_calendar",
+          "description": "Get compliance calendar with due dates"
+        },
+        {
+          "path": "/tds/calculate",
+          "methods": [
+            "POST"
+          ],
+          "function": "calculate_tds",
+          "description": "Calculate TDS for payment"
+        },
+        {
+          "path": "/tds/certificate",
+          "methods": [
+            "POST"
+          ],
+          "function": "generate_tds_certificate",
+          "description": "Generate TDS certificate"
+        },
+        {
+          "path": "/export/gst",
+          "methods": [
+            "POST"
+          ],
+          "function": "export_gst_data",
+          "description": "Export GST data in various formats"
+        },
+        {
+          "path": "/reconcile/gst",
+          "methods": [
+            "POST"
+          ],
+          "function": "reconcile_gst_data",
+          "description": "Reconcile GST data between books and returns"
+        },
+        {
+          "path": "/tax/summary",
+          "methods": [
+            "POST"
+          ],
+          "function": "tax_summary",
+          "description": "Get comprehensive tax summary"
+        },
+        {
+          "path": "/reminders",
+          "methods": [
+            "GET"
+          ],
+          "function": "compliance_reminders",
+          "description": "Get compliance reminders"
+        },
+        {
+          "path": "/check/automated",
+          "methods": [
+            "POST"
+          ],
+          "function": "automated_compliance_check",
+          "description": "Run automated compliance checks"
+        },
+        {
+          "path": "/invoice/<invoice_id>/gst-details",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_invoice_gst_details",
+          "description": "Get GST details for a specific invoice"
+        },
+        {
+          "path": "/hsn/codes",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_hsn_codes",
+          "description": "Get HSN codes for rice products"
+        },
+        {
+          "path": "/gst/rates",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_gst_rates",
+          "description": "Get current GST rates for different products"
+        },
+        {
+          "path": "/compliance/requirements",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_compliance_requirements",
+          "description": "Get compliance requirements for rice mill"
+        }
+      ]
+    },
+    "Analytics Reporting": {
+      "prefix": "/api/analytics",
+      "routes": [
+        {
+          "path": "/reports/generate",
+          "methods": [
+            "POST"
+          ],
+          "function": "generate_natural_language_report",
+          "description": "Generate natural language report with AI insights"
+        },
+        {
+          "path": "/predictive/analyze",
+          "methods": [
+            "POST"
+          ],
+          "function": "predictive_analytics",
+          "description": "Advanced predictive analytics with machine learning"
+        },
+        {
+          "path": "/insights/generate",
+          "methods": [
+            "POST"
+          ],
+          "function": "generate_intelligent_insights",
+          "description": "Generate intelligent insights from multiple data sources"
+        },
+        {
+          "path": "/dashboard/custom",
+          "methods": [
+            "POST"
+          ],
+          "function": "generate_custom_dashboard",
+          "description": "Generate custom dashboard analytics"
+        },
+        {
+          "path": "/compare/analyze",
+          "methods": [
+            "POST"
+          ],
+          "function": "comparative_analysis",
+          "description": "Perform comparative analysis"
+        },
+        {
+          "path": "/anomaly/detect",
+          "methods": [
+            "POST"
+          ],
+          "function": "detect_anomalies",
+          "description": "Detect anomalies in data streams"
+        },
+        {
+          "path": "/benchmark/analyze",
+          "methods": [
+            "POST"
+          ],
+          "function": "performance_benchmarking",
+          "description": "Benchmark performance against standards"
+        },
+        {
+          "path": "/realtime/<metric_type>",
+          "methods": [
+            "GET"
+          ],
+          "function": "real_time_analytics",
+          "description": "Generate real-time analytics"
+        },
+        {
+          "path": "/dashboard/overview",
+          "methods": [
+            "GET"
+          ],
+          "function": "analytics_dashboard_overview",
+          "description": "Get comprehensive analytics dashboard overview"
+        },
+        {
+          "path": "/reports/templates",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_report_templates",
+          "description": "Get available report templates"
+        },
+        {
+          "path": "/export/report",
+          "methods": [
+            "POST"
+          ],
+          "function": "export_report",
+          "description": "Export report in various formats"
+        },
+        {
+          "path": "/kpi/calculate",
+          "methods": [
+            "POST"
+          ],
+          "function": "calculate_kpis",
+          "description": "Calculate Key Performance Indicators"
+        },
+        {
+          "path": "/trends/analyze",
+          "methods": [
+            "POST"
+          ],
+          "function": "analyze_trends",
+          "description": "Analyze trends in various metrics"
+        },
+        {
+          "path": "/alerts/smart",
+          "methods": [
+            "GET"
+          ],
+          "function": "get_smart_alerts",
+          "description": "Get AI-generated smart alerts"
+        }
+      ]
+    }
+  }
+}

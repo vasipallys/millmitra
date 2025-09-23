@@ -12,7 +12,7 @@ import speech_recognition as sr
 from PIL import Image
 import io
 
-class AIServices:
+class AIService:
     def __init__(self):
         self.voice_recognizer = sr.Recognizer()
         self.supported_languages = ['en-US', 'hi-IN', 'ta-IN', 'te-IN']

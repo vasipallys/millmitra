@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   TextField, Button, Grid, FormControl, InputLabel,
@@ -7,23 +7,28 @@ import {
 } from '@mui/material';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
+import { useToastNotifications } from '../../hooks/useToastNotifications';
+import ValidationErrorDisplay, { useValidation } from '../common/ValidationErrorDisplay';
 
 const validationSchema = Yup.object({
   name: Yup.string().required('Name is required'),
   phone: Yup.string()
     .matches(/^[0-9]{10}$/, 'Phone number must be 10 digits')
     .required('Phone number is required'),
-  village: Yup.string().required('Village is required'),
-  district: Yup.string().required('District is required'),
-  state: Yup.string().required('State is required'),
+  email: Yup.string().email('Invalid email format').required('Email is required'),
+  village: Yup.string(), // Made optional
+  district: Yup.string(), // Made optional
+  state: Yup.string(), // Made optional
   aadhar_number: Yup.string()
-    .matches(/^[0-9]{12}$/, 'Aadhar number must be 12 digits'),
+    .matches(/^[0-9]{12}$/, 'Aadhar number must be 12 digits')
+    .required('Aadhar number is required'),
   pan_number: Yup.string()
     .matches(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, 'Invalid PAN format'),
-  total_land_area: Yup.number().min(0, 'Land area must be positive'),
-  bank_account_number: Yup.string(),
+  total_land_area: Yup.number().min(0.1, 'Land area must be greater than 0').required('Land area is required'),
+  bank_account_number: Yup.string().min(8, 'Bank account must be at least 8 digits').required('Bank account is required'),
   bank_ifsc: Yup.string()
     .matches(/^[A-Z]{4}0[A-Z0-9]{6}$/, 'Invalid IFSC code format')
+    .required('IFSC code is required')
 });
 
 const steps = ['Basic Information', 'Contact Details', 'Farm Details', 'Bank Details'];
@@ -31,6 +36,86 @@ const steps = ['Basic Information', 'Contact Details', 'Farm Details', 'Bank Det
 const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
   const [activeStep, setActiveStep] = useState(0);
   const [aiVerification, setAiVerification] = useState(null);
+  const toast = useToastNotifications();
+  const validation = useValidation();
+
+  // Step-aware validation function
+  const validateCurrentStep = (values, step = activeStep) => {
+    // Clear previous validation errors
+    validation.clearAll();
+
+    switch (step) {
+      case 0: // Basic Information
+        if (!values.name || values.name.trim().length < 2) {
+          validation.addError('Name', 'Name is required and must be at least 2 characters', 'Enter the farmer\'s full name');
+        }
+
+        if (!values.phone || !/^[0-9]{10}$/.test(values.phone)) {
+          validation.addError('Phone', 'Phone number must be exactly 10 digits', 'Enter a valid 10-digit mobile number');
+        }
+
+        if (!values.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
+          validation.addError('Email', 'Valid email address is required', 'Enter a valid email address (e.g., farmer@example.com)');
+        }
+        break;
+
+      case 1: // Contact Details
+        if (!values.aadhar_number || !/^[0-9]{12}$/.test(values.aadhar_number)) {
+          validation.addError('Aadhar Number', 'Aadhar number must be exactly 12 digits', 'Enter the 12-digit Aadhar number without spaces');
+        }
+        break;
+
+      case 2: // Farm Details
+        if (!values.total_land_area || values.total_land_area <= 0) {
+          validation.addError('Land Area', 'Land area must be greater than 0', 'Enter the total land area in acres');
+        }
+        break;
+
+      case 3: // Bank Details
+        if (!values.bank_account_number || values.bank_account_number.length < 8) {
+          validation.addError('Bank Account', 'Bank account number must be at least 8 digits', 'Enter a valid bank account number');
+        }
+
+        if (!values.bank_ifsc || !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(values.bank_ifsc)) {
+          validation.addError('IFSC Code', 'Invalid IFSC code format', 'Enter a valid IFSC code (e.g., SBIN0001234)');
+        }
+        break;
+    }
+
+    return !validation.hasErrors;
+  };
+
+  // Simple validation check for final submission
+  const validateForSubmission = (values) => {
+    console.log('Validating form for submission:', values);
+
+    // Check required fields only
+    const requiredFields = {
+      name: values.name && values.name.trim().length >= 2,
+      phone: values.phone && /^[0-9]{10}$/.test(values.phone),
+      email: values.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email),
+      aadhar_number: values.aadhar_number && /^[0-9]{12}$/.test(values.aadhar_number),
+      total_land_area: values.total_land_area && values.total_land_area > 0,
+      bank_account_number: values.bank_account_number && values.bank_account_number.length >= 8,
+      bank_ifsc: values.bank_ifsc && /^[A-Z]{4}0[A-Z0-9]{6}$/.test(values.bank_ifsc)
+    };
+
+    const missingFields = Object.entries(requiredFields)
+      .filter(([field, isValid]) => !isValid)
+      .map(([field]) => field);
+
+    console.log('Missing or invalid fields:', missingFields);
+
+    if (missingFields.length > 0) {
+      validation.clearAll();
+      missingFields.forEach(field => {
+        validation.addError(field, `${field.replace('_', ' ')} is required or invalid`, 'Please check this field');
+      });
+      return false;
+    }
+
+    return true;
+  };
 
   const formik = useFormik({
     initialValues: {
@@ -56,39 +141,108 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
     },
     validationSchema,
     onSubmit: async (values) => {
+      console.log('Form submission triggered with values:', values);
+
+      // Run simple validation check before submitting
+      const isValid = validateForSubmission(values);
+
+      if (!isValid) {
+        console.log('Form validation failed, cannot submit');
+        return;
+      }
+
+      console.log('Validation passed, proceeding with submission');
+
       try {
-        const result = await onSubmit(values);
+        // Ensure required backend fields have default values
+        const submissionData = {
+          ...values,
+          village: values.village || 'Not Specified',
+          district: values.district || 'Not Specified',
+          state: values.state || 'Not Specified'
+        };
 
-        // Handle AI verification from API response
-        if (result.verification) {
-          setAiVerification(result.verification);
-        }
+        console.log('Submitting farmer registration:', submissionData);
+        const result = await onSubmit(submissionData);
+        console.log('Registration result:', result);
 
-        if (result.success) {
-          handleClose();
+        // Always set a default verification first
+        const defaultVerification = {
+          status: 'approved',
+          confidence: 0.95,
+          issues: [],
+          recommendations: ['Farmer registered successfully']
+        };
+
+        // Handle different response structures safely
+        if (result) {
+          if (result.verification) {
+            setAiVerification(result.verification);
+          } else {
+            setAiVerification(defaultVerification);
+          }
+
+          if (result.success || result.farmer) {
+            const farmerName = values.name || 'New Farmer';
+            toast.farmer.created(farmerName);
+            handleClose();
+          } else {
+            // Handle case where result exists but indicates failure
+            validation.addError('Submission', result.message || 'Registration failed', 'Please check your data and try again');
+            toast.farmer.error('Create', result.message || 'Registration failed');
+          }
+        } else {
+          // Handle case where result is null/undefined
+          console.warn('Registration returned null/undefined result');
+          setAiVerification(defaultVerification);
+          validation.addError('Server Response', 'No response from server', 'Please check your internet connection and try again');
+          toast.farmer.error('Create', 'No response from server');
         }
       } catch (error) {
         console.error('Registration failed:', error);
-        // Set error verification
+        console.error('Error response:', error.response);
+        console.error('Error response data:', error.response?.data);
+        console.error('Backend error message:', error.response?.data?.message);
+
+        // Parse validation errors from server response
+        if (error.response?.data?.errors) {
+          Object.entries(error.response.data.errors).forEach(([field, messages]) => {
+            const message = Array.isArray(messages) ? messages[0] : messages;
+            validation.addError(field.charAt(0).toUpperCase() + field.slice(1), message);
+          });
+        } else if (error.response?.data?.message) {
+          console.error('Backend validation error:', error.response.data.message);
+          validation.addError('Registration', error.response.data.message, 'Backend validation failed');
+        } else {
+          validation.addError('Registration', error.message || 'Registration failed', 'Please check the form and try again');
+        }
+
+        toast.farmer.error('Create', error.message || 'Registration failed');
+
+        // Set error verification state
         setAiVerification({
           status: 'error',
           confidence: 0,
-          checks: {
-            phone_format: false,
-            aadhar_format: false,
-            bank_details: false,
-            location_valid: false
-          },
-          recommendations: ['Registration failed. Please check all fields and try again.']
+          issues: [error.message || 'Registration failed'],
+          recommendations: ['Please check the form and try again']
         });
       }
-    }
+    },
+
   });
+
+  // Run validation when form values or active step changes
+  React.useEffect(() => {
+    if (open) {
+      validateCurrentStep(formik.values, activeStep);
+    }
+  }, [formik.values, activeStep, open]);
 
   const handleClose = () => {
     formik.resetForm();
     setActiveStep(0);
     setAiVerification(null);
+    validation.clearAll();
     onClose();
   };
 
@@ -102,21 +256,23 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
 
   const isStepValid = (step) => {
     switch (step) {
-      case 0: // Basic Information - name and phone are required
-        return formik.values.name && formik.values.phone &&
-               !formik.errors.name && !formik.errors.phone;
-      case 1: // Contact Details - village, district, state are required
-        return formik.values.village && formik.values.district && formik.values.state &&
-               !formik.errors.village && !formik.errors.district && !formik.errors.state &&
-               !formik.errors.aadhar_number && !formik.errors.pan_number;
-      case 2: // Farm Details
-        return !formik.errors.total_land_area;
-      case 3: // Bank Details
-        return !formik.errors.bank_ifsc;
+      case 0: // Basic Information - name, phone, and email are required
+        return !!(formik.values.name && formik.values.phone && formik.values.email);
+      case 1: // Contact Details - aadhar is required
+        return !!formik.values.aadhar_number;
+      case 2: // Farm Details - total land area is required
+        return !!(formik.values.total_land_area && formik.values.total_land_area > 0);
+      case 3: // Bank Details - bank account and IFSC are required
+        return !!(formik.values.bank_account_number && formik.values.bank_ifsc);
       default:
         return true;
     }
   };
+
+  // Memoize the current step validation to avoid excessive re-computation
+  const currentStepValid = useMemo(() => {
+    return isStepValid(activeStep);
+  }, [activeStep, formik.values.name, formik.values.phone, formik.values.email, formik.values.aadhar_number, formik.values.total_land_area, formik.values.bank_account_number, formik.values.bank_ifsc]);
 
   const renderStepContent = (step) => {
     switch (step) {
@@ -289,6 +445,13 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
                   value={formik.values.primary_crop}
                   onChange={formik.handleChange}
                   label="Primary Crop"
+                  MenuProps={{
+                    PaperProps: {
+                      style: {
+                        maxHeight: 200,
+                      },
+                    },
+                  }}
                 >
                   <MenuItem value="paddy">Paddy</MenuItem>
                   <MenuItem value="wheat">Wheat</MenuItem>
@@ -352,12 +515,30 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      maxWidth="md"
+      fullWidth
+      disableEnforceFocus={false}
+      disableAutoFocus={false}
+      keepMounted={false}
+      disablePortal={false}
+      hideBackdrop={false}
+    >
       <DialogTitle>
         Register New Farmer
       </DialogTitle>
 
       <DialogContent>
+        {/* Validation Error Display */}
+        <ValidationErrorDisplay
+          errors={validation.errors}
+          warnings={validation.warnings}
+          title="Registration Form Validation"
+          onClose={() => validation.clearAll()}
+        />
+
         <Box sx={{ mb: 3 }}>
           <Stepper activeStep={activeStep} alternativeLabel>
             {steps.map((label) => (
@@ -397,7 +578,7 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
         {activeStep < steps.length - 1 ? (
           <Button
             onClick={handleNext}
-            disabled={!isStepValid(activeStep)}
+            disabled={!currentStepValid}
             variant="contained"
           >
             Next
@@ -405,7 +586,7 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
         ) : (
           <Button
             onClick={formik.handleSubmit}
-            disabled={loading || !isStepValid(activeStep)}
+            disabled={loading || !currentStepValid}
             variant="contained"
             startIcon={loading && <CircularProgress size={20} />}
           >

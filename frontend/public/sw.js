@@ -1,15 +1,15 @@
 // Smart Rice Mill ERP - Service Worker
 // Provides offline functionality and caching
 
-const CACHE_NAME = 'smart-mill-v1.0.0';
+const CACHE_NAME = 'smart-mill-v2.0.0';
 const OFFLINE_URL = '/offline.html';
 
 // Resources to cache for offline use
 const STATIC_CACHE_URLS = [
   '/',
   '/manifest.json'
-  // Note: In development mode, we cache minimal resources
-  // In production, add: '/static/js/bundle.js', '/static/css/main.css', '/offline.html'
+  // Note: In development mode, static files are served by webpack dev server
+  // In production, add: '/static/css/main.css', '/static/js/main.js'
 ];
 
 // API endpoints to cache
@@ -27,9 +27,27 @@ self.addEventListener('install', (event) => {
   
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => {
+      .then(async (cache) => {
         console.log('Service Worker: Caching static files');
-        return cache.addAll(STATIC_CACHE_URLS);
+        
+        // Cache files individually to avoid failures from missing files
+        const cachePromises = STATIC_CACHE_URLS.map(async (url) => {
+          try {
+            // First check if the resource exists
+            const response = await fetch(url);
+            if (response.ok) {
+              await cache.add(url);
+              console.log('Cached:', url);
+            } else {
+              console.warn('Resource not found, skipping cache:', url);
+            }
+          } catch (error) {
+            console.warn('Failed to cache:', url, error);
+          }
+        });
+        
+        await Promise.allSettled(cachePromises);
+        return cache;
       })
       .then(() => {
         console.log('Service Worker: Installation complete');
@@ -66,94 +84,115 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - handle requests with cache-first strategy
 self.addEventListener('fetch', (event) => {
-  const { request } = event;
-  const url = new URL(request.url);
+  try {
+    const { request } = event;
+    const url = new URL(request.url);
 
-  // Skip requests to non-existent ports or invalid origins
-  if (url.origin.includes('localhost:3001') ||
-      url.origin.includes('127.0.0.1:3001') ||
-      (!url.origin.includes(location.origin) &&
-       !url.origin.includes('localhost:5000') &&
-       !url.origin.includes('127.0.0.1:5000'))) {
-    return;
-  }
-
-  // Handle navigation requests
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request)
-        .catch(() => {
-          return caches.match(OFFLINE_URL);
-        })
-    );
-    return;
-  }
-
-  // Handle API requests with network-first strategy (only GET requests)
-  if (url.pathname.startsWith('/api/')) {
-    if (request.method === 'GET') {
-      event.respondWith(
-        networkFirstStrategy(request)
-      );
-    } else {
-      // For non-GET requests, just fetch without caching
-      event.respondWith(fetch(request));
+    // Skip requests to non-existent ports or invalid origins
+    if (url.origin.includes('localhost:3001') ||
+        url.origin.includes('127.0.0.1:3001') ||
+        (!url.origin.includes(location.origin) &&
+         !url.origin.includes('localhost:5000') &&
+         !url.origin.includes('127.0.0.1:5000'))) {
+      return;
     }
-    return;
-  }
 
-  // Handle static assets with cache-first strategy
-  event.respondWith(
-    cacheFirstStrategy(request)
-  );
+    // Handle navigation requests
+    if (request.mode === 'navigate') {
+      event.respondWith(
+        fetch(request)
+          .catch(() => {
+            // For SPA routes like /settings, /dashboard, etc., return the index.html
+            // This allows React Router to handle the routing
+            return caches.match('/').then(response => {
+              if (response) {
+                return response;
+              }
+              // Fallback offline page if index.html is not cached
+              return new Response(`
+                <!DOCTYPE html>
+                <html>
+                <head><title>Offline</title></head>
+                <body>
+                  <h1>You are offline</h1>
+                  <p>Please check your internet connection.</p>
+                </body>
+                </html>
+              `, {
+                headers: { 'Content-Type': 'text/html' }
+              });
+            });
+          })
+      );
+      return;
+    }
+
+    // Handle API requests with network-first strategy (only GET requests)
+    if (url.pathname.startsWith('/api/')) {
+      if (request.method === 'GET') {
+        event.respondWith(
+          networkFirstStrategy(request)
+        );
+      } else {
+        // For non-GET requests, just fetch without caching
+        event.respondWith(
+          fetch(request).catch(error => {
+            console.error('Failed to fetch API request:', error);
+            return new Response(JSON.stringify({
+              error: 'Network error',
+              message: 'Unable to complete request'
+            }), {
+              status: 503,
+              headers: { 'Content-Type': 'application/json' }
+            });
+          })
+        );
+      }
+      return;
+    }
+
+    // Handle static assets with cache-first strategy
+    event.respondWith(
+      cacheFirstStrategy(request)
+    );
+  } catch (error) {
+    console.error('Service Worker fetch error:', error);
+    // Return a fallback response for any unhandled errors
+    event.respondWith(
+      new Response('Service Worker Error', {
+        status: 500,
+        statusText: 'Internal Service Worker Error'
+      })
+    );
+  }
 });
 
 // Network-first strategy for API calls
 async function networkFirstStrategy(request) {
   try {
-    // Add CORS headers for API requests
-    const fetchOptions = {
-      method: request.method,
-      headers: request.headers,
-      mode: 'cors',
-      credentials: 'same-origin'
-    };
-
-    if (request.method !== 'GET' && request.method !== 'HEAD') {
-      fetchOptions.body = await request.clone().blob();
-    }
-
-    const networkResponse = await fetch(request.url, fetchOptions);
+    const networkResponse = await fetch(request);
 
     // Only cache GET requests with successful responses
-    if (networkResponse.ok && request.method === 'GET') {
-      const cache = await caches.open(CACHE_NAME);
-      cache.put(request, networkResponse.clone());
+    if (networkResponse && networkResponse.ok && request.method === 'GET') {
+      try {
+        const cache = await caches.open(CACHE_NAME);
+        await cache.put(request, networkResponse.clone());
+      } catch (cacheError) {
+        console.warn('Failed to cache response:', cacheError);
+      }
     }
 
     return networkResponse;
   } catch (error) {
     console.log('Network failed, trying cache:', request.url);
-
-    // Don't cache API requests that fail
-    if (request.url.includes('/api/')) {
-      console.log('API request failed, not using cache:', request.url);
-      return new Response(
-        JSON.stringify({
-          success: false,
-          message: 'API unavailable offline',
-          offline: true
-        }),
-        {
-          status: 503,
-          headers: { 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
-    const cachedResponse = await caches.match(request);
-    if (cachedResponse) {
-      return cachedResponse;
+    
+    try {
+      const cachedResponse = await caches.match(request);
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+    } catch (cacheError) {
+      console.warn('Cache lookup failed:', cacheError);
     }
     
     // Return offline response for failed API calls
@@ -174,19 +213,27 @@ async function networkFirstStrategy(request) {
 
 // Cache-first strategy for static assets
 async function cacheFirstStrategy(request) {
-  const cachedResponse = await caches.match(request);
-  
-  if (cachedResponse) {
-    return cachedResponse;
+  try {
+    const cachedResponse = await caches.match(request);
+    
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+  } catch (cacheError) {
+    console.warn('Cache lookup failed:', cacheError);
   }
   
   try {
     const networkResponse = await fetch(request);
 
     // Only cache GET requests with successful responses
-    if (networkResponse.ok && request.method === 'GET') {
-      const cache = await caches.open(CACHE_NAME);
-      cache.put(request, networkResponse.clone());
+    if (networkResponse && networkResponse.ok && request.method === 'GET') {
+      try {
+        const cache = await caches.open(CACHE_NAME);
+        await cache.put(request, networkResponse.clone());
+      } catch (cacheError) {
+        console.warn('Failed to cache response:', cacheError);
+      }
     }
 
     return networkResponse;
@@ -211,7 +258,10 @@ async function cacheFirstStrategy(request) {
     // For other requests, return a fallback response
     return new Response('Resource not available offline', {
       status: 503,
-      statusText: 'Service Unavailable'
+      statusText: 'Service Unavailable',
+      headers: {
+        'Content-Type': 'text/plain'
+      }
     });
   }
 }

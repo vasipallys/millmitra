@@ -140,6 +140,16 @@ class Customer(db.Model):
             'status': 'good' if utilization < 80 else 'warning' if utilization < 95 else 'critical'
         }
 
+    @property
+    def status(self):
+        """Alias for is_active field for backward compatibility"""
+        return 'active' if self.is_active else 'inactive'
+    
+    @property
+    def segment(self):
+        """Alias for customer_type field for backward compatibility"""
+        return self.customer_type
+
     def get_customer_insights(self):
         """Get AI-powered customer insights"""
         insights = []
@@ -211,6 +221,8 @@ class Customer(db.Model):
             'risk_category': self.risk_category,
             'payment_behavior_score': self.payment_behavior_score,
             'is_active': self.is_active,
+            'status': self.status,
+            'segment': self.segment,
             'is_verified': self.is_verified,
             'verification_date': self.verification_date.isoformat() if self.verification_date else None,
             'last_order_date': self.last_order_date.isoformat() if self.last_order_date else None,

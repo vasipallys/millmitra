@@ -1,0 +1,6 @@
+# Vision Analysis Agent Requirements for Rice Mill Management System
+
+# Core dependencies
+opencv-python>=4.0.0
+numpy>=1.0.0
+Pillow>=8.0.0

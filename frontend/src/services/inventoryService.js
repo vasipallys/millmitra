@@ -13,7 +13,7 @@ export const inventoryService = {
 
   async updateProductStock(productId, updateData) {
     try {
-      const response = await api.put(`/inventory/product-stock/${productId}`, updateData);
+      const response = await api.put(`/inventory/products/${productId}`, updateData);
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to update product stock');
@@ -22,7 +22,7 @@ export const inventoryService = {
 
   async addProductStock(stockData) {
     try {
-      const response = await api.post('/inventory/product-stock', stockData);
+      const response = await api.post('/inventory/products', stockData);
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to add product stock');
@@ -41,7 +41,7 @@ export const inventoryService = {
 
   async updatePaddyStock(paddyId, updateData) {
     try {
-      const response = await api.put(`/inventory/paddy-stock/${paddyId}`, updateData);
+      const response = await api.put(`/inventory/paddy/${paddyId}`, updateData);
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to update paddy stock');
@@ -50,7 +50,7 @@ export const inventoryService = {
 
   async addPaddyStock(stockData) {
     try {
-      const response = await api.post('/inventory/paddy-stock', stockData);
+      const response = await api.post('/inventory/paddy', stockData);
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to add paddy stock');
@@ -72,21 +72,6 @@ export const inventoryService = {
       const response = await api.get('/inventory/movements', { params });
       return response.data;
     } catch (error) {
-      // Check if it's a network error (offline)
-      if (!navigator.onLine || error.code === 'NETWORK_ERROR') {
-        // Return cached data or mock data when offline
-        return {
-          success: true,
-          movements: [],
-          total: 0,
-          summary: {
-            total_in: 0,
-            total_out: 0,
-            total_transfers: 0
-          },
-          message: 'Offline mode - showing cached data'
-        };
-      }
       throw new Error(error.response?.data?.message || 'Failed to fetch stock movements');
     }
   },
@@ -173,80 +158,6 @@ export const inventoryService = {
         monthlyConsumption: 12500
       }
     };
-  },
-
-  // Missing methods that are used in the Inventory page
-  async getInventoryOverview() {
-    try {
-      const response = await api.get('/inventory/overview');
-      return response.data;
-    } catch (error) {
-      // Return mock data for now
-      return {
-        success: true,
-        overview: {
-          total_paddy_stock: 5000,
-          total_product_stock: 2500,
-          total_value: 1250000,
-          low_stock_items: 3,
-          pending_orders: 5,
-          recent_movements: 12
-        }
-      };
-    }
-  },
-
-  async getReorderAlerts() {
-    try {
-      const response = await api.get('/inventory/reorder-alerts');
-      return response.data;
-    } catch (error) {
-      // Return mock data for now
-      return {
-        success: true,
-        alerts: [
-          {
-            id: 1,
-            item_name: 'Basmati Rice',
-            current_stock: 50,
-            reorder_level: 100,
-            priority: 'high'
-          }
-        ]
-      };
-    }
-  },
-
-  async getInventoryValuation() {
-    try {
-      const response = await api.get('/inventory/valuation');
-      return response.data;
-    } catch (error) {
-      // Return mock data for now
-      return {
-        success: true,
-        valuation: {
-          total_value: 1250000,
-          paddy_value: 750000,
-          product_value: 500000,
-          by_category: [
-            { category: 'Basmati', value: 400000 },
-            { category: 'Sona Masuri', value: 350000 },
-            { category: 'IR64', value: 300000 },
-            { category: 'Others', value: 200000 }
-          ]
-        }
-      };
-    }
-  },
-
-  async createStockMovement(movementData) {
-    try {
-      const response = await api.post('/inventory/movements', movementData);
-      return response.data;
-    } catch (error) {
-      throw new Error(error.response?.data?.message || 'Failed to create stock movement');
-    }
   }
 };
 

@@ -85,7 +85,7 @@ mock_notifications = [
     }
 ]
 
-@notifications_bp.route('/api/notifications', methods=['GET'])
+@notifications_bp.route('/notifications', methods=['GET'])
 def get_notifications():
     """Get all notifications"""
     try:
@@ -104,7 +104,7 @@ def get_notifications():
             'error': str(e)
         }), 500
 
-@notifications_bp.route('/api/notifications/<int:notification_id>/read', methods=['POST'])
+@notifications_bp.route('/notifications/<int:notification_id>/read', methods=['POST'])
 def mark_notification_read(notification_id):
     """Mark a notification as read"""
     try:
@@ -130,7 +130,7 @@ def mark_notification_read(notification_id):
             'error': str(e)
         }), 500
 
-@notifications_bp.route('/api/notifications/mark-all-read', methods=['POST'])
+@notifications_bp.route('/notifications/mark-all-read', methods=['POST'])
 def mark_all_notifications_read():
     """Mark all notifications as read"""
     try:
@@ -148,7 +148,7 @@ def mark_all_notifications_read():
             'error': str(e)
         }), 500
 
-@notifications_bp.route('/api/notifications/<int:notification_id>', methods=['DELETE'])
+@notifications_bp.route('/notifications/<int:notification_id>', methods=['DELETE'])
 def delete_notification(notification_id):
     """Delete a notification"""
     try:
@@ -166,7 +166,7 @@ def delete_notification(notification_id):
             'error': str(e)
         }), 500
 
-@notifications_bp.route('/api/notifications', methods=['POST'])
+@notifications_bp.route('/notifications', methods=['POST'])
 def create_notification():
     """Create a new notification"""
     try:
@@ -200,7 +200,7 @@ def create_notification():
             'error': str(e)
         }), 500
 
-@notifications_bp.route('/api/notifications/categories', methods=['GET'])
+@notifications_bp.route('/notifications/categories', methods=['GET'])
 def get_notification_categories():
     """Get notification categories"""
     try:
@@ -223,7 +223,7 @@ def get_notification_categories():
             'error': str(e)
         }), 500
 
-@notifications_bp.route('/api/notifications/stats', methods=['GET'])
+@notifications_bp.route('/notifications/stats', methods=['GET'])
 def get_notification_stats():
     """Get notification statistics"""
     try:
