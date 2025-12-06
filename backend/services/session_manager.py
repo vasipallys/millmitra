@@ -18,13 +18,28 @@ import secrets
 class SessionManager:
     def __init__(self, app=None):
         self.redis_client = None
+        self.use_redis = False
         if app:
             self.init_app(app)
-    
+
     def init_app(self, app):
         """Initialize session manager with Flask app"""
-        redis_url = app.config.get('SESSION_REDIS_URL', 'redis://localhost:6379/1')
-        self.redis_client = redis.from_url(redis_url, decode_responses=True)
+        redis_url = app.config.get('SESSION_REDIS_URL')
+        if redis_url:
+            try:
+                self.redis_client = redis.from_url(redis_url, decode_responses=True)
+                # Test connection
+                self.redis_client.ping()
+                self.use_redis = True
+                print(f"Redis connected successfully at {redis_url}")
+            except Exception as e:
+                print(f"Warning: Redis connection failed: {e}. Falling back to database-only sessions.")
+                self.redis_client = None
+                self.use_redis = False
+        else:
+            print("Redis URL not configured. Using database-only sessions.")
+            self.use_redis = False
+
         self.session_prefix = app.config.get('SESSION_KEY_PREFIX', 'rice_mill_session:')
         self.session_timeout = app.config.get('PERMANENT_SESSION_LIFETIME', timedelta(hours=24))
     
@@ -50,13 +65,17 @@ class SessionManager:
                 'security_level': 'normal'
             }
             
-            # Store in Redis with expiration
-            redis_key = f"{self.session_prefix}{session_token}"
-            self.redis_client.setex(
-                redis_key,
-                int(self.session_timeout.total_seconds()),
-                json.dumps(session_data)
-            )
+            # Store in Redis with expiration (if available)
+            if self.use_redis and self.redis_client:
+                try:
+                    redis_key = f"{self.session_prefix}{session_token}"
+                    self.redis_client.setex(
+                        redis_key,
+                        int(self.session_timeout.total_seconds()),
+                        json.dumps(session_data)
+                    )
+                except Exception as e:
+                    print(f"Warning: Redis set failed: {e}. Session will be database-only.")
             
             # Store in database for persistence and audit
             db_session = UserSession(
@@ -79,20 +98,25 @@ class SessionManager:
     def get_session(self, session_token):
         """Get session data by token"""
         try:
-            redis_key = f"{self.session_prefix}{session_token}"
-            session_data = self.redis_client.get(redis_key)
-            
-            if session_data:
-                return json.loads(session_data)
-            
+            # Try Redis first (if available)
+            if self.use_redis and self.redis_client:
+                try:
+                    redis_key = f"{self.session_prefix}{session_token}"
+                    session_data = self.redis_client.get(redis_key)
+
+                    if session_data:
+                        return json.loads(session_data)
+                except Exception as e:
+                    print(f"Warning: Redis get failed: {e}. Falling back to database.")
+
             # Fallback to database if not in Redis
             db_session = UserSession.query.filter_by(
                 session_token=session_token,
                 is_active=True
             ).first()
-            
+
             if db_session and not db_session.is_expired():
-                # Restore to Redis
+                # Restore to Redis (if available)
                 session_data = {
                     'user_id': db_session.user_id,
                     'session_token': session_token,
@@ -101,13 +125,19 @@ class SessionManager:
                     'last_activity': db_session.last_activity.isoformat(),
                     'is_active': True
                 }
-                
-                self.redis_client.setex(
-                    redis_key,
-                    int(self.session_timeout.total_seconds()),
-                    json.dumps(session_data)
-                )
-                
+
+                # Restore to Redis if available
+                if self.use_redis and self.redis_client:
+                    try:
+                        redis_key = f"{self.session_prefix}{session_token}"
+                        self.redis_client.setex(
+                            redis_key,
+                            int(self.session_timeout.total_seconds()),
+                            json.dumps(session_data)
+                        )
+                    except Exception as e:
+                        print(f"Warning: Redis restore failed: {e}.")
+
                 return session_data
             
             return None

@@ -1,28 +1,29 @@
 import os
 from datetime import timedelta
+import secrets
 
 class Config:
     # Basic Flask configuration
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
-    
+    SECRET_KEY = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
+
     # Database configuration - PostgreSQL preferred, SQLite fallback
-    DATABASE_URL = os.environ.get('DATABASE_URL') or 'postgresql://postgres:siva@localhost:5432/rice_mill_erp'
+    DATABASE_URL = os.environ.get('DATABASE_URL') or 'sqlite:///rice_mill_erp.db'
     SQLALCHEMY_DATABASE_URI = DATABASE_URL
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_pre_ping': True,
         'pool_recycle': 300,
         'pool_timeout': 20,
-        'max_overflow': 0
+        'max_overflow': 10
     }
-    
+
     # JWT configuration
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret-change-in-production'
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or secrets.token_hex(32)
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
-    
+
     # Redis configuration
-    REDIS_URL = os.environ.get('REDIS_URL') or 'redis://localhost:6379/0'
+    REDIS_URL = os.environ.get('REDIS_URL') or None
     
     # Celery configuration
     CELERY_BROKER_URL = REDIS_URL

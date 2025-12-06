@@ -13,8 +13,9 @@ from models.user import User, AuthLog, UserSession
 from models.farmer import Farmer
 from models.inventory import ProductStock, PaddyStock
 from models.production import ProductionBatch, QualityTest
-from models.sales import Customer, Invoice, InvoiceItem
+from models.sales import Customer
 from models.finance import Transaction, Payment, Expense
+from models.financial import Invoice
 
 # Re-export all models for easy importing
 __all__ = [
@@ -28,7 +29,6 @@ __all__ = [
     'QualityTest',
     'Customer',
     'Invoice',
-    'InvoiceItem',
     'Transaction',
     'Payment',
     'Expense'

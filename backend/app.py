@@ -5,8 +5,6 @@ from config import Config
 
 # Import models to ensure they're registered
 from models.farmer_edit_request import FarmerEditRequest
-from models.notification import Notification, NotificationTemplate
-from services.session_management_service import UserSession, LoginAttempt
 
 # Import all blueprints
 from routes.auth import auth_bp
@@ -49,8 +47,8 @@ def create_app():
     app.register_blueprint(biometric_bp, url_prefix='/api/biometric')
     app.register_blueprint(quality_vision_bp, url_prefix='/api/quality-vision')
     app.register_blueprint(financial_intelligence_bp, url_prefix='/api/financial-intelligence')
-    app.register_blueprint(compliance_gst_bp, url_prefix='/api/compliance')
-    app.register_blueprint(analytics_reporting_bp, url_prefix='/api/analytics')
+    app.register_blueprint(compliance_gst_bp, url_prefix='/api/compliance/gst')
+    app.register_blueprint(analytics_reporting_bp, url_prefix='/api/analytics/reporting')
     # Farmer routes enabled
     app.register_blueprint(farmer_bp, url_prefix='/api/farmer')
     app.register_blueprint(inventory_bp, url_prefix='/api/inventory')
@@ -88,8 +86,10 @@ def create_app():
 app = create_app()
 
 if __name__ == '__main__':
+    import os
     with app.app_context():
         db.create_all()
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() in ['true', '1', 'yes']
+    app.run(host='0.0.0.0', port=5000, debug=debug_mode)
 
 
