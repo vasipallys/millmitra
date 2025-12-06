@@ -34,8 +34,8 @@ const CreateContractDialog = ({ open, onClose, onSubmit, loading = false }) => {
   const [riskAssessment, setRiskAssessment] = useState(null);
 
   const { data: farmersData } = useQuery(
-    'farmers-list',
-    () => farmerService.getFarmers({ status: 'active' }),
+    'verified-farmers-list',
+    () => farmerService.getFarmers({ status: 'active', verified: 'true' }),
     { enabled: open }
   );
 
@@ -153,7 +153,7 @@ const CreateContractDialog = ({ open, onClose, onSubmit, loading = false }) => {
             <Grid item xs={12}>
               <Autocomplete
                 options={farmersData?.farmers || []}
-                getOptionLabel={(option) => `${option.name} (${option.farmer_code}) - ${option.village}`}
+                getOptionLabel={(option) => `${option.name} (${option.farmer_code}) - ${option.village} ✓ Verified`}
                 value={farmersData?.farmers?.find(f => f.id === formik.values.farmer_id) || null}
                 onChange={(event, newValue) => {
                   formik.setFieldValue('farmer_id', newValue?.id || '');
@@ -161,7 +161,7 @@ const CreateContractDialog = ({ open, onClose, onSubmit, loading = false }) => {
                 renderInput={(params) => (
                   <TextField
                     {...params}
-                    label="Select Farmer *"
+                    label="Select Verified Farmer *"
                     error={formik.touched.farmer_id && Boolean(formik.errors.farmer_id)}
                     helperText={formik.touched.farmer_id && formik.errors.farmer_id}
                   />

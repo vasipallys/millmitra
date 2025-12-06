@@ -13,7 +13,7 @@ import ValidationErrorDisplay, { useValidation } from '../common/ValidationError
 const validationSchema = Yup.object({
   name: Yup.string().required('Name is required'),
   phone: Yup.string()
-    .matches(/^[0-9]{10}$/, 'Phone number must be 10 digits')
+    .matches(/^[0-9]{10,11}$/, 'Phone number must be 10-11 digits')
     .required('Phone number is required'),
   email: Yup.string().email('Invalid email format').required('Email is required'),
   village: Yup.string(), // Made optional
@@ -23,7 +23,9 @@ const validationSchema = Yup.object({
     .matches(/^[0-9]{12}$/, 'Aadhar number must be 12 digits')
     .required('Aadhar number is required'),
   pan_number: Yup.string()
-    .matches(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, 'Invalid PAN format'),
+    .matches(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, 'Invalid PAN format')
+    .nullable()
+    .notRequired(),
   total_land_area: Yup.number().min(0.1, 'Land area must be greater than 0').required('Land area is required'),
   bank_account_number: Yup.string().min(8, 'Bank account must be at least 8 digits').required('Bank account is required'),
   bank_ifsc: Yup.string()
@@ -50,8 +52,8 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
           validation.addError('Name', 'Name is required and must be at least 2 characters', 'Enter the farmer\'s full name');
         }
 
-        if (!values.phone || !/^[0-9]{10}$/.test(values.phone)) {
-          validation.addError('Phone', 'Phone number must be exactly 10 digits', 'Enter a valid 10-digit mobile number');
+        if (!values.phone || !/^[0-9]{10,11}$/.test(values.phone)) {
+          validation.addError('Phone', 'Phone number must be 10-11 digits', 'Enter a valid mobile number');
         }
 
         if (!values.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
@@ -87,12 +89,11 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
 
   // Simple validation check for final submission
   const validateForSubmission = (values) => {
-    console.log('Validating form for submission:', values);
 
     // Check required fields only
     const requiredFields = {
       name: values.name && values.name.trim().length >= 2,
-      phone: values.phone && /^[0-9]{10}$/.test(values.phone),
+      phone: values.phone && /^[0-9]{10,11}$/.test(values.phone),
       email: values.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email),
       aadhar_number: values.aadhar_number && /^[0-9]{12}$/.test(values.aadhar_number),
       total_land_area: values.total_land_area && values.total_land_area > 0,
@@ -103,8 +104,11 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
     const missingFields = Object.entries(requiredFields)
       .filter(([field, isValid]) => !isValid)
       .map(([field]) => field);
+    
+    console.log('=== VALIDATION CHECK ===');
+    console.log('Required fields status:', requiredFields);
+    console.log('Missing/invalid fields:', missingFields);
 
-    console.log('Missing or invalid fields:', missingFields);
 
     if (missingFields.length > 0) {
       validation.clearAll();
@@ -141,17 +145,31 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
     },
     validationSchema,
     onSubmit: async (values) => {
-      console.log('Form submission triggered with values:', values);
-
+      console.log('=== FORM SUBMISSION DEBUG ===');
+      console.log('Form values:', values);
+      console.log('Form errors:', formik.errors);
+      console.log('Form touched:', formik.touched);
+      console.log('Form isValid:', formik.isValid);
+      
       // Run simple validation check before submitting
       const isValid = validateForSubmission(values);
+      console.log('Custom validation result:', isValid);
 
       if (!isValid) {
-        console.log('Form validation failed, cannot submit');
+        console.log('❌ Custom validation failed - not submitting');
+        // Show validation errors to user
+        toast.error('Please fix the validation errors before submitting');
+        
+        // Also check and display Formik validation errors
+        if (Object.keys(formik.errors).length > 0) {
+          console.log('Formik validation errors:', formik.errors);
+          Object.entries(formik.errors).forEach(([field, error]) => {
+            validation.addError(field, error, 'Please correct this field');
+          });
+        }
         return;
       }
 
-      console.log('Validation passed, proceeding with submission');
 
       try {
         // Ensure required backend fields have default values
@@ -162,9 +180,7 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
           state: values.state || 'Not Specified'
         };
 
-        console.log('Submitting farmer registration:', submissionData);
         const result = await onSubmit(submissionData);
-        console.log('Registration result:', result);
 
         // Always set a default verification first
         const defaultVerification = {
@@ -585,7 +601,16 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
           </Button>
         ) : (
           <Button
-            onClick={formik.handleSubmit}
+            onClick={(e) => {
+              console.log('=== REGISTER BUTTON CLICK ===');
+              console.log('Loading:', loading);
+              console.log('Current step valid:', currentStepValid);
+              console.log('Button disabled:', loading || !currentStepValid);
+              console.log('Formik isValid:', formik.isValid);
+              console.log('Formik errors:', formik.errors);
+              console.log('Formik values:', formik.values);
+              formik.handleSubmit(e);
+            }}
             disabled={loading || !currentStepValid}
             variant="contained"
             startIcon={loading && <CircularProgress size={20} />}

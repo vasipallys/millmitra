@@ -5,6 +5,8 @@ from config import Config
 
 # Import models to ensure they're registered
 from models.farmer_edit_request import FarmerEditRequest
+from models.notification import Notification, NotificationTemplate
+from services.session_management_service import UserSession, LoginAttempt
 
 # Import all blueprints
 from routes.auth import auth_bp

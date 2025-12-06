@@ -100,14 +100,29 @@ def register_farmer():
 @farmer_bp.route('/list', methods=['GET'])
 @jwt_required()
 def get_farmers():
-    # Simplified implementation - return mock data for now
-    farmers = Farmer.query.all()
+    # Get query parameters for filtering
+    status = request.args.get('status')  # active/inactive
+    verified_only = request.args.get('verified', 'false').lower() == 'true'
+    
+    # Build query with filters
+    query = Farmer.query
+    
+    if status == 'active':
+        query = query.filter(Farmer.is_active == True)
+    elif status == 'inactive':
+        query = query.filter(Farmer.is_active == False)
+    
+    if verified_only:
+        query = query.filter(Farmer.is_verified == True)
+    
+    farmers = query.all()
 
     return jsonify({
         'farmers': [farmer.to_dict() for farmer in farmers],
         'insights': {
             'total_farmers': len(farmers),
             'active_farmers': len([f for f in farmers if f.is_active]),
+            'verified_farmers': len([f for f in farmers if f.is_verified]),
             'message': 'Farmer data loaded successfully'
         }
     })
