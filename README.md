@@ -272,7 +272,7 @@ docker-compose exec backend python migrate_db.py
 ```
 
 5. **Access the application**
-- Frontend: http://localhost:3000
+- Frontend: http://localhost:3000 (if 3000 is busy, Vite uses the next free port and prints the URL)
 - Backend API: http://localhost:5000
 - AI Services: http://localhost:8000
 
@@ -302,7 +302,17 @@ cp .env.example .env
 ```bash
 python migrate_db.py
 ```
-
+==================================================
+🔄 Starting database migration...
+🗑️  Dropping existing tables...
+🏗️  Creating tables with updated schema...
+👤 Creating default admin user...
+✅ Default users created successfully!
+   - admin@ricemill.com / admin123
+   - operator@ricemill.com / operator123
+   - manager@ricemill.com / manager123
+✅ Database migration completed successfully!
+📍 Database location: rice_mill_erp.db
 5. **Start the backend server**
 ```bash
 python app.py

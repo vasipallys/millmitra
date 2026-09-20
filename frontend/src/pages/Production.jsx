@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Grid, Card, CardContent, Typography, Box, Button, Chip,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
@@ -23,6 +23,13 @@ const Production = () => {
   const [selectedBatch, setSelectedBatch] = useState(null);
   const [batchDetailsOpen, setBatchDetailsOpen] = useState(false);
   const [qualityTestOpen, setQualityTestOpen] = useState(false);
+  const [completeOpen, setCompleteOpen] = useState(false);
+  const [completeForm, setCompleteForm] = useState({
+    rice_output: '',
+    broken_rice_output: '',
+    bran_output: '',
+    husk_output: ''
+  });
   const queryClient = useQueryClient();
 
   // Fetch production data
@@ -34,13 +41,13 @@ const Production = () => {
 
   const { data: currentStatus } = useQuery(
     'production-status',
-    productionService.getCurrentStatus,
+    () => productionService.getCurrentStatus(),
     { refetchInterval: 10000 }
   );
 
   const { data: recommendations } = useQuery(
     'production-recommendations',
-    productionService.getRecommendations,
+    () => productionService.getRecommendations(),
     { refetchInterval: 60000 }
   );
 
@@ -58,11 +65,28 @@ const Production = () => {
     }
   });
 
+  const pauseBatchMutation = useMutation(
+    ({ batchId, reason }) => productionService.pauseBatch(batchId, { reason }),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['production-batches', 'production-status']);
+      }
+    }
+  );
+
+  const resumeBatchMutation = useMutation(productionService.resumeBatch, {
+    onSuccess: () => {
+      queryClient.invalidateQueries(['production-batches', 'production-status']);
+    }
+  });
+
   const completeBatchMutation = useMutation(
     ({ batchId, ...completionData }) => productionService.completeBatch(batchId, completionData),
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['production-batches', 'production-status']);
+        setCompleteOpen(false);
+        setSelectedBatch(null);
       }
     }
   );
@@ -75,8 +99,35 @@ const Production = () => {
     startBatchMutation.mutate(batchId);
   };
 
-  const handleCompleteBatch = (batchId, completionData) => {
-    completeBatchMutation.mutate({ batchId, ...completionData });
+  const handlePauseBatch = (batchId, reason = 'Paused from mill floor') => {
+    pauseBatchMutation.mutate({ batchId, reason });
+  };
+
+  const handleResumeBatch = (batchId) => {
+    resumeBatchMutation.mutate(batchId);
+  };
+
+  const handleOpenComplete = (batch) => {
+    setSelectedBatch(batch);
+    setCompleteForm({
+      rice_output: '',
+      broken_rice_output: '',
+      bran_output: '',
+      husk_output: ''
+    });
+    setCompleteOpen(true);
+  };
+
+  const handleCompleteBatch = () => {
+    if (!selectedBatch?.id) return;
+    completeBatchMutation.mutate({
+      batchId: selectedBatch.id,
+      rice_output: completeForm.rice_output,
+      output_quantity: completeForm.rice_output,
+      broken_rice_output: completeForm.broken_rice_output,
+      bran_output: completeForm.bran_output,
+      husk_output: completeForm.husk_output
+    });
   };
 
   const handleViewBatch = (batch) => {
@@ -196,8 +247,11 @@ const Production = () => {
               <BatchCard
                 batch={batch}
                 onStart={() => handleStartBatch(batch.id)}
-                onComplete={(data) => handleCompleteBatch(batch.id, data)}
-                onView={() => handleViewBatch(batch)}
+                onPause={() => handlePauseBatch(batch.id)}
+                onStop={() => handlePauseBatch(batch.id, 'Stopped from mill floor')}
+                onResume={() => handleResumeBatch(batch.id)}
+                onComplete={() => handleOpenComplete(batch)}
+                onViewDetails={() => handleViewBatch(batch)}
                 onQualityTest={() => {
                   setSelectedBatch(batch);
                   setQualityTestOpen(true);
@@ -259,15 +313,36 @@ const Production = () => {
                             </IconButton>
                           </Tooltip>
                         )}
-                        {batch.status === 'in_progress' && (
-                          <Tooltip title="Quality Test">
-                            <IconButton onClick={() => {
-                              setSelectedBatch(batch);
-                              setQualityTestOpen(true);
-                            }}>
-                              <Assessment />
+                        {batch.status === 'paused' && (
+                          <Tooltip title="Resume Batch">
+                            <IconButton onClick={() => handleResumeBatch(batch.id)}>
+                              <PlayArrow />
                             </IconButton>
                           </Tooltip>
+                        )}
+                        {batch.status === 'in_progress' && (
+                          <Tooltip title="Pause Batch">
+                            <IconButton onClick={() => handlePauseBatch(batch.id)}>
+                              <Stop />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                        {(batch.status === 'in_progress' || batch.status === 'paused') && (
+                          <>
+                            <Tooltip title="Quality Test">
+                              <IconButton onClick={() => {
+                                setSelectedBatch(batch);
+                                setQualityTestOpen(true);
+                              }}>
+                                <Assessment />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Mark Complete">
+                              <IconButton onClick={() => handleOpenComplete(batch)}>
+                                <CheckCircle />
+                              </IconButton>
+                            </Tooltip>
+                          </>
                         )}
                       </TableCell>
                     </TableRow>
@@ -313,9 +388,76 @@ const Production = () => {
           setQualityTestOpen(false);
         }}
       />
+
+      <CompleteBatchDialog
+        open={completeOpen}
+        batch={selectedBatch}
+        form={completeForm}
+        onChange={setCompleteForm}
+        onClose={() => setCompleteOpen(false)}
+        onSubmit={handleCompleteBatch}
+        loading={completeBatchMutation.isLoading}
+      />
     </Box>
   );
 };
+
+const CompleteBatchDialog = ({ open, onClose, onSubmit, batch, form, onChange, loading }) => (
+  <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <DialogTitle>
+      Mark Complete — {batch?.batch_number || batch?.batch_id || ''}
+    </DialogTitle>
+    <DialogContent>
+      <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 2 }}>
+        Enter milled output in kg. Rice output is added to product stock.
+      </Typography>
+      <Grid container spacing={2}>
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
+            label="Rice output (kg)"
+            type="number"
+            value={form.rice_output}
+            onChange={(e) => onChange({ ...form, rice_output: e.target.value })}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
+            label="Broken rice (kg)"
+            type="number"
+            value={form.broken_rice_output}
+            onChange={(e) => onChange({ ...form, broken_rice_output: e.target.value })}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
+            label="Bran (kg)"
+            type="number"
+            value={form.bran_output}
+            onChange={(e) => onChange({ ...form, bran_output: e.target.value })}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
+            label="Husk (kg)"
+            type="number"
+            value={form.husk_output}
+            onChange={(e) => onChange({ ...form, husk_output: e.target.value })}
+          />
+        </Grid>
+      </Grid>
+    </DialogContent>
+    <DialogActions>
+      <Button onClick={onClose}>Cancel</Button>
+      <Button onClick={onSubmit} variant="contained" disabled={loading}>
+        {loading ? 'Saving...' : 'Mark Complete'}
+      </Button>
+    </DialogActions>
+  </Dialog>
+);
 
 const CreateBatchDialog = ({ open, onClose, onSubmit, loading }) => {
   const [formData, setFormData] = useState({

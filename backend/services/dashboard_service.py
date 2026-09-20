@@ -35,39 +35,42 @@ class SmartDashboardService:
         """AI determines widget priority based on user role, time, and current context"""
         
         current_hour = datetime.now().hour
-        user_preferences = user.get_preferences()
-        
-        # Base widgets for all roles
         widgets = []
-        
         role = (user.role or '').lower()
+
+        factories = []
         if role in ('manager', 'admin', 'administrator', 'super_admin'):
-            widgets.extend([
-                self._create_production_overview_widget(),
-                self._create_quality_trends_widget(),
-                self._create_financial_summary_widget(),
-                self._create_alerts_widget(user)
+            factories.extend([
+                self._create_production_overview_widget,
+                self._create_quality_trends_widget,
+                self._create_financial_summary_widget,
+                lambda: self._create_alerts_widget(user),
             ])
-        
+
         if role in ('operator', 'supervisor', 'manager', 'admin', 'administrator'):
-            widgets.extend([
-                self._create_current_batch_widget(),
-                self._create_quality_control_widget(),
-                self._create_machine_status_widget(),
-                self._create_safety_widget()
+            factories.extend([
+                self._create_current_batch_widget,
+                self._create_quality_control_widget,
+                self._create_machine_status_widget,
+                self._create_safety_widget,
             ])
-        
+
         if role in ('sales', 'manager', 'admin', 'administrator'):
-            widgets.extend([
-                self._create_sales_pipeline_widget(),
-                self._create_customer_insights_widget(),
-                self._create_inventory_alerts_widget()
+            factories.extend([
+                self._create_sales_pipeline_widget,
+                self._create_customer_insights_widget,
+                self._create_inventory_alerts_widget,
             ])
-        
-        # AI prioritization based on context
-        prioritized_widgets = self._ai_prioritize_widgets(widgets, user, current_hour)
-        
-        return prioritized_widgets
+
+        for factory in factories:
+            try:
+                widget = factory()
+                if widget:
+                    widgets.append(widget)
+            except Exception:
+                db.session.rollback()
+
+        return self._ai_prioritize_widgets(widgets, user, current_hour)
     
     def get_smart_alerts(self, user: User):
         """Generate AI-powered alerts and recommendations"""
@@ -450,6 +453,128 @@ class SmartDashboardService:
                 'incidents': 0,
                 'days_safe': 30,
                 'endpoint': '/dashboard/safety'
+            }
+        }
+
+    def _create_sales_pipeline_widget(self):
+        """Open sales orders grouped by status, with empty fallbacks."""
+        stages = {
+            'pending': 0,
+            'confirmed': 0,
+            'processing': 0,
+            'shipped': 0,
+            'delivered': 0,
+        }
+        open_orders = 0
+        pipeline_value = 0.0
+        try:
+            rows = db.session.query(
+                SalesOrder.status, func.count(SalesOrder.id)
+            ).group_by(SalesOrder.status).all()
+            for status, count in rows:
+                key = (status or 'pending').lower()
+                if key in stages:
+                    stages[key] = int(count or 0)
+            open_filter = SalesOrder.status.in_(
+                ['pending', 'confirmed', 'processing', 'shipped']
+            )
+            open_orders = SalesOrder.query.filter(open_filter).count()
+            pipeline_value = db.session.query(
+                func.coalesce(func.sum(SalesOrder.total_amount), 0)
+            ).filter(open_filter).scalar() or 0
+        except Exception:
+            db.session.rollback()
+
+        items = [
+            {'title': label, 'description': f'{stages[key]} orders'}
+            for key, label in (
+                ('pending', 'Pending'),
+                ('confirmed', 'Confirmed'),
+                ('processing', 'Processing'),
+                ('shipped', 'Shipped'),
+                ('delivered', 'Delivered'),
+            )
+        ]
+        return {
+            'id': 'sales_pipeline',
+            'title': 'Sales Pipeline',
+            'type': 'list',
+            'priority': 8,
+            'data': {
+                'value': open_orders,
+                'subtitle': f'₹{float(pipeline_value):,.0f} open value',
+                'items': items,
+                'stages': stages,
+                'open_orders': open_orders,
+                'pipeline_value': float(pipeline_value),
+            }
+        }
+
+    def _create_customer_insights_widget(self):
+        """Customer counts for the dashboard, with empty fallbacks."""
+        total = 0
+        active = 0
+        try:
+            total = Customer.query.count()
+            try:
+                active = Customer.query.filter_by(is_active=True).count()
+            except Exception:
+                db.session.rollback()
+                active = total
+        except Exception:
+            db.session.rollback()
+
+        return {
+            'id': 'customer_insights',
+            'title': 'Customer Insights',
+            'type': 'metric',
+            'priority': 7,
+            'data': {
+                'value': total,
+                'subtitle': f'{active} active customers',
+                'total_customers': total,
+                'active_customers': active,
+            }
+        }
+
+    def _create_inventory_alerts_widget(self):
+        """Low product (and empty paddy) stock alerts for the dashboard."""
+        items = []
+        try:
+            for stock in ProductStock.query.all():
+                qty = stock.quantity or 0
+                min_level = stock.minimum_stock_level or stock.reorder_point or 0
+                if min_level and qty < min_level:
+                    name = stock.variety or stock.product_type or f'Product {stock.id}'
+                    items.append({
+                        'title': name,
+                        'description': f'{qty:.0f} kg remaining (min {min_level:.0f} kg)'
+                    })
+            if not items:
+                for stock in PaddyStock.query.all():
+                    remaining = (
+                        stock.remaining_quantity
+                        if stock.remaining_quantity is not None
+                        else stock.quantity
+                    ) or 0
+                    if remaining <= 0:
+                        items.append({
+                            'title': stock.variety or f'Paddy {stock.id}',
+                            'description': 'No remaining paddy'
+                        })
+        except Exception:
+            db.session.rollback()
+
+        return {
+            'id': 'inventory_alerts',
+            'title': 'Inventory Alerts',
+            'type': 'list',
+            'priority': 9 if items else 4,
+            'data': {
+                'count': len(items),
+                'value': len(items),
+                'subtitle': f'{len(items)} low-stock items' if items else 'Stock levels OK',
+                'items': items[:8],
             }
         }
     

@@ -171,6 +171,7 @@ const CreateInvoiceDialog = ({ open, onClose, onSubmit }) => {
                       label="Description"
                       value={item.description}
                       onChange={(e) => handleItemChange(index, 'description', e.target.value)}
+                      helperText="Use a product name from Inventory (e.g. Basmati)"
                       required
                     />
                   </Grid>

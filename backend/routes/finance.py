@@ -3,9 +3,11 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import User, Payment, Expense, Budget
 from models.financial import Invoice, Transaction
 from models.sales import Customer, SalesOrder
+from models.inventory import ProductStock
 from extensions import db
 from datetime import datetime, timedelta
 from utils import current_user
+from sqlalchemy import or_, func
 import uuid
 
 finance_bp = Blueprint('finance', __name__)
@@ -38,6 +40,61 @@ class _FinanceStub:
 finance_service = _FinanceStub()
 ai_finance = _FinanceStub()
 
+
+def _find_product_stock(item):
+    stock_pk = item.get('product_stock_id') or item.get('stock_id')
+    if stock_pk not in (None, ''):
+        try:
+            stock = ProductStock.query.get(int(stock_pk))
+            if stock:
+                return stock
+        except (TypeError, ValueError):
+            pass
+    product_id = item.get('product_id')
+    if product_id:
+        stock = ProductStock.query.filter_by(product_id=str(product_id)).first()
+        if stock:
+            return stock
+    name = (item.get('description') or item.get('variety') or item.get('product_name') or '').strip()
+    if not name:
+        return None
+    return ProductStock.query.filter(
+        or_(
+            ProductStock.product_name.ilike(f'%{name}%'),
+            ProductStock.variety.ilike(f'%{name}%'),
+            ProductStock.product_type.ilike(f'%{name}%'),
+        )
+    ).order_by(ProductStock.quantity.desc()).first()
+
+
+def _deduct_invoice_stock(items):
+    shortages = []
+    for item in items:
+        qty = float(item.get('quantity', 0) or 0)
+        if qty <= 0:
+            continue
+        stock = _find_product_stock(item)
+        label = item.get('description') or item.get('variety') or 'line item'
+        if not stock:
+            shortages.append(f'No product stock matching "{label}"')
+            continue
+        available = stock.quantity or 0
+        if available < qty:
+            shortages.append(
+                f'Insufficient stock for {stock.product_name or stock.variety}: '
+                f'{available:.0f} kg available, {qty:.0f} kg billed'
+            )
+            continue
+        stock.quantity = available - qty
+        if stock.quantity <= 0:
+            stock.status = 'sold'
+    return shortages
+
+
+def _month_key(dt):
+    return dt.strftime('%Y-%m') if dt else None
+
+
 # Simple endpoints for frontend compatibility
 @finance_bp.route('/invoices', methods=['GET'])
 @jwt_required()
@@ -51,6 +108,7 @@ def get_invoices():
         payload.append({
             **invoice.to_dict(),
             'customer_name': customer.name if customer else None,
+            'customer': {'id': customer.id, 'name': customer.name} if customer else None,
             'amount': invoice.total_amount,
             'date': invoice.invoice_date.isoformat() if invoice.invoice_date else None
         })
@@ -63,41 +121,70 @@ def get_invoices():
 @finance_bp.route('/cash-flow', methods=['GET'])
 @jwt_required()
 def get_cash_flow():
-    """Get cash flow data for frontend compatibility"""
     period = request.args.get('period', 'monthly')
-
-    cash_flow = {
-        'period': period,
-        'inflow': 250000,
-        'outflow': 180000,
-        'net_flow': 70000,
-        'balance': 320000,
-        'trend': 'positive'
-    }
-
+    months = {}
+    for invoice in Invoice.query.all():
+        key = _month_key(invoice.invoice_date)
+        if not key:
+            continue
+        months.setdefault(key, {'date': key, 'inflow': 0, 'outflow': 0, 'netFlow': 0})
+        months[key]['inflow'] += invoice.total_amount or 0
+    try:
+        for expense in Expense.query.all():
+            key = _month_key(getattr(expense, 'expense_date', None) or getattr(expense, 'created_at', None))
+            if not key:
+                continue
+            months.setdefault(key, {'date': key, 'inflow': 0, 'outflow': 0, 'netFlow': 0})
+            months[key]['outflow'] += getattr(expense, 'amount', 0) or 0
+    except Exception:
+        db.session.rollback()
+    series = []
+    for key in sorted(months.keys())[-6:]:
+        row = months[key]
+        row['netFlow'] = row['inflow'] - row['outflow']
+        series.append(row)
+    inflow = sum(r['inflow'] for r in series)
+    outflow = sum(r['outflow'] for r in series)
     return jsonify({
-        'cash_flow': cash_flow,
+        'period': period,
+        'inflow': inflow,
+        'outflow': outflow,
+        'net_flow': inflow - outflow,
+        'series': series,
+        'cash_flow': series,
         'message': 'Cash flow data loaded successfully'
     })
 
 @finance_bp.route('/accounts-receivable', methods=['GET'])
 @jwt_required()
 def get_accounts_receivable():
-    """Get accounts receivable for frontend compatibility"""
-
+    now = datetime.utcnow()
+    unpaid = Invoice.query.filter(Invoice.status.in_(['pending', 'overdue', 'partial'])).all()
+    overdue = [inv for inv in unpaid if inv.due_date and inv.due_date < now]
+    aging = {'0-30': 0, '31-60': 0, '61-90': 0, '90+': 0}
+    for inv in unpaid:
+        days = (now - (inv.due_date or inv.invoice_date or now)).days if (inv.due_date or inv.invoice_date) else 0
+        amount = inv.total_amount or 0
+        if days <= 30:
+            aging['0-30'] += amount
+        elif days <= 60:
+            aging['31-60'] += amount
+        elif days <= 90:
+            aging['61-90'] += amount
+        else:
+            aging['90+'] += amount
+    outstanding = sum(inv.total_amount or 0 for inv in unpaid)
+    overdue_amount = sum(inv.total_amount or 0 for inv in overdue)
     receivables = {
-        'total_outstanding': 125000,
-        'overdue_amount': 25000,
-        'current_amount': 100000,
-        'aging': {
-            '0-30': 75000,
-            '31-60': 30000,
-            '61-90': 15000,
-            '90+': 5000
-        }
+        'total_outstanding': outstanding,
+        'overdue_amount': overdue_amount,
+        'total_overdue': overdue_amount,
+        'overdue_count': len(overdue),
+        'current_amount': outstanding - overdue_amount,
+        'aging': aging
     }
-
     return jsonify({
+        **receivables,
         'receivables': receivables,
         'message': 'Accounts receivable loaded successfully'
     })
@@ -105,19 +192,31 @@ def get_accounts_receivable():
 @finance_bp.route('/financial-summary', methods=['GET'])
 @jwt_required()
 def get_financial_summary():
-    """Get financial summary for frontend compatibility"""
     period_days = request.args.get('period_days', 30, type=int)
-
+    start = datetime.utcnow() - timedelta(days=period_days)
+    invoices = Invoice.query.filter(Invoice.invoice_date >= start).all()
+    payments = Payment.query.filter(Payment.payment_date >= start).all() if hasattr(Payment, 'payment_date') else Payment.query.all()
+    total_revenue = sum(inv.total_amount or 0 for inv in invoices if (inv.status or '') != 'cancelled')
+    collected = sum(p.amount or 0 for p in payments)
+    unpaid = Invoice.query.filter(Invoice.status.in_(['pending', 'overdue', 'partial'])).all()
+    outstanding = sum(inv.total_amount or 0 for inv in unpaid)
+    total_expenses = 0
+    try:
+        total_expenses = sum(getattr(e, 'amount', 0) or 0 for e in Expense.query.all())
+    except Exception:
+        db.session.rollback()
+    net_profit = total_revenue - total_expenses
     summary = {
         'period_days': period_days,
-        'total_revenue': 500000,
-        'total_expenses': 350000,
-        'net_profit': 150000,
-        'profit_margin': 30.0,
-        'cash_position': 320000
+        'total_revenue': total_revenue,
+        'total_expenses': total_expenses,
+        'net_profit': net_profit,
+        'profit_margin': (net_profit / total_revenue * 100) if total_revenue else 0,
+        'cash_position': collected,
+        'outstanding_receivables': outstanding
     }
-
     return jsonify({
+        **summary,
         'summary': summary,
         'message': 'Financial summary loaded successfully'
     })
@@ -188,6 +287,14 @@ def create_invoice():
             due_date = datetime.strptime(data['due_date'][:10], '%Y-%m-%d')
         except ValueError:
             pass
+
+    shortages = _deduct_invoice_stock(items)
+    if shortages:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': '; '.join(shortages)
+        }), 400
 
     count = Invoice.query.count() + 1
     invoice = Invoice(

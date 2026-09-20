@@ -59,7 +59,12 @@ const InventoryAnalytics = ({ data = null }) => {
     ]
   };
 
-  const analyticsData = data || mockData;
+  const live = data && (
+    typeof data.total_valuation === 'number' ||
+    typeof data.paddy_count === 'number' ||
+    typeof data.low_stock_items === 'number'
+  );
+  const analyticsData = (!live && data?.stockLevels) ? data : mockData;
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', { 
@@ -115,6 +120,46 @@ const InventoryAnalytics = ({ data = null }) => {
 
   return (
     <Grid container spacing={3}>
+      {live && (
+        <>
+          <Grid item xs={12} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="text.secondary">Total valuation</Typography>
+                <Typography variant="h5">
+                  ₹{Number(data.total_valuation || 0).toLocaleString()}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="text.secondary">Paddy lots</Typography>
+                <Typography variant="h5">{data.paddy_count || 0}</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="text.secondary">Product lots</Typography>
+                <Typography variant="h5">{data.product_count || 0}</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="text.secondary">Low stock items</Typography>
+                <Typography variant="h5">{data.low_stock_items || 0}</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        </>
+      )}
+      {!live && (
+      <>
       {/* Stock Levels Overview */}
       <Grid item xs={12} lg={8}>
         <Card>
@@ -363,6 +408,8 @@ const InventoryAnalytics = ({ data = null }) => {
           </CardContent>
         </Card>
       </Grid>
+      </>
+      )}
     </Grid>
   );
 };

@@ -257,7 +257,11 @@ class ProductionBatch(db.Model):
             'planned_start_time': self.start_time.isoformat() if self.start_time else None,
             'current_quality_score': self.yield_percentage,
             'produced_quantity': self.total_output,
-            'target_quantity': self.paddy_input_quantity
+            'target_quantity': self.paddy_input_quantity,
+            'batch_id': self.batch_number,
+            'quality_grade': self.paddy_quality_grade or self.output_quality_grade,
+            'product_type': self.paddy_variety,
+            'production_date': (self.start_time or self.created_at).isoformat() if (self.start_time or self.created_at) else None
         }
 
 class QualityTest(db.Model):

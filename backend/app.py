@@ -1,3 +1,4 @@
+import re
 from flask import Flask, jsonify
 from flask_cors import CORS
 from extensions import db, jwt, init_extensions
@@ -35,7 +36,10 @@ def create_app():
 
     # Initialize extensions
     init_extensions(app)
-    CORS(app, origins=['http://localhost:3000', 'http://localhost:3001'])
+    CORS(app, origins=[
+        re.compile(r'^http://localhost:\d+$'),
+        re.compile(r'^http://127\.0\.0\.1:\d+$'),
+    ])
 
     # Initialize session middleware
     from middleware.session_middleware import session_middleware

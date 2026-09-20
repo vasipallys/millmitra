@@ -1,10 +1,20 @@
 import api from './api';
 
+function queryParams(params) {
+  if (!params || typeof params !== 'object' || Array.isArray(params)) {
+    return {};
+  }
+  if (params.queryKey || params.signal || typeof params.pageParam !== 'undefined') {
+    return {};
+  }
+  return params;
+}
+
 export const inventoryService = {
   // Product Stock Management
   async getProductStock(params = {}) {
     try {
-      const response = await api.get('/inventory/products', { params });
+      const response = await api.get('/inventory/products', { params: queryParams(params) });
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to fetch product stock');
@@ -32,7 +42,7 @@ export const inventoryService = {
   // Paddy Stock Management
   async getPaddyStock(params = {}) {
     try {
-      const response = await api.get('/inventory/paddy', { params });
+      const response = await api.get('/inventory/paddy', { params: queryParams(params) });
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to fetch paddy stock');
@@ -60,7 +70,7 @@ export const inventoryService = {
   // Inventory Analytics
   async getInventoryAnalytics(params = {}) {
     try {
-      const response = await api.get('/inventory/analytics', { params });
+      const response = await api.get('/inventory/analytics', { params: queryParams(params) });
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to fetch inventory analytics');
@@ -69,7 +79,7 @@ export const inventoryService = {
 
   async getStockMovements(params = {}) {
     try {
-      const response = await api.get('/inventory/movements', { params });
+      const response = await api.get('/inventory/movements', { params: queryParams(params) });
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to fetch stock movements');
@@ -91,7 +101,7 @@ export const inventoryService = {
 
   async getInventoryOverview(params = {}) {
     try {
-      const response = await api.get('/inventory/analytics', { params });
+      const response = await api.get('/inventory/analytics', { params: queryParams(params) });
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to fetch inventory overview');

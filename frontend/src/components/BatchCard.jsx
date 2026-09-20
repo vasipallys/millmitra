@@ -27,9 +27,11 @@ const BatchCard = ({
   batch, 
   onStart, 
   onPause, 
-  onStop, 
+  onStop,
+  onResume,
   onComplete, 
   onViewDetails,
+  onView,
   onQualityTest 
 }) => {
   const [anchorEl, setAnchorEl] = React.useState(null);
@@ -46,10 +48,12 @@ const BatchCard = ({
   const getStatusColor = (status) => {
     const colors = {
       'pending': 'warning',
+      'planned': 'warning',
       'in_progress': 'info',
       'paused': 'warning',
       'completed': 'success',
       'failed': 'error',
+      'cancelled': 'error',
       'quality_check': 'secondary'
     };
     return colors[status] || 'default';
@@ -58,6 +62,7 @@ const BatchCard = ({
   const getStatusIcon = (status) => {
     const icons = {
       'pending': <Schedule />,
+      'planned': <Schedule />,
       'in_progress': <PlayArrow />,
       'paused': <Pause />,
       'completed': <CheckCircle />,
@@ -68,8 +73,13 @@ const BatchCard = ({
   };
 
   const calculateProgress = () => {
-    if (!batch.target_quantity || batch.target_quantity === 0) return 0;
-    return Math.min((batch.produced_quantity / batch.target_quantity) * 100, 100);
+    if (typeof batch.completion_percentage === 'number') {
+      return Math.min(batch.completion_percentage, 100);
+    }
+    if (!batch.target_quantity || batch.target_quantity === 0) {
+      return batch.status === 'in_progress' ? 50 : 0;
+    }
+    return Math.min(((batch.produced_quantity || 0) / batch.target_quantity) * 100, 100);
   };
 
   const formatDate = (dateString) => {
@@ -105,12 +115,12 @@ const BatchCard = ({
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
           <Box>
             <Typography variant="h6" component="div" gutterBottom>
-              {batch.batch_id}
+              {batch.batch_id || batch.batch_number || `Batch ${batch.id}`}
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               {getStatusIcon(batch.status)}
               <Chip 
-                label={batch.status.replace('_', ' ').toUpperCase()} 
+                label={(batch.status || 'planned').replace('_', ' ').toUpperCase()} 
                 color={getStatusColor(batch.status)}
                 size="small"
               />
@@ -257,7 +267,7 @@ const BatchCard = ({
             sx: { minWidth: 180 }
           }}
         >
-          {batch.status === 'pending' && (
+          {(batch.status === 'pending' || batch.status === 'planned') && (
             <MenuItem onClick={() => { onStart?.(batch); handleMenuClose(); }}>
               <PlayArrow sx={{ mr: 1 }} fontSize="small" />
               Start Batch
@@ -270,7 +280,7 @@ const BatchCard = ({
                 <Pause sx={{ mr: 1 }} fontSize="small" />
                 Pause Batch
               </MenuItem>
-              <MenuItem onClick={() => { onStop?.(batch); handleMenuClose(); }}>
+              <MenuItem onClick={() => { (onStop || onPause)?.(batch); handleMenuClose(); }}>
                 <Stop sx={{ mr: 1 }} fontSize="small" />
                 Stop Batch
               </MenuItem>
@@ -278,13 +288,13 @@ const BatchCard = ({
           )}
           
           {batch.status === 'paused' && (
-            <MenuItem onClick={() => { onStart?.(batch); handleMenuClose(); }}>
+            <MenuItem onClick={() => { (onResume || onStart)?.(batch); handleMenuClose(); }}>
               <PlayArrow sx={{ mr: 1 }} fontSize="small" />
               Resume Batch
             </MenuItem>
           )}
           
-          {(batch.status === 'completed' || batch.status === 'in_progress') && (
+          {(batch.status === 'completed' || batch.status === 'in_progress' || batch.status === 'paused') && (
             <MenuItem onClick={() => { onQualityTest?.(batch); handleMenuClose(); }}>
               <Assignment sx={{ mr: 1 }} fontSize="small" />
               Quality Test
@@ -293,11 +303,11 @@ const BatchCard = ({
           
           <Divider />
           
-          <MenuItem onClick={() => { onViewDetails?.(batch); handleMenuClose(); }}>
+          <MenuItem onClick={() => { (onViewDetails || onView)?.(batch); handleMenuClose(); }}>
             View Details
           </MenuItem>
           
-          {batch.status === 'in_progress' && calculateProgress() >= 100 && (
+          {(batch.status === 'in_progress' || batch.status === 'paused') && (
             <>
               <Divider />
               <MenuItem 

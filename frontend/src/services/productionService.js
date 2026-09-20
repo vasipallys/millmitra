@@ -23,6 +23,16 @@ class ProductionService {
     return response.data;
   }
 
+  async pauseBatch(batchId, data = {}) {
+    const response = await api.post(`${API_BASE}/batches/${batchId}/pause`, data);
+    return response.data;
+  }
+
+  async resumeBatch(batchId) {
+    const response = await api.post(`${API_BASE}/batches/${batchId}/resume`);
+    return response.data;
+  }
+
   async completeBatch(batchId, completionData) {
     const response = await api.post(`${API_BASE}/batches/${batchId}/complete`, completionData);
     return response.data;

@@ -9,7 +9,8 @@ class FinanceService {
   }
 
   async getInvoices(params = {}) {
-    const response = await api.get(`${API_BASE}/invoices`, { params });
+    const safeParams = params && !params.queryKey ? params : {};
+    const response = await api.get(`${API_BASE}/invoices`, { params: safeParams });
     return response.data;
   }
 
@@ -19,22 +20,43 @@ class FinanceService {
   }
 
   async getCashFlow(period = 'monthly') {
+    const safePeriod = typeof period === 'string' ? period : 'monthly';
     const response = await api.get(`${API_BASE}/cash-flow`, {
-      params: { period }
+      params: { period: safePeriod }
     });
-    return response.data;
+    const data = response.data || {};
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data.series)) return data.series;
+    if (Array.isArray(data.cash_flow)) return data.cash_flow;
+    return data;
   }
 
   async getAccountsReceivable() {
     const response = await api.get(`${API_BASE}/accounts-receivable`);
-    return response.data;
+    const data = response.data || {};
+    const receivables = data.receivables || data;
+    return {
+      ...receivables,
+      total_outstanding: receivables.total_outstanding ?? 0,
+      total_overdue: receivables.total_overdue ?? receivables.overdue_amount ?? 0,
+      overdue_count: receivables.overdue_count ?? 0
+    };
   }
 
   async getFinancialSummary(periodDays = 30) {
+    const days = typeof periodDays === 'number' ? periodDays : 30;
     const response = await api.get(`${API_BASE}/financial-summary`, {
-      params: { period_days: periodDays }
+      params: { period_days: days }
     });
-    return response.data;
+    const data = response.data || {};
+    const summary = data.summary || data;
+    return {
+      ...summary,
+      total_revenue: summary.total_revenue ?? 0,
+      total_expenses: summary.total_expenses ?? 0,
+      net_profit: summary.net_profit ?? 0,
+      outstanding_receivables: summary.outstanding_receivables ?? 0
+    };
   }
 
   async createBudget(budgetData) {

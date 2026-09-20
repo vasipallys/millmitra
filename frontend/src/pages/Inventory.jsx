@@ -42,19 +42,19 @@ const Inventory = () => {
 
   const { data: overview } = useQuery(
     'inventory-overview',
-    inventoryService.getInventoryOverview,
+    () => inventoryService.getInventoryOverview(),
     { refetchInterval: 120000 }
   );
 
   const { data: reorderAlerts } = useQuery(
     'reorder-alerts',
-    inventoryService.getReorderAlerts,
+    () => inventoryService.getReorderAlerts(),
     { refetchInterval: 300000 }
   );
 
   const { data: valuation } = useQuery(
     'inventory-valuation',
-    inventoryService.getInventoryValuation,
+    () => inventoryService.getInventoryValuation(),
     { refetchInterval: 300000 }
   );
 
@@ -301,7 +301,7 @@ const Inventory = () => {
       )}
 
       {activeTab === 3 && (
-        <InventoryAnalytics />
+        <InventoryAnalytics data={overview} />
       )}
 
       {/* Add Stock Dialog */}

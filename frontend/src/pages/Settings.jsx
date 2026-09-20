@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Grid,
@@ -58,39 +58,68 @@ import {
   SmartToy as AIIcon,
   Business as BusinessIcon,
 } from '@mui/icons-material';
+import api from '../services/api';
+
+const SETTINGS_STORAGE_KEY = 'millmitra_settings';
+
+const defaultSettings = {
+  notifications: {
+    emailAlerts: true,
+    smsAlerts: false,
+    pushNotifications: true,
+    lowStockAlerts: true,
+    qualityAlerts: true,
+    productionAlerts: true,
+  },
+  ai: {
+    voiceCommands: true,
+    predictiveAnalytics: true,
+    autoOptimization: false,
+    smartRecommendations: true,
+  },
+  business: {
+    companyName: 'ABC Rice Mills',
+    gstNumber: '27AABCU9603R1ZX',
+    address: '123 Mill Street, Rice City',
+    phone: '+91 9876543210',
+    email: 'info@abcricemills.com',
+  },
+  security: {
+    twoFactorAuth: false,
+    sessionTimeout: 30,
+    passwordExpiry: 90,
+    loginAttempts: 3,
+  },
+};
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [openDialog, setOpenDialog] = useState(false);
-  const [settings, setSettings] = useState({
-    notifications: {
-      emailAlerts: true,
-      smsAlerts: false,
-      pushNotifications: true,
-      lowStockAlerts: true,
-      qualityAlerts: true,
-      productionAlerts: true,
-    },
-    ai: {
-      voiceCommands: true,
-      predictiveAnalytics: true,
-      autoOptimization: false,
-      smartRecommendations: true,
-    },
-    business: {
-      companyName: 'ABC Rice Mills',
-      gstNumber: '27AABCU9603R1ZX',
-      address: '123 Mill Street, Rice City',
-      phone: '+91 9876543210',
-      email: 'info@abcricemills.com',
-    },
-    security: {
-      twoFactorAuth: false,
-      sessionTimeout: 30,
-      passwordExpiry: 90,
-      loginAttempts: 3,
-    },
-  });
+  const [saveMessage, setSaveMessage] = useState('');
+  const [saveError, setSaveError] = useState('');
+  const [settings, setSettings] = useState(defaultSettings);
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
+        if (stored) {
+          setSettings((prev) => ({ ...prev, ...JSON.parse(stored) }));
+        }
+      } catch (err) {
+        console.warn('Could not read local settings', err);
+      }
+      try {
+        const response = await api.get('/user/mill-settings');
+        if (response.data?.settings && Object.keys(response.data.settings).length) {
+          setSettings((prev) => ({ ...prev, ...response.data.settings }));
+        }
+      } catch (err) {
+        // Keep local copy if the mill server is unavailable
+      }
+    };
+    loadSettings();
+  }, []);
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
@@ -106,9 +135,21 @@ const Settings = () => {
     }));
   };
 
-  const handleSave = () => {
-    // Save settings logic
-    console.log('Saving settings:', settings);
+  const handleSave = async () => {
+    setSaveMessage('');
+    setSaveError('');
+    try {
+      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+    } catch (err) {
+      setSaveError('Could not save settings on this computer');
+      return;
+    }
+    try {
+      await api.put('/user/mill-settings', { settings });
+      setSaveMessage('Settings saved');
+    } catch (err) {
+      setSaveMessage('Saved on this computer. Sign in again to store them on the mill server.');
+    }
   };
 
   const TabPanel = ({ children, value, index }) => (
@@ -127,6 +168,8 @@ const Settings = () => {
         <Typography variant="body1" color="text.secondary">
           Configure your rice mill management system
         </Typography>
+        {saveMessage && <Alert severity="success" sx={{ mt: 2 }}>{saveMessage}</Alert>}
+        {saveError && <Alert severity="error" sx={{ mt: 2 }}>{saveError}</Alert>}
       </Box>
 
       {/* Settings Tabs */}

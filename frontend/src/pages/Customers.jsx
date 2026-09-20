@@ -38,13 +38,13 @@ const Customers = () => {
 
   const { data: analytics } = useQuery(
     'customer-analytics',
-    customerService.getCustomerAnalytics,
+    () => customerService.getCustomerAnalytics(),
     { refetchInterval: 300000 }
   );
 
   const { data: segments } = useQuery(
     'customer-segments',
-    customerService.getCustomerSegments,
+    () => customerService.getCustomerSegments(),
     { refetchInterval: 300000 }
   );
 

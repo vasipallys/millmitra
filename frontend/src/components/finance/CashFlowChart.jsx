@@ -35,7 +35,7 @@ const CashFlowChart = ({ data = [], chartType = 'line', title = 'Cash Flow Analy
     { date: '2024-01-07', inflow: 220000, outflow: 160000, netFlow: 60000 },
   ];
 
-  const chartData = data.length > 0 ? data : defaultData;
+  const chartData = Array.isArray(data) ? data : defaultData;
 
   const formatCurrency = (value) => {
     return `₹${(value / 1000).toFixed(0)}K`;

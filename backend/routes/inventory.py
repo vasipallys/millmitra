@@ -286,6 +286,7 @@ def get_inventory_valuation_simple():
     return jsonify(_inventory_valuation())
 
 @inventory_bp.route('/movements', methods=['GET'])
+@jwt_required()
 def get_movements():
     """Get stock movements"""
     try:

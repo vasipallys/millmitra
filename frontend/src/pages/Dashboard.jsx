@@ -30,19 +30,19 @@ const Dashboard = () => {
 
   const { data: widgets, isLoading: widgetsLoading } = useQuery(
     'dashboard-widgets',
-    dashboardService.getWidgets,
+    () => dashboardService.getWidgets(),
     { refetchInterval: 60000 } // Refresh every minute
   );
 
   const { data: insights } = useQuery(
     'dashboard-insights',
-    dashboardService.getInsights,
+    () => dashboardService.getInsights(),
     { refetchInterval: 120000 } // Refresh every 2 minutes
   );
 
   const { data: alerts } = useQuery(
     'dashboard-alerts',
-    dashboardService.getAlerts,
+    () => dashboardService.getAlerts(),
     { refetchInterval: 30000 }
   );
 

@@ -4,7 +4,10 @@ Handles user profile and authentication related endpoints
 """
 
 from flask import Blueprint, request, jsonify, session
+from flask_jwt_extended import jwt_required
 from datetime import datetime
+from utils import current_user
+from extensions import db
 import uuid
 
 user_bp = Blueprint('user', __name__)
@@ -134,6 +137,34 @@ def update_user_preferences():
             'success': False,
             'error': str(e)
         }), 500
+
+@user_bp.route('/api/user/mill-settings', methods=['GET'])
+@jwt_required()
+def get_mill_settings():
+    user = current_user()
+    if not user:
+        return jsonify({'success': False, 'error': 'User not found'}), 401
+    prefs = user.get_preferences() or {}
+    settings = prefs.get('mill_settings') or {}
+    return jsonify({'success': True, 'settings': settings})
+
+@user_bp.route('/api/user/mill-settings', methods=['PUT'])
+@jwt_required()
+def save_mill_settings():
+    user = current_user()
+    if not user:
+        return jsonify({'success': False, 'error': 'User not found'}), 401
+    data = request.get_json() or {}
+    settings = data.get('settings') or data
+    prefs = user.get_preferences() or {}
+    prefs['mill_settings'] = settings
+    user.set_preferences(prefs)
+    db.session.commit()
+    return jsonify({
+        'success': True,
+        'settings': settings,
+        'message': 'Settings saved'
+    })
 
 @user_bp.route('/api/user/activity', methods=['GET'])
 def get_user_activity():

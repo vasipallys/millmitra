@@ -23,7 +23,7 @@ const Finance = () => {
   // Queries
   const { data: summary } = useQuery(
     'financial-summary',
-    financeService.getFinancialSummary,
+    () => financeService.getFinancialSummary(30),
     { refetchInterval: 300000 } // 5 minutes
   );
 
@@ -35,7 +35,7 @@ const Finance = () => {
 
   const { data: accountsReceivable } = useQuery(
     'accounts-receivable',
-    financeService.getAccountsReceivable,
+    () => financeService.getAccountsReceivable(),
     { refetchInterval: 300000 }
   );
 
@@ -47,8 +47,11 @@ const Finance = () => {
   // Mutations
   const createInvoiceMutation = useMutation(financeService.createInvoice, {
     onSuccess: () => {
-      queryClient.invalidateQueries(['financial-summary', 'recent-invoices']);
+      queryClient.invalidateQueries(['financial-summary', 'recent-invoices', 'accounts-receivable', 'cash-flow']);
       setCreateInvoiceOpen(false);
+    },
+    onError: (error) => {
+      window.alert(error.response?.data?.message || 'Could not create invoice');
     }
   });
 
@@ -184,7 +187,10 @@ const Finance = () => {
               <Typography variant="h6" gutterBottom>
                 Cash Flow Analysis
               </Typography>
-              {cashFlow && <CashFlowChart data={cashFlow} />}
+              {Array.isArray(cashFlow) && cashFlow.length > 0 && <CashFlowChart data={cashFlow} />}
+              {Array.isArray(cashFlow) && cashFlow.length === 0 && (
+                <Typography color="textSecondary">No cash-flow months yet.</Typography>
+              )}
             </CardContent>
           </Card>
         </Grid>
@@ -252,7 +258,7 @@ const Finance = () => {
                     {recentInvoices?.invoices?.map((invoice) => (
                       <TableRow key={invoice.id}>
                         <TableCell>{invoice.invoice_number}</TableCell>
-                        <TableCell>{invoice.customer?.name}</TableCell>
+                        <TableCell>{invoice.customer?.name || invoice.customer_name || '—'}</TableCell>
                         <TableCell>{new Date(invoice.invoice_date).toLocaleDateString()}</TableCell>
                         <TableCell>{new Date(invoice.due_date).toLocaleDateString()}</TableCell>
                         <TableCell>{formatCurrency(invoice.total_amount)}</TableCell>

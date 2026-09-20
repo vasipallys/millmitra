@@ -405,6 +405,7 @@ class SalesOrder(db.Model):
             'customer_satisfaction_prediction': self.customer_satisfaction_prediction,
             'delivery_timeline': self.get_delivery_timeline(),
             'order_insights': self.get_order_insights(),
+            'customer_name': self.customer.name if self.customer else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
