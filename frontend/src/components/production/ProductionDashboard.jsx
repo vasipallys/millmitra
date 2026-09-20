@@ -72,6 +72,10 @@ const ProductionDashboard = () => {
     );
   }
 
+  if (!dashboardData) {
+    return <Alert severity="warning">Production dashboard data is unavailable.</Alert>;
+  }
+
   const { current_status, weekly_analytics, ai_insights } = dashboardData;
 
   // Chart data

@@ -85,6 +85,37 @@ export const inventoryService = {
     }
   },
 
+  async getReorderAlerts() {
+    return this.getLowStockAlerts();
+  },
+
+  async getInventoryOverview(params = {}) {
+    try {
+      const response = await api.get('/inventory/analytics', { params });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch inventory overview');
+    }
+  },
+
+  async getInventoryValuation() {
+    try {
+      const response = await api.get('/inventory/valuation');
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch inventory valuation');
+    }
+  },
+
+  async createStockMovement(movementData) {
+    try {
+      const response = await api.post('/inventory/transactions', movementData);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to record stock movement');
+    }
+  },
+
   // Mock data for development
   generateMockInventoryData() {
     return {

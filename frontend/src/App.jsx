@@ -115,8 +115,13 @@ function AppContent() {
       const token = localStorage.getItem('token');
       if (token) {
         const userData = await authService.getCurrentUser();
-        setUser(userData);
-        setIsAuthenticated(true);
+        if (userData) {
+          setUser(userData);
+          setIsAuthenticated(true);
+        } else {
+          setUser(null);
+          setIsAuthenticated(false);
+        }
       }
     } catch (error) {
       console.error('Auth check failed:', error);
@@ -204,7 +209,7 @@ function AppContent() {
           }}>
             <Routes>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/login" element={<Login />} />
+              <Route path="/login" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/farmers/*" element={<Farmers />} />
               <Route path="/inventory/*" element={<Inventory />} />
@@ -216,7 +221,7 @@ function AppContent() {
               <Route path="/quality-control" element={<QualityControl />} />
               <Route path="/financial-intelligence" element={<FinancialIntelligence />} />
               <Route path="/compliance-gst" element={<ComplianceGST />} />
-              <Route path="/analytics" element={<AnalyticsReporting />} />
+              <Route path="/analytics-reporting" element={<AnalyticsReporting />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/toast-demo" element={<ToastDemo />} />

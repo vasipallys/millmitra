@@ -41,22 +41,22 @@ export const customerService = {
 
   // Order Management
   async getOrders(params = {}) {
-    const response = await api.get('/orders/', { params });
+    const response = await api.get('/sales/orders/', { params });
     return response.data;
   },
 
   async createOrder(orderData) {
-    const response = await api.post('/orders/', orderData);
+    const response = await api.post('/sales/orders/', orderData);
     return response.data;
   },
 
   async getOrderDetails(orderId) {
-    const response = await api.get(`/orders/${orderId}`);
+    const response = await api.get(`/sales/orders/${orderId}`);
     return response.data;
   },
 
   async updateOrderStatus(orderId, statusData) {
-    const response = await api.put(`/orders/${orderId}/status`, statusData);
+    const response = await api.put(`/sales/orders/${orderId}/status`, statusData);
     return response.data;
   },
 

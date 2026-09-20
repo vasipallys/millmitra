@@ -26,7 +26,7 @@ import { Assignment, Science, CheckCircle } from '@mui/icons-material';
 const QualityTestDialog = ({ open, onClose, onSubmit, batch = null }) => {
   const [activeStep, setActiveStep] = useState(0);
   const [formData, setFormData] = useState({
-    batch_id: batch?.batch_id || '',
+    batch_id: batch?.id || batch?.batch_id || '',
     test_type: 'comprehensive',
     test_parameters: {
       moisture_content: '',

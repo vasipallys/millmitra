@@ -10,12 +10,16 @@ class Config:
     DATABASE_URL = os.environ.get('DATABASE_URL') or 'sqlite:///rice_mill_erp.db'
     SQLALCHEMY_DATABASE_URI = DATABASE_URL
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_ENGINE_OPTIONS = {
+    _engine_options = {
         'pool_pre_ping': True,
         'pool_recycle': 300,
-        'pool_timeout': 20,
-        'max_overflow': 10
     }
+    if not DATABASE_URL.startswith('sqlite'):
+        _engine_options.update({
+            'pool_timeout': 20,
+            'max_overflow': 10,
+        })
+    SQLALCHEMY_ENGINE_OPTIONS = _engine_options
 
     # JWT configuration
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or secrets.token_hex(32)

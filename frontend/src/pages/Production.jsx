@@ -58,11 +58,14 @@ const Production = () => {
     }
   });
 
-  const completeBatchMutation = useMutation(productionService.completeBatch, {
-    onSuccess: () => {
-      queryClient.invalidateQueries(['production-batches', 'production-status']);
+  const completeBatchMutation = useMutation(
+    ({ batchId, ...completionData }) => productionService.completeBatch(batchId, completionData),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['production-batches', 'production-status']);
+      }
     }
-  });
+  );
 
   const handleCreateBatch = (batchData) => {
     createBatchMutation.mutate(batchData);
@@ -301,7 +304,12 @@ const Production = () => {
         onClose={() => setQualityTestOpen(false)}
         batch={selectedBatch}
         onSubmit={(testData) => {
-          // Handle quality test submission
+          if (selectedBatch?.id) {
+            productionService.createQualityTest({
+              ...testData,
+              batch_id: selectedBatch.id
+            });
+          }
           setQualityTestOpen(false);
         }}
       />

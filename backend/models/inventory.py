@@ -58,7 +58,7 @@ class PaddyStock(db.Model):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        if not self.remaining_quantity:
+        if self.remaining_quantity is None:
             self.remaining_quantity = self.quantity
 
     def get_storage_conditions(self):
@@ -160,7 +160,15 @@ class PaddyStock(db.Model):
             'quality_score': self.get_quality_score(),
             'storage_recommendations': self.get_storage_recommendations(),
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            # Frontend StockCard aliases
+            'product_name': f"{self.variety or 'Paddy'} ({self.quality_grade or 'N/A'})",
+            'current_stock': self.remaining_quantity if self.remaining_quantity is not None else self.quantity,
+            'reorder_level': 100,
+            'max_stock': self.quantity,
+            'unit': 'kg',
+            'category': 'paddy',
+            'last_updated': self.updated_at.isoformat() if self.updated_at else None
         }
 
 class ProductStock(db.Model):
@@ -321,5 +329,12 @@ class ProductStock(db.Model):
             'stock_status': self.get_stock_status(),
             'pricing_recommendations': self.get_pricing_recommendations(),
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            # Frontend StockCard aliases
+            'current_stock': self.quantity,
+            'reorder_level': self.reorder_point or self.minimum_stock_level or 0,
+            'max_stock': self.maximum_stock_level or 0,
+            'unit': 'kg',
+            'category': self.product_type,
+            'last_updated': self.updated_at.isoformat() if self.updated_at else None
         }

@@ -40,7 +40,8 @@ class SmartDashboardService:
         # Base widgets for all roles
         widgets = []
         
-        if user.role == 'manager' or user.role == 'admin':
+        role = (user.role or '').lower()
+        if role in ('manager', 'admin', 'administrator', 'super_admin'):
             widgets.extend([
                 self._create_production_overview_widget(),
                 self._create_quality_trends_widget(),
@@ -48,7 +49,7 @@ class SmartDashboardService:
                 self._create_alerts_widget(user)
             ])
         
-        if user.role == 'operator' or user.role == 'supervisor':
+        if role in ('operator', 'supervisor', 'manager', 'admin', 'administrator'):
             widgets.extend([
                 self._create_current_batch_widget(),
                 self._create_quality_control_widget(),
@@ -56,7 +57,7 @@ class SmartDashboardService:
                 self._create_safety_widget()
             ])
         
-        if user.role == 'sales' or user.role == 'manager':
+        if role in ('sales', 'manager', 'admin', 'administrator'):
             widgets.extend([
                 self._create_sales_pipeline_widget(),
                 self._create_customer_insights_widget(),
@@ -125,7 +126,7 @@ class SmartDashboardService:
                 } for item in daily_production
             ],
             'total_batches': len(batches),
-            'avg_efficiency': sum(b.efficiency_score or 0 for b in batches) / len(batches) if batches else 0,
+            'avg_efficiency': sum((b.efficiency_percentage or 0) for b in batches) / len(batches) if batches else 0,
             'ai_insights': ai_analysis
         }
     
@@ -171,8 +172,8 @@ class SmartDashboardService:
         product_stock = ProductStock.query.all()
         
         # Calculate inventory values
-        total_paddy_value = sum(stock.quantity * stock.purchase_price for stock in paddy_stock)
-        total_product_value = sum(stock.quantity * stock.market_price for stock in product_stock)
+        total_paddy_value = sum((stock.quantity or 0) * (stock.purchase_price or 0) for stock in paddy_stock)
+        total_product_value = sum((stock.quantity or 0) * (stock.market_price or stock.unit_cost or 0) for stock in product_stock)
         
         # AI inventory optimization
         ai_optimization = self._get_ai_inventory_optimization(paddy_stock, product_stock)
@@ -317,7 +318,7 @@ class SmartDashboardService:
                 'user_role': user.role,
                 'metrics': metrics,
                 'context': 'overview'
-            })
+            }, timeout=2)
             if response.status_code == 200:
                 return response.json().get('insights', [])
         except:
@@ -460,7 +461,7 @@ class SmartDashboardService:
                 'user_role': user.role,
                 'current_hour': current_hour,
                 'user_preferences': user.get_preferences()
-            })
+            }, timeout=2)
             if response.status_code == 200:
                 return response.json().get('prioritized_widgets', widgets)
         except:
@@ -479,7 +480,7 @@ class SmartDashboardService:
         ).all()
         
         if recent_batches:
-            avg_efficiency = sum(b.efficiency_score or 0 for b in recent_batches) / len(recent_batches)
+            avg_efficiency = sum((b.efficiency_percentage or 0) for b in recent_batches) / len(recent_batches)
             if avg_efficiency < 70:
                 alerts.append({
                     'id': 'low_efficiency',
@@ -542,7 +543,7 @@ class SmartDashboardService:
             response = requests.post(f"{self.ai_service_url}/dashboard/predictive-alerts", json={
                 'user_role': user.role,
                 'context': 'dashboard'
-            })
+            }, timeout=2)
             if response.status_code == 200:
                 return response.json().get('alerts', [])
         except:
@@ -679,7 +680,7 @@ class SmartDashboardService:
                 return ["No production data available for analysis"]
 
             total_output = sum(batch.total_output or 0 for batch in batches)
-            avg_efficiency = sum(batch.efficiency_score or 0 for batch in batches) / len(batches)
+            avg_efficiency = sum((batch.efficiency_percentage or 0) for batch in batches) / len(batches)
 
             insights = []
 

@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from utils import current_user
 from models import Customer, SalesOrder, User
 # from services.customer_service import CustomerService
 # from services.ai_customer_service import AICustomerService
@@ -15,10 +16,37 @@ customers_bp = Blueprint('customers', __name__)
 class MockAICustomer:
     def __getattr__(self, name):
         def mock_method(*args, **kwargs):
-            return {'success': True, 'data': 'AI service temporarily disabled'}
+            return {
+                'success': True,
+                'valid': True,
+                'is_duplicate': False,
+                'data': 'AI service temporarily disabled'
+            }
         return mock_method
 
 ai_customer = MockAICustomer()
+
+
+class _CustomerServiceStub:
+    class _Result:
+        def to_dict(self):
+            return {}
+
+    class _Page:
+        items = []
+        pagination = {'page': 1, 'pages': 0, 'per_page': 20, 'total': 0}
+
+        def __getitem__(self, key):
+            return getattr(self, key)
+
+    def __getattr__(self, name):
+        def _call(*args, **kwargs):
+            if name.startswith('get_'):
+                return self._Page()
+            return self._Result()
+        return _call
+
+customer_service = _CustomerServiceStub()
 
 # Add analytics endpoints that frontend expects
 @customers_bp.route('/analytics/overview', methods=['GET'])
@@ -107,50 +135,51 @@ def get_customers():
 @customers_bp.route('/', methods=['POST'])
 @jwt_required()
 def create_customer():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-    
-    data = request.get_json()
-    
-    # AI data validation and enrichment
-    validation_result = ai_customer.validate_customer_data(data)
-    
-    if not validation_result['valid']:
+    user = current_user()
+    data = request.get_json() or {}
+
+    if not data.get('name') or not data.get('phone'):
         return jsonify({
             'success': False,
-            'errors': validation_result['errors']
+            'errors': {'required': 'Name and phone are required'}
         }), 400
-    
-    # AI customer segmentation prediction
-    predicted_segment = ai_customer.predict_customer_segment(data)
-    
-    # AI credit scoring
-    credit_assessment = ai_customer.assess_credit_worthiness(data)
-    
-    # AI duplicate detection
-    duplicate_check = ai_customer.detect_duplicate_customer(data)
-    
-    if duplicate_check['is_duplicate']:
+
+    existing = Customer.query.filter_by(phone=data['phone']).first()
+    if existing:
         return jsonify({
             'success': False,
             'message': 'Potential duplicate customer detected',
-            'similar_customers': duplicate_check['similar_customers']
+            'similar_customers': [existing.to_dict()]
         }), 409
-    
-    # AI data enrichment
-    enriched_data = ai_customer.enrich_customer_data(data)
-    
-    customer = customer_service.create_customer(user, enriched_data, predicted_segment, credit_assessment)
-    
-    # AI onboarding recommendations
-    onboarding_plan = ai_customer.generate_onboarding_plan(customer.to_dict())
-    
+
+    count = Customer.query.count() + 1
+    customer = Customer(
+        customer_code=f'CUST{count:06d}',
+        name=data['name'],
+        customer_type=data.get('customer_type') or data.get('segment') or 'retailer',
+        phone=data['phone'],
+        email=data.get('email'),
+        contact_person=data.get('contact_person'),
+        address=data.get('address'),
+        city=data.get('city'),
+        state=data.get('state'),
+        pincode=data.get('pincode'),
+        business_name=data.get('business_name') or data.get('company_name'),
+        gst_number=data.get('gst_number'),
+        pan_number=data.get('pan_number'),
+        credit_limit=float(data.get('credit_limit', 0) or 0),
+        payment_terms=data.get('payment_terms', 'immediate'),
+        created_by=user.id if user else None
+    )
+    db.session.add(customer)
+    db.session.commit()
+
     return jsonify({
         'success': True,
         'customer': customer.to_dict(),
-        'predicted_segment': predicted_segment,
-        'credit_assessment': credit_assessment,
-        'onboarding_plan': onboarding_plan
+        'predicted_segment': customer.customer_type,
+        'credit_assessment': {},
+        'onboarding_plan': {}
     }), 201
 
 @customers_bp.route('/<int:customer_id>', methods=['GET'])
@@ -166,34 +195,26 @@ def get_customer(customer_id):
 @customers_bp.route('/<int:customer_id>', methods=['PUT'])
 @jwt_required()
 def update_customer(customer_id):
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-    
     customer = Customer.query.get_or_404(customer_id)
-    data = request.get_json()
-    
-    # AI change impact analysis
-    change_impact = ai_customer.analyze_update_impact(customer.to_dict(), data)
-    
-    # AI data validation
-    validation_result = ai_customer.validate_customer_data(data)
-    
-    if not validation_result['valid']:
-        return jsonify({
-            'success': False,
-            'errors': validation_result['errors']
-        }), 400
-    
-    # AI re-segmentation check
-    new_segment = ai_customer.predict_customer_segment(data)
-    
-    updated_customer = customer_service.update_customer(customer, user, data, new_segment)
-    
+    data = request.get_json() or {}
+    updatable = [
+        'name', 'phone', 'email', 'contact_person', 'address', 'city', 'state',
+        'pincode', 'business_name', 'gst_number', 'pan_number', 'credit_limit',
+        'payment_terms', 'customer_type'
+    ]
+    for field in updatable:
+        if field in data:
+            setattr(customer, field, data[field])
+    if 'company_name' in data and 'business_name' not in data:
+        customer.business_name = data['company_name']
+    if 'is_active' in data:
+        customer.is_active = bool(data['is_active'])
+    db.session.commit()
     return jsonify({
         'success': True,
-        'customer': updated_customer.to_dict(),
-        'change_impact': change_impact,
-        'new_segment': new_segment
+        'customer': customer.to_dict(),
+        'change_impact': {},
+        'new_segment': customer.customer_type
     })
 
 @customers_bp.route('/<int:customer_id>/interactions', methods=['GET'])

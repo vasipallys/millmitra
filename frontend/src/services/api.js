@@ -39,4 +39,36 @@ api.interceptors.response.use(
   }
 );
 
+export const productionAPI = {
+  getDashboard: () => api.get('/production/dashboard'),
+  getBatches: (params = {}) => api.get('/production/batches', { params }),
+  createBatch: (data) => api.post('/production/batches', data),
+  getBatchDetails: (batchId) => api.get(`/production/batches/${batchId}`),
+  startBatch: (batchId) => api.post(`/production/batches/${batchId}/start`),
+  pauseBatch: (batchId, data = {}) => api.post(`/production/batches/${batchId}/pause`, data),
+  resumeBatch: (batchId) => api.post(`/production/batches/${batchId}/resume`),
+  completeBatch: (batchId, data) => api.post(`/production/batches/${batchId}/complete`, data),
+  addProductionStep: (batchId, data) => api.post(`/production/batches/${batchId}/steps`, data),
+  getQualityTests: (params = {}) => api.get('/production/quality-tests', { params }),
+  createQualityTest: (data) => api.post('/production/quality-tests', data),
+  getCurrentStatus: () => api.get('/production/current-status'),
+  getAnalytics: (days = 30) => api.get('/production/analytics', { params: { days } }),
+  getAiRecommendations: (data) => api.post('/production/ai/recommendations', data),
+  optimizeProduction: (data) => api.post('/production/optimize', data),
+};
+
+export const inventoryAPI = {
+  getPaddyStock: (params) => api.get('/inventory/paddy', { params }),
+  getProductStock: (params) => api.get('/inventory/products', { params }),
+};
+
+export const salesAPI = {
+  getCustomers: (params) => api.get('/sales/customers', { params }),
+  createCustomer: (data) => api.post('/sales/customers', data),
+  createOrder: (data) => api.post('/sales/orders', data),
+  getOrders: (params) => api.get('/sales/orders', { params }),
+  getDashboard: (days) => api.get('/sales/dashboard', { params: { days } }),
+  getAnalytics: () => api.get('/sales/analytics'),
+};
+
 export default api;

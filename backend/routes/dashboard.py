@@ -4,17 +4,27 @@ from models import User, ProductionBatch, QualityTest, PaddyStock, ProductStock,
 from services.dashboard_service import SmartDashboardService
 from services.ai_insights_service import AIInsightsService
 from datetime import datetime, timedelta
+from utils import current_user
 import json
 
 dashboard_bp = Blueprint('dashboard', __name__)
 dashboard_service = SmartDashboardService()
 ai_insights = AIInsightsService()
 
+def _require_user():
+    user = current_user()
+    if not user:
+        return None
+    return user
+
 @dashboard_bp.route('/overview', methods=['GET'])
 @jwt_required()
 def get_dashboard_overview():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
+    user = None
+    from utils import current_user
+    user = current_user()
+    if not user:
+        return jsonify({'error': 'User not found'}), 401
     
     # Get time range from query params
     days = request.args.get('days', 7, type=int)
@@ -29,35 +39,29 @@ def get_dashboard_overview():
 @dashboard_bp.route('/widgets', methods=['GET'])
 @jwt_required()
 def get_smart_widgets():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-    
-    # AI determines which widgets to show based on role, time, and context
+    user = _require_user()
+    if not user:
+        return jsonify({'error': 'User not found'}), 401
     widgets = dashboard_service.get_priority_widgets(user)
-    
-    return jsonify({'widgets': widgets})
+    return jsonify({'widgets': widgets or []})
 
 @dashboard_bp.route('/insights', methods=['GET'])
 @jwt_required()
 def get_ai_insights():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-    
-    # Get AI-generated insights
+    user = _require_user()
+    if not user:
+        return jsonify({'error': 'User not found'}), 401
     insights = ai_insights.generate_insights(user)
-    
-    return jsonify({'insights': insights})
+    return jsonify({'insights': insights or []})
 
 @dashboard_bp.route('/alerts', methods=['GET'])
 @jwt_required()
 def get_smart_alerts():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-    
-    # Get AI-powered alerts and recommendations
+    user = _require_user()
+    if not user:
+        return jsonify({'error': 'User not found'}), 401
     alerts = dashboard_service.get_smart_alerts(user)
-    
-    return jsonify({'alerts': alerts})
+    return jsonify({'alerts': alerts or []})
 
 @dashboard_bp.route('/metrics/production', methods=['GET'])
 @jwt_required()
@@ -101,21 +105,19 @@ def get_financial_metrics():
 @dashboard_bp.route('/predictions', methods=['GET'])
 @jwt_required()
 def get_predictions():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-    
+    user = _require_user()
+    if not user:
+        return jsonify({'error': 'User not found'}), 401
     prediction_type = request.args.get('type', 'all')
     predictions = ai_insights.get_predictions(user, prediction_type)
-    
-    return jsonify({'predictions': predictions})
+    return jsonify({'predictions': predictions or []})
 
 @dashboard_bp.route('/customize', methods=['POST'])
 @jwt_required()
 def customize_dashboard():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-    
-    customization = request.get_json()
+    user = _require_user()
+    if not user:
+        return jsonify({'error': 'User not found'}), 401
+    customization = request.get_json() or {}
     dashboard_service.save_user_preferences(user, customization)
-    
     return jsonify({'success': True})

@@ -115,24 +115,44 @@ def get_farmers():
 @farmer_bp.route('/<int:farmer_id>', methods=['GET'])
 @jwt_required()
 def get_farmer_details(farmer_id):
-    if not farmer_service:
-        return jsonify({
-            'error': 'Farmer service not available'
-        }), 503
-
-    dashboard_data = farmer_service.get_farmer_dashboard_data(farmer_id)
-
-    # AI farmer performance analysis (if available)
-    performance_analysis = None
-    recommendations = None
-    if ai_farmer:
-        performance_analysis = ai_farmer.analyze_farmer_performance(dashboard_data)
-        recommendations = ai_farmer.get_farmer_recommendations(dashboard_data)
+    farmer = Farmer.query.get_or_404(farmer_id)
+    contracts = []
+    procurements = []
+    payments = []
+    try:
+        contracts = FarmerContract.query.filter_by(farmer_id=farmer_id).all()
+    except Exception:
+        db.session.rollback()
+    try:
+        from models.inventory import PaddyStock
+        procurements = PaddyStock.query.filter_by(farmer_id=farmer_id).order_by(
+            PaddyStock.purchase_date.desc()
+        ).limit(10).all()
+    except Exception:
+        db.session.rollback()
+    try:
+        payments = Payment.query.filter_by(farmer_id=farmer_id).all()
+    except Exception:
+        db.session.rollback()
 
     return jsonify({
-        **dashboard_data,
-        'performance_analysis': performance_analysis,
-        'recommendations': recommendations
+        'farmer': farmer.to_dict(),
+        'active_contracts': [c.to_dict() for c in contracts if getattr(c, 'status', None) == 'active'],
+        'recent_procurements': [
+            {
+                'id': p.id,
+                'variety': p.variety,
+                'quantity': p.quantity,
+                'total_amount': p.total_amount,
+                'purchase_date': p.purchase_date.isoformat() if p.purchase_date else None
+            } for p in procurements
+        ],
+        'payment_summary': {
+            'total_payments': sum(getattr(p, 'amount', 0) or 0 for p in payments),
+            'pending_payments': farmer.outstanding_amount or 0
+        },
+        'performance_analysis': None,
+        'recommendations': None
     })
 
 @farmer_bp.route('/<int:farmer_id>', methods=['PUT'])
@@ -526,20 +546,16 @@ def update_contract(contract_id):
         # Update fields if provided
         if 'quantity_committed' in data:
             contract.quantity_committed = float(data['quantity_committed']) if data['quantity_committed'] else None
-        if 'base_price' in data:
-            contract.base_price = float(data['base_price']) if data['base_price'] else None
-        if 'quality_bonus' in data:
-            contract.quality_bonus = float(data['quality_bonus']) if data['quality_bonus'] else None
+        if 'base_price' in data or 'price_per_kg' in data:
+            contract.price_per_kg = float(data.get('price_per_kg', data.get('base_price'))) if data.get('price_per_kg', data.get('base_price')) else None
         if 'advance_amount' in data:
             contract.advance_amount = float(data['advance_amount']) if data['advance_amount'] else None
-        if 'terms_conditions' in data:
-            contract.terms_conditions = data['terms_conditions']
-        if 'special_instructions' in data:
-            contract.special_instructions = data['special_instructions']
         if 'status' in data:
             contract.status = data['status']
         if 'payment_terms' in data:
             contract.payment_terms = data['payment_terms']
+        if 'variety' in data or 'crop_type' in data:
+            contract.variety = data.get('variety') or data.get('crop_type')
 
         contract.updated_at = datetime.utcnow()
 
@@ -782,42 +798,34 @@ def record_procurement():
 @farmer_bp.route('/payments', methods=['POST'])
 @jwt_required()
 def process_payment():
-    if not farmer_service:
-        return jsonify({
-            'error': 'Farmer service not available'
-        }), 503
+    from utils import current_user as _current_user
+    user = _current_user()
+    data = request.get_json() or {}
+    amount = float(data.get('amount', 0) or 0)
+    if amount <= 0 or not data.get('farmer_id'):
+        return jsonify({'success': False, 'message': 'farmer_id and amount are required'}), 400
 
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-
-    data = request.get_json()
-
-    # AI payment validation and fraud detection (if available)
-    payment_validation = None
-    fraud_check = None
-    impact_analysis = None
-
-    if ai_farmer:
-        payment_validation = ai_farmer.validate_farmer_payment(data)
-        fraud_check = ai_farmer.detect_payment_fraud(data)
-
-        if fraud_check and fraud_check.get('is_suspicious'):
-            return jsonify({
-                'success': False,
-                'message': 'Payment flagged for review',
-                'fraud_indicators': fraud_check.get('indicators', [])
-            }), 400
-
-    payment = farmer_service.process_payment(user, data, payment_validation)
-
-    # AI payment impact analysis (if available)
-    if ai_farmer:
-        impact_analysis = ai_farmer.analyze_payment_impact(payment.to_dict())
-    
+    payment = Payment(
+        payment_id=f'FPAY{datetime.utcnow().strftime("%Y%m%d")}{datetime.utcnow().strftime("%H%M%S")}',
+        payment_type='paid',
+        payment_category='farmer_payment',
+        farmer_id=data['farmer_id'],
+        amount=amount,
+        payment_method=data.get('payment_method', 'cash'),
+        reference_number=data.get('reference_number'),
+        payment_date=datetime.utcnow(),
+        status='cleared',
+        description=data.get('notes'),
+        created_by=user.id if user else None
+    )
+    db.session.add(payment)
+    farmer = Farmer.query.get(data['farmer_id'])
+    if farmer:
+        farmer.outstanding_amount = max(0, (farmer.outstanding_amount or 0) - amount)
+    db.session.commit()
     return jsonify({
         'success': True,
-        'payment': payment.to_dict(),
-        'impact_analysis': impact_analysis
+        'payment': payment.to_dict()
     }), 201
 
 @farmer_bp.route('/analytics/overview', methods=['GET'])

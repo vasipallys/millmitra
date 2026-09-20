@@ -139,10 +139,14 @@ class AuthService {
       const response = await api.put('/user/profile', profileData);
 
       // Update stored user data
-      const currentUser = this.getCurrentUser();
-      if (currentUser) {
-        const updatedUser = { ...currentUser, ...response.data.user };
-        localStorage.setItem('user', JSON.stringify(updatedUser));
+      try {
+        const stored = JSON.parse(localStorage.getItem('user') || 'null');
+        if (stored) {
+          const updatedUser = { ...stored, ...response.data.user };
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+        }
+      } catch {
+        // ignore local cache update failures
       }
 
       return response.data;
@@ -166,11 +170,14 @@ class AuthService {
     try {
       const response = await api.put('/user/preferences', preferences);
 
-      // Update stored user data
-      const currentUser = this.getCurrentUser();
-      if (currentUser) {
-        const updatedUser = { ...currentUser, preferences: response.data.preferences };
-        localStorage.setItem('user', JSON.stringify(updatedUser));
+      try {
+        const stored = JSON.parse(localStorage.getItem('user') || 'null');
+        if (stored) {
+          const updatedUser = { ...stored, preferences: response.data.preferences };
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+        }
+      } catch {
+        // ignore local cache update failures
       }
 
       return response.data;

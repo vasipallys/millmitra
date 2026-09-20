@@ -412,6 +412,8 @@ class AIAuthService:
     def _is_suspicious_user_agent(self, user_agent: str) -> bool:
         # Check for suspicious user agents
         suspicious_patterns = ['bot', 'crawler', 'spider']
+        if not user_agent:
+            return False
         return any(pattern in user_agent.lower() for pattern in suspicious_patterns)
     
     def _get_user_login_patterns(self, user_id: int) -> Dict:

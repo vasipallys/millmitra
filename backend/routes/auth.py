@@ -156,8 +156,8 @@ def login():
 def get_current_user():
     """Get current user information"""
     try:
-        user_id = get_jwt_identity()
-        user = User.query.get(user_id)
+        from utils import current_user as load_user
+        user = load_user()
 
         if not user or not user.is_active:
             return jsonify({'error': 'User not found or inactive'}), 404

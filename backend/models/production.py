@@ -249,7 +249,15 @@ class ProductionBatch(db.Model):
             'production_rate': self.get_production_rate(),
             'performance_analysis': self.analyze_performance(),
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            # Frontend aliases used by Production page / BatchCard
+            'input_quantity': self.paddy_input_quantity,
+            'output_quantity': self.rice_output if self.rice_output else self.total_output,
+            'efficiency_score': self.efficiency_percentage,
+            'planned_start_time': self.start_time.isoformat() if self.start_time else None,
+            'current_quality_score': self.yield_percentage,
+            'produced_quantity': self.total_output,
+            'target_quantity': self.paddy_input_quantity
         }
 
 class QualityTest(db.Model):
