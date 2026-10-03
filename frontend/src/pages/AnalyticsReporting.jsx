@@ -51,8 +51,22 @@ import {
 } from '@mui/icons-material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart as RechartsBarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, AreaChart, Area } from 'recharts';
 import DemoBanner from '../components/DemoBanner';
+import PreviewModeToggle from '../components/PreviewModeToggle';
+import { usePreviewMode } from '../hooks/usePreviewMode';
+import { dashboardService } from '../services/dashboardService';
+import { financeService } from '../services/financeService';
+import { productionService } from '../services/productionService';
+import { productionAPI } from '../services/api';
+import {
+  mapDashboardInsights,
+  normalizeQualityTests,
+  productionTrendFromRecords,
+  qualityDashboardFromTests,
+  unwrapList,
+} from '../utils/previewLiveData';
 
 const AnalyticsReporting = () => {
+  const { mode, setMode, isSample } = usePreviewMode('analytics-reporting');
   const [activeTab, setActiveTab] = useState(0);
   const [dashboardData, setDashboardData] = useState(null);
   const [reports, setReports] = useState([]);
@@ -155,42 +169,106 @@ const AnalyticsReporting = () => {
   ];
 
   useEffect(() => {
-    loadDashboardData();
-    loadKPIs();
-    loadInsights();
-  }, []);
-
-  const loadDashboardData = async () => {
-    try {
-      setLoading(true);
-      
-      // Simulate API calls
-      setTimeout(() => {
+    let cancelled = false;
+    const load = async () => {
+      if (isSample) {
         setDashboardData(mockDashboardData);
+        setKpis(mockKPIs);
+        setInsights(mockInsights);
         setLoading(false);
-      }, 1000);
-      
-    } catch (error) {
-      console.error('Failed to load dashboard data:', error);
-      setLoading(false);
-    }
-  };
-
-  const loadKPIs = async () => {
-    try {
-      setKpis(mockKPIs);
-    } catch (error) {
-      console.error('Failed to load KPIs:', error);
-    }
-  };
-
-  const loadInsights = async () => {
-    try {
-      setInsights(mockInsights);
-    } catch (error) {
-      console.error('Failed to load insights:', error);
-    }
-  };
+        return;
+      }
+      setLoading(true);
+      try {
+        const [overview, productionPayload, finance, testsRes, insightsRes, batchesRes] = await Promise.all([
+          dashboardService.getOverview(30),
+          productionService.getAnalytics(30),
+          financeService.getFinancialSummary(30),
+          productionAPI.getQualityTests({ per_page: 50 }),
+          dashboardService.getInsights(),
+          productionService.getBatches({ per_page: 50 }),
+        ]);
+        if (cancelled) return;
+        const production = productionPayload?.analytics || productionPayload || {};
+        const tests = normalizeQualityTests(testsRes?.data || testsRes);
+        const quality = qualityDashboardFromTests(tests);
+        const batches = unwrapList(batchesRes, ['batches', 'items']);
+        const revenue = Number(finance?.total_revenue || 0);
+        const profit = Number(finance?.net_profit || 0);
+        setDashboardData({
+          overview: {
+            total_production_30d: Number(overview?.summary?.total_production || production.total_output || 0),
+            average_quality_score: Number(overview?.summary?.quality_score || quality.avgScore || 0),
+            revenue_30d: revenue,
+            profit_30d: profit,
+            production_batches: Number(production.total_batches || batches.length || 0),
+            quality_tests: quality.testCount,
+          },
+          trends: {
+            production_trend: production.total_output ? 'from mill batches' : 'no data',
+            quality_trend: quality.testCount ? 'from quality tests' : 'no data',
+            financial_trend: revenue ? 'from invoices' : 'no data',
+          },
+          alerts: [],
+          trendSeries: productionTrendFromRecords(production, batches),
+        });
+        setKpis({
+          production: {
+            total_output: Number(production.total_output || 0),
+            efficiency_rate: Number(production.average_efficiency || 0),
+            downtime_hours: 0,
+            yield_percentage: Number(production.average_yield || 0),
+            batches_completed: Number(production.completed_batches || 0),
+          },
+          quality: {
+            average_grade: '—',
+            defect_rate: 0,
+            grade_a_percentage: 0,
+            quality_score: quality.avgScore,
+            tests_conducted: quality.testCount,
+          },
+          financial: {
+            revenue,
+            profit_margin: revenue ? (profit / revenue) * 100 : 0,
+            cost_per_kg: 0,
+            roi: 0,
+            cash_flow: Number(finance?.net_profit || 0),
+          },
+        });
+        setInsights(mapDashboardInsights(insightsRes).map((item) => ({
+          category: item.type,
+          insight: item.description || item.title,
+          confidence: item.confidence,
+          priority_level: String(item.impact || 'medium').toLowerCase(),
+        })));
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Failed to load dashboard data:', error);
+          setDashboardData({
+            overview: {
+              total_production_30d: 0,
+              average_quality_score: 0,
+              revenue_30d: 0,
+              profit_30d: 0,
+              production_batches: 0,
+              quality_tests: 0,
+            },
+            trends: { production_trend: 'no data', quality_trend: 'no data', financial_trend: 'no data' },
+            alerts: [],
+            trendSeries: [],
+          });
+          setKpis({ production: {}, quality: {}, financial: {} });
+          setInsights([]);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [isSample]);
 
   const downloadJson = (filename, payload) => {
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -210,21 +288,28 @@ const AnalyticsReporting = () => {
       language: reportForm.language,
       confidence_score: 80,
       period: { start_date: reportForm.start_date, end_date: reportForm.end_date },
-      kpis: mockKPIs,
-      note: 'Preview report from sample figures. Use Dashboard, Inventory, Production, Sales, and Finance for live mill numbers.',
+      kpis,
+      note: isSample
+        ? 'Preview report from sample figures.'
+        : 'Report built from mill records on Dashboard, Production, Quality tests, and Finance.',
     };
     setReports((prev) => [report, ...prev]);
     downloadJson(`${report.report_id}.json`, report);
     setShowReportDialog(false);
-    setPageMessage({ severity: 'success', text: `Downloaded ${report.report_id}. This is a preview, not a live mill report.` });
+    setPageMessage({
+      severity: 'success',
+      text: isSample
+        ? `Downloaded ${report.report_id}. This is a sample preview.`
+        : `Downloaded ${report.report_id} from mill records.`,
+    });
   };
 
   const runPredictiveAnalysis = () => {
     const result = {
       analysis_type: predictiveForm.analysis_type,
       forecast_period: predictiveForm.forecast_period,
-      summary: 'Preview forecast only. MillMitra does not run a production ML model here.',
-      sample_outlook: mockTrendData,
+      summary: 'Outlook export only. MillMitra does not run a production ML model here.',
+      sample_outlook: isSample ? mockTrendData : (dashboardData?.trendSeries || []),
     };
     downloadJson(`predictive-${predictiveForm.analysis_type}.json`, result);
     setShowPredictiveDialog(false);
@@ -271,20 +356,23 @@ const AnalyticsReporting = () => {
 
   return (
     <Box>
-      <DemoBanner title="Analytics & Reporting" />
+      <DemoBanner title="Analytics & Reporting" mode={mode} />
       {pageMessage && (
         <Alert severity={pageMessage.severity} sx={{ mb: 2 }} onClose={() => setPageMessage(null)}>
           {pageMessage.text}
         </Alert>
       )}
       {/* Header */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" fontWeight="bold">
-          Analytics & Reporting
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Natural language reports and predictive analytics powered by AI
-        </Typography>
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
+        <Box>
+          <Typography variant="h4" component="h1" fontWeight="bold">
+            Analytics & Reporting
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Mill records from Dashboard, Production, Quality tests, and Finance. Sample is opt-in.
+          </Typography>
+        </Box>
+        <PreviewModeToggle mode={mode} onChange={setMode} />
       </Box>
 
       {/* Quick Actions */}
@@ -414,7 +502,7 @@ const AnalyticsReporting = () => {
                   Performance Trends
                 </Typography>
                 <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={mockTrendData}>
+                  <LineChart data={isSample ? mockTrendData : (dashboardData?.trendSeries || [])}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
                     <YAxis />
@@ -454,8 +542,8 @@ const AnalyticsReporting = () => {
                   <Typography variant="body2" color="text.secondary">
                     Efficiency Rate
                   </Typography>
-                  <Typography variant="h6" color="success.main">
-                    92.5%
+                    <Typography variant="h6" color="success.main">
+                    {Number(kpis.production?.efficiency_rate || 0).toFixed(1)}%
                   </Typography>
                 </Box>
               </CardContent>
@@ -554,7 +642,7 @@ const AnalyticsReporting = () => {
                   Multi-Metric Trend Analysis
                 </Typography>
                 <ResponsiveContainer width="100%" height={400}>
-                  <AreaChart data={mockTrendData}>
+                  <AreaChart data={isSample ? mockTrendData : (dashboardData?.trendSeries || [])}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
                     <YAxis />

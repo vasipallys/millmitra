@@ -39,8 +39,18 @@ import {
 } from '@mui/icons-material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import DemoBanner from '../components/DemoBanner';
+import PreviewModeToggle from '../components/PreviewModeToggle';
+import { usePreviewMode } from '../hooks/usePreviewMode';
+import { productionAPI } from '../services/api';
+import {
+  gradeDistributionFromTests,
+  normalizeQualityTests,
+  qualityDashboardFromTests,
+  qualityTrendFromTests,
+} from '../utils/previewLiveData';
 
 const QualityControl = () => {
+  const { mode, setMode, isSample, isActual } = usePreviewMode('quality-control');
   const [activeTab, setActiveTab] = useState(0);
   const [showCameraDialog, setShowCameraDialog] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -51,6 +61,8 @@ const QualityControl = () => {
   const [batchId, setBatchId] = useState('');
   const [pageMessage, setPageMessage] = useState(null);
   const [viewTest, setViewTest] = useState(null);
+  const [previewTests, setPreviewTests] = useState([]);
+  const [testsLoading, setTestsLoading] = useState(false);
   
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -97,18 +109,54 @@ const QualityControl = () => {
     }
   ];
 
-  const gradeDistribution = [
-    { name: 'Grade A', value: 45, color: '#4CAF50' },
-    { name: 'Grade B', value: 30, color: '#FF9800' },
-    { name: 'Grade C', value: 20, color: '#FFC107' },
-    { name: 'Grade D', value: 4, color: '#FF5722' },
-    { name: 'Grade E', value: 1, color: '#F44336' },
-  ];
-
   useEffect(() => {
-    setQualityTrend(mockQualityTrend);
-    setRecentTests(mockRecentTests);
-  }, []);
+    let cancelled = false;
+    const load = async () => {
+      if (isSample) {
+        setQualityTrend(mockQualityTrend);
+        setRecentTests(mockRecentTests);
+        setTestsLoading(false);
+        return;
+      }
+      setTestsLoading(true);
+      try {
+        const response = await productionAPI.getQualityTests({ per_page: 50 });
+        if (cancelled) return;
+        const tests = normalizeQualityTests(response.data || response);
+        setRecentTests(tests);
+        setQualityTrend(qualityTrendFromTests(tests));
+      } catch (error) {
+        if (!cancelled) {
+          setRecentTests([]);
+          setQualityTrend([]);
+          setPageMessage({
+            severity: 'warning',
+            text: error?.userMessage || 'Could not load quality tests from Production.',
+          });
+        }
+      } finally {
+        if (!cancelled) setTestsLoading(false);
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [isSample]);
+
+  const gradeDistribution = isSample
+    ? [
+      { name: 'Grade A', value: 45, color: '#4CAF50' },
+      { name: 'Grade B', value: 30, color: '#FF9800' },
+      { name: 'Grade C', value: 20, color: '#FFC107' },
+      { name: 'Grade D', value: 4, color: '#FF5722' },
+      { name: 'Grade E', value: 1, color: '#F44336' },
+    ]
+    : gradeDistributionFromTests(recentTests);
+
+  const qualitySummary = isSample
+    ? { passRate: 94.2, avgScore: 89.7, testsToday: 23, testCount: mockRecentTests.length }
+    : qualityDashboardFromTests(recentTests);
 
   const startCamera = async () => {
     try {
@@ -155,34 +203,42 @@ const QualityControl = () => {
     setIsAnalyzing(true);
     const preview = {
       overall_score: 88.0,
+      overall_grade: 'B',
       grade: 'B',
+      quality_score: 88.0,
       moisture_content: 12.4,
       broken_percentage: 4.1,
       foreign_matter: 0.3,
       variety: selectedVariety,
       batch_id: batchId || 'preview',
-      note: 'Preview estimate only. Record official lab numbers on Production → Quality Test.',
+      grain_analysis: { broken_percentage: 4.1, average_length: 6.8 },
+      foreign_matter: { foreign_matter_percentage: 0.3 },
+      moisture_estimation: { estimated_moisture_percentage: 12.4 },
+      note: 'Camera estimate only. Record official lab numbers on Production → Quality Test.',
     };
     setTimeout(() => {
       setAnalysisResult(preview);
-      setRecentTests((prev) => [
-        {
-          id: `QT-PREVIEW-${Date.now()}`,
-          batch_id: preview.batch_id,
-          variety: selectedVariety,
-          grade: preview.grade,
-          score: preview.overall_score,
-          date: new Date().toLocaleString(),
-          status: 'preview',
-          details: preview,
-        },
-        ...prev,
-      ]);
+      const cameraRow = {
+        id: `QT-PREVIEW-${Date.now()}`,
+        batch_id: preview.batch_id,
+        variety: selectedVariety,
+        grade: preview.grade,
+        score: preview.overall_score,
+        date: new Date().toLocaleString(),
+        status: 'preview',
+        details: preview,
+      };
+      setPreviewTests((prev) => [cameraRow, ...prev]);
+      if (isSample) {
+        setRecentTests((prev) => [cameraRow, ...prev]);
+      }
       setShowCameraDialog(false);
       stopCamera();
       setPageMessage({
         severity: 'info',
-        text: 'Preview analysis shown. This camera tool does not grade mill-of-record stock.',
+        text: isSample
+          ? 'Sample camera analysis added to this screen only.'
+          : 'Camera preview shown. It did not change live quality tests from Production.',
       });
       setIsAnalyzing(false);
     }, 400);
@@ -226,20 +282,23 @@ const QualityControl = () => {
 
   return (
     <Box>
-      <DemoBanner title="Quality Control" />
+      <DemoBanner title="Quality Control" mode={mode} />
       {pageMessage && (
         <Alert severity={pageMessage.severity} sx={{ mb: 2 }} onClose={() => setPageMessage(null)}>
           {pageMessage.text}
         </Alert>
       )}
       {/* Header */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" fontWeight="bold">
-          AI Quality Control
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Computer vision-powered rice quality assessment
-        </Typography>
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
+        <Box>
+          <Typography variant="h4" component="h1" fontWeight="bold">
+            Quality Control
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Live quality tests from Production. Camera grading is optional and does not overwrite mill tests.
+          </Typography>
+        </Box>
+        <PreviewModeToggle mode={mode} onChange={setMode} />
       </Box>
 
       {/* Quality Control Tabs */}
@@ -339,11 +398,11 @@ const QualityControl = () => {
                   <Box sx={{ mb: 2 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                       <Typography variant="h4" sx={{ mr: 2 }}>
-                        {analysisResult.overall_grade}
+                        {analysisResult.overall_grade || analysisResult.grade}
                       </Typography>
                       <Chip
-                        label={`${analysisResult.quality_score?.toFixed(1)}%`}
-                        color={getGradeColor(analysisResult.overall_grade)}
+                        label={`${Number(analysisResult.quality_score ?? analysisResult.overall_score ?? 0).toFixed(1)}%`}
+                        color={getGradeColor(analysisResult.overall_grade || analysisResult.grade)}
                         size="large"
                       />
                     </Box>
@@ -422,7 +481,7 @@ const QualityControl = () => {
                       Pass Rate
                     </Typography>
                     <Typography variant="h4" component="div" color="success.main">
-                      94.2%
+                      {qualitySummary.testCount ? `${qualitySummary.passRate.toFixed(1)}%` : '—'}
                     </Typography>
                   </Box>
                   <CheckCircle color="success" sx={{ fontSize: 40 }} />
@@ -440,7 +499,7 @@ const QualityControl = () => {
                       Avg Quality Score
                     </Typography>
                     <Typography variant="h4" component="div" color="primary.main">
-                      89.7
+                      {qualitySummary.testCount ? qualitySummary.avgScore.toFixed(1) : '—'}
                     </Typography>
                   </Box>
                   <Analytics color="primary" sx={{ fontSize: 40 }} />
@@ -455,10 +514,10 @@ const QualityControl = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
                     <Typography color="textSecondary" gutterBottom variant="body2">
-                      Tests Today
+                      Tests recorded
                     </Typography>
                     <Typography variant="h4" component="div" color="info.main">
-                      23
+                      {qualitySummary.testCount}
                     </Typography>
                   </Box>
                   <Assessment color="info" sx={{ fontSize: 40 }} />
@@ -473,10 +532,10 @@ const QualityControl = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
                     <Typography color="textSecondary" gutterBottom variant="body2">
-                      AI Accuracy
+                      Tests today
                     </Typography>
                     <Typography variant="h4" component="div" color="secondary.main">
-                      96.8%
+                      {qualitySummary.testsToday}
                     </Typography>
                   </Box>
                   <CheckCircle color="secondary" sx={{ fontSize: 40 }} />
@@ -492,15 +551,21 @@ const QualityControl = () => {
                 <Typography variant="h6" gutterBottom>
                   Quality Score Trend
                 </Typography>
+                {!qualityTrend.length ? (
+                  <Typography variant="body2" color="text.secondary" sx={{ py: 6, textAlign: 'center' }}>
+                    No quality tests recorded yet.
+                  </Typography>
+                ) : (
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={qualityTrend}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
-                    <YAxis domain={[70, 100]} />
+                    <YAxis domain={isSample ? [70, 100] : ['auto', 'auto']} />
                     <Tooltip />
                     <Line type="monotone" dataKey="score" stroke="#2E7D32" strokeWidth={3} />
                   </LineChart>
                 </ResponsiveContainer>
+                )}
               </CardContent>
             </Card>
           </Grid>
@@ -512,6 +577,11 @@ const QualityControl = () => {
                 <Typography variant="h6" gutterBottom>
                   Grade Distribution
                 </Typography>
+                {!gradeDistribution.length ? (
+                  <Typography variant="body2" color="text.secondary" sx={{ py: 6, textAlign: 'center' }}>
+                    No grades to chart yet.
+                  </Typography>
+                ) : (
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
@@ -530,6 +600,7 @@ const QualityControl = () => {
                     <Tooltip />
                   </PieChart>
                 </ResponsiveContainer>
+                )}
               </CardContent>
             </Card>
           </Grid>
@@ -543,6 +614,17 @@ const QualityControl = () => {
             <Typography variant="h6" gutterBottom>
               Recent Quality Tests
             </Typography>
+            {testsLoading && <LinearProgress sx={{ mb: 2 }} />}
+            {!recentTests.length && !testsLoading && (
+              <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
+                No quality tests on Production yet. Camera previews stay on the Live Analysis tab and do not create mill tests.
+              </Typography>
+            )}
+            {isActual && previewTests.length > 0 && (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                {previewTests.length} camera preview(s) on this session only — not saved as mill tests.
+              </Alert>
+            )}
             <TableContainer component={Paper} elevation={0}>
               <Table>
                 <TableHead>

@@ -31,6 +31,14 @@ import NotificationsPanel from './NotificationsPanel';
 import ProfilePanel from './ProfilePanel';
 import notificationService from '../services/notificationService';
 
+const accountLabel = (account) => (
+  account?.username || account?.email || 'Account'
+);
+
+const accountInitial = (account) => (
+  (accountLabel(account)[0] || 'A').toUpperCase()
+);
+
 const Navbar = ({ onMenuClick, onLogout, user }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [notificationAnchor, setNotificationAnchor] = useState(null);
@@ -158,7 +166,7 @@ const Navbar = ({ onMenuClick, onLogout, user }) => {
             aria-label="Account menu"
           >
             <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
-              {user?.username?.charAt(0).toUpperCase() || 'U'}
+              {accountInitial(user)}
             </Avatar>
           </IconButton>
         </Tooltip>
@@ -178,7 +186,7 @@ const Navbar = ({ onMenuClick, onLogout, user }) => {
           }}
         >
           <Box sx={{ px: 2, py: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
-            <Typography variant="subtitle2">{user?.username}</Typography>
+            <Typography variant="subtitle2">{accountLabel(user)}</Typography>
             <Typography variant="body2" color="text.secondary">
               {user?.role || 'Operator'}
             </Typography>

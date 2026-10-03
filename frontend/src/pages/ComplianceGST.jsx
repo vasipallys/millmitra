@@ -40,8 +40,19 @@ import {
 } from '@mui/icons-material';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import DemoBanner from '../components/DemoBanner';
+import PreviewModeToggle from '../components/PreviewModeToggle';
+import { usePreviewMode } from '../hooks/usePreviewMode';
 import { financeService } from '../services/financeService';
+import { farmerService } from '../services/farmerService';
 import { getApiErrorMessage } from '../utils/apiError';
+import {
+  actualComplianceStatus,
+  gstActivitiesFromInvoices,
+  gstDashboardFromInvoices,
+  procurementsToGstr2bRows,
+  statutoryGstCalendar,
+  unwrapList,
+} from '../utils/previewLiveData';
 import {
   CALENDAR_TASKS,
   GST_CATEGORIES,
@@ -119,7 +130,11 @@ const TabPanel = ({ children, value, index }) => (
 );
 
 const ComplianceGST = () => {
+  const { mode, setMode, isSample } = usePreviewMode('compliance-gst');
   const [activeTab, setActiveTab] = useState(0);
+  const [invoiceRows, setInvoiceRows] = useState([]);
+  const [activityRows, setActivityRows] = useState([]);
+  const [calendarRows, setCalendarRows] = useState([]);
   const [dashboardData, setDashboardData] = useState(null);
   const [complianceStatus, setComplianceStatus] = useState(null);
   const [gstCalculator, setGstCalculator] = useState({
@@ -141,10 +156,45 @@ const ComplianceGST = () => {
   const [busyAction, setBusyAction] = useState('');
 
   useEffect(() => {
-    setDashboardData(mockGSTData);
-    setComplianceStatus(mockComplianceData);
-    setLoading(false);
-  }, []);
+    let cancelled = false;
+    const load = async () => {
+      if (isSample) {
+        setDashboardData(mockGSTData);
+        setComplianceStatus(mockComplianceData);
+        setActivityRows(gstActivities);
+        setCalendarRows(complianceCalendar);
+        setInvoiceRows(sampleGstr1Rows());
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      try {
+        const data = await financeService.getInvoices({ limit: 50 });
+        if (cancelled) return;
+        const invoices = unwrapList(data, ['invoices', 'items']);
+        setInvoiceRows(invoicesToGstr1Rows(invoices));
+        setDashboardData(gstDashboardFromInvoices(invoices));
+        setComplianceStatus(actualComplianceStatus(invoices));
+        setActivityRows(gstActivitiesFromInvoices(invoices));
+        setCalendarRows(statutoryGstCalendar());
+      } catch (error) {
+        if (!cancelled) {
+          setInvoiceRows([]);
+          setDashboardData(gstDashboardFromInvoices([]));
+          setComplianceStatus(actualComplianceStatus([]));
+          setActivityRows([]);
+          setCalendarRows(statutoryGstCalendar());
+          setPageMessage({ severity: 'warning', text: getApiErrorMessage(error, 'Could not load Finance invoices') });
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [isSample]);
 
   const showMessage = (severity, text) => {
     setPageMessage({ severity, text });
@@ -169,20 +219,23 @@ const ComplianceGST = () => {
   };
 
   const loadInvoiceRows = async () => {
+    if (isSample) {
+      return { rows: sampleGstr1Rows(), source: 'sample rows on this preview page' };
+    }
+    if (invoiceRows.length) {
+      return { rows: invoiceRows, source: 'live invoices from Finance' };
+    }
     try {
       const data = await financeService.getInvoices({ limit: 50 });
       const invoices = data?.invoices || data?.items || [];
       const rows = invoicesToGstr1Rows(invoices);
-      if (rows.length) {
-        return { rows, source: 'live invoices from Finance' };
-      }
+      return { rows, source: rows.length ? 'live invoices from Finance' : 'no invoices yet' };
     } catch (error) {
       return {
-        rows: sampleGstr1Rows(),
-        source: `sample rows (${getApiErrorMessage(error, 'Finance invoices unavailable')})`,
+        rows: [],
+        source: getApiErrorMessage(error, 'Finance invoices unavailable'),
       };
     }
-    return { rows: sampleGstr1Rows(), source: 'sample rows on this preview page' };
   };
 
   const generateReturn = async (kind) => {
@@ -190,9 +243,25 @@ const ComplianceGST = () => {
     try {
       const stamp = new Date().toISOString().slice(0, 10);
       if (kind === 'GSTR-2B') {
-        const rows = sampleGstr2bRows();
-        downloadText(`gstr-2b-preview-${stamp}.csv`, toCsv(rows), 'text/csv;charset=utf-8');
-        showMessage('success', 'Downloaded GSTR-2B preview CSV (sample inward supplies). MillMitra does not file GST.');
+        if (isSample) {
+          const rows = sampleGstr2bRows();
+          downloadText(`gstr-2b-preview-${stamp}.csv`, toCsv(rows), 'text/csv;charset=utf-8');
+          showMessage('success', 'Downloaded GSTR-2B preview CSV (sample inward supplies). MillMitra does not file GST.');
+          return;
+        }
+        try {
+          const data = await farmerService.getProcurements({ limit: 50 });
+          const rows = procurementsToGstr2bRows(unwrapList(data, ['procurements', 'items']));
+          if (!rows.length) {
+            downloadText(`gstr-2b-preview-${stamp}.csv`, 'sr,invoice_number,invoice_date,supplier,taxable_value,gst_amount,total,status\n', 'text/csv;charset=utf-8');
+            showMessage('info', 'No procurement records for GSTR-2B. Downloaded an empty preview. MillMitra does not file GST.');
+            return;
+          }
+          downloadText(`gstr-2b-preview-${stamp}.csv`, toCsv(rows), 'text/csv;charset=utf-8');
+          showMessage('success', 'Downloaded GSTR-2B preview CSV from farmer procurements. Not a statutory filing.');
+        } catch (error) {
+          showMessage('error', getApiErrorMessage(error, 'Could not load procurements for GSTR-2B'));
+        }
         return;
       }
       const { rows, source } = await loadInvoiceRows();
@@ -304,14 +373,17 @@ const ComplianceGST = () => {
 
   return (
     <Box>
-      <DemoBanner title="Compliance & GST" />
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" fontWeight="bold">
-          Compliance & GST Management
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Preview tools for GST maths and sample returns. MillMitra does not file GST.
-        </Typography>
+      <DemoBanner title="Compliance & GST" mode={mode} />
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
+        <Box>
+          <Typography variant="h4" component="h1" fontWeight="bold">
+            Compliance & GST Management
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            GST totals from Finance invoices at preview rates. MillMitra does not file GST.
+          </Typography>
+        </Box>
+        <PreviewModeToggle mode={mode} onChange={setMode} />
       </Box>
 
       {pageMessage && (
@@ -360,14 +432,16 @@ const ComplianceGST = () => {
               <CardContent>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="h3" color="primary.main">
-                    {complianceStatus?.compliance_score}
+                    {complianceStatus?.compliance_score != null
+                      ? complianceStatus.compliance_score
+                      : (dashboardData?.monthly_summary?.invoice_count ?? 0)}
                   </Typography>
                   <Typography variant="h6" color="text.secondary">
-                    Compliance Score
+                    {complianceStatus?.compliance_score != null ? 'Compliance Score' : 'Invoices in preview'}
                   </Typography>
                   <Chip
-                    label={complianceStatus?.overall_status?.toUpperCase()}
-                    color={getComplianceColor(complianceStatus?.compliance_score)}
+                    label={(complianceStatus?.overall_status || 'preview').toUpperCase()}
+                    color={complianceStatus?.compliance_score != null ? getComplianceColor(complianceStatus.compliance_score) : 'info'}
                     sx={{ mt: 1 }}
                   />
                 </Box>
@@ -400,15 +474,15 @@ const ComplianceGST = () => {
               <CardContent>
                 <Typography variant="h6" gutterBottom>Filing Status</Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  {getStatusIcon(dashboardData?.monthly_summary?.gstr1_filed ? 'compliant' : 'pending')}
+                  {getStatusIcon(isSample && dashboardData?.monthly_summary?.gstr1_filed ? 'compliant' : 'pending')}
                   <Typography variant="body1" sx={{ ml: 1 }}>
-                    GSTR-1: {dashboardData?.monthly_summary?.gstr1_filed ? 'Filed' : 'Pending'}
+                    GSTR-1: {isSample && dashboardData?.monthly_summary?.gstr1_filed ? 'Sample: Filed' : 'Not filed in MillMitra'}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  {getStatusIcon(dashboardData?.monthly_summary?.gstr3b_filed ? 'compliant' : 'pending')}
+                  {getStatusIcon(isSample && dashboardData?.monthly_summary?.gstr3b_filed ? 'compliant' : 'pending')}
                   <Typography variant="body1" sx={{ ml: 1 }}>
-                    GSTR-3B: {dashboardData?.monthly_summary?.gstr3b_filed ? 'Filed' : 'Pending'}
+                    GSTR-3B: {isSample && dashboardData?.monthly_summary?.gstr3b_filed ? 'Sample: Filed' : 'Not filed in MillMitra'}
                   </Typography>
                 </Box>
               </CardContent>
@@ -424,16 +498,18 @@ const ComplianceGST = () => {
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1, gap: 1, flexWrap: 'wrap' }}>
                       <Typography variant="body1" fontWeight="medium">{check.category}</Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Typography variant="body1" fontWeight="bold">{check.score}%</Typography>
+                        {check.score != null && <Typography variant="body1" fontWeight="bold">{check.score}%</Typography>}
                         <Button size="small" onClick={() => setStatusItem(check)}>View details</Button>
                       </Box>
                     </Box>
+                    {check.score != null && (
                     <LinearProgress
                       variant="determinate"
                       value={check.score}
                       sx={{ height: 8, borderRadius: 4 }}
                       color={getComplianceColor(check.score)}
                     />
+                    )}
                     {check.issues?.length > 0 && (
                       <Typography variant="body2" color="warning.main" sx={{ mt: 0.5 }}>
                         Issues: {check.issues.join(', ')}
@@ -506,7 +582,7 @@ const ComplianceGST = () => {
                   </Button>
                 </Box>
                 <Typography variant="body2" color="text.secondary">
-                  Downloads a CSV preview. Live invoices are used when Finance is reachable; otherwise sample rows.
+                  Downloads a CSV preview. View actual uses Finance invoices (and procurements for GSTR-2B). View sample uses demonstration rows.
                 </Typography>
                 <Typography variant="body2" sx={{ mt: 1 }}>
                   GSTR-1 due: {dashboardData?.monthly_summary?.due_dates?.gstr1}
@@ -556,8 +632,15 @@ const ComplianceGST = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {gstActivities.map((row) => (
-                        <TableRow key={row.form}>
+                      {!activityRows.length && (
+                        <TableRow>
+                          <TableCell colSpan={5}>
+                            <Typography variant="body2" color="text.secondary">No invoice GST activity yet.</Typography>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                      {activityRows.map((row, index) => (
+                        <TableRow key={`${row.form}-${row.activity}-${index}`}>
                           <TableCell>{row.date}</TableCell>
                           <TableCell>{row.activity}</TableCell>
                           <TableCell>
@@ -590,14 +673,18 @@ const ComplianceGST = () => {
                     {getStatusIcon(check.status)}
                     <Typography variant="h6" sx={{ ml: 1 }}>{check.category}</Typography>
                     <Box sx={{ flexGrow: 1 }} />
-                    <Chip label={`${check.score}%`} color={getComplianceColor(check.score)} />
+                    {check.score != null && (
+                      <Chip label={`${check.score}%`} color={getComplianceColor(check.score)} />
+                    )}
                   </Box>
+                  {check.score != null && (
                   <LinearProgress
                     variant="determinate"
                     value={check.score}
                     sx={{ mb: 2, height: 8, borderRadius: 4 }}
                     color={getComplianceColor(check.score)}
                   />
+                  )}
                   {check.issues?.length > 0 ? (
                     <Box>
                       <Typography variant="subtitle2" color="warning.main" gutterBottom>
@@ -640,7 +727,7 @@ const ComplianceGST = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {complianceCalendar.map((item) => (
+                  {calendarRows.map((item) => (
                     <TableRow key={item.task}>
                       <TableCell>{item.date}</TableCell>
                       <TableCell>{item.task}</TableCell>
@@ -819,7 +906,9 @@ const ComplianceGST = () => {
                 {CALENDAR_TASKS[calendarItem.task]?.typicalDue || 'Confirm the due date on the GST portal.'}
               </Typography>
               <Alert severity="info" sx={{ mt: 2 }}>
-                Dates on this calendar are sample. MillMitra does not file this return.
+                {isSample
+                  ? 'Dates on this calendar are sample. MillMitra does not file this return.'
+                  : 'Typical statutory due dates for a checklist only. MillMitra does not file this return.'}
               </Alert>
             </Box>
           )}
@@ -857,7 +946,7 @@ const ComplianceGST = () => {
         <DialogContent>
           {statusItem && (
             <Box sx={{ pt: 1 }}>
-              <Typography>Score: {statusItem.score}%</Typography>
+              {statusItem.score != null && <Typography>Score: {statusItem.score}%</Typography>}
               <Typography>Status: {statusItem.status}</Typography>
               <Typography sx={{ mt: 1 }}>
                 {statusItem.issues?.length
@@ -865,7 +954,9 @@ const ComplianceGST = () => {
                   : 'No issues listed on this preview check.'}
               </Typography>
               <Alert severity="info" sx={{ mt: 2 }}>
-                These scores are sample. They are not a statutory compliance assessment.
+                {isSample
+                  ? 'These scores are sample. They are not a statutory compliance assessment.'
+                  : 'This is an invoice-based GST preview, not a statutory compliance assessment.'}
               </Alert>
             </Box>
           )}

@@ -86,25 +86,25 @@ const previewMenuItems = [
     text: 'Analytics',
     icon: <AnalyticsIcon />,
     path: '/analytics',
-    description: 'Sample insights'
+    description: 'Mill records'
   },
   {
     text: 'Quality Control',
     icon: <QualityIcon />,
     path: '/quality-control',
-    description: 'Sample quality UI'
+    description: 'Live tests'
   },
   {
     text: 'Financial Intelligence',
     icon: <FinancialIntelligenceIcon />,
     path: '/financial-intelligence',
-    description: 'Sample finance UI'
+    description: 'Invoices & aging'
   },
   {
     text: 'Compliance & GST',
     icon: <ComplianceIcon />,
     path: '/compliance-gst',
-    description: 'Sample GST UI'
+    description: 'Invoice GST preview'
   },
 ];
 
@@ -207,7 +207,7 @@ const Sidebar = ({ open, onClose, user }) => {
         </List>
         <Divider sx={{ my: 1 }} />
         <Typography variant="caption" color="text.secondary" sx={{ px: 2 }}>
-          Preview
+          Preview · mill records by default
         </Typography>
         <List dense>
           {previewMenuItems.map((item) => (
@@ -226,7 +226,6 @@ const Sidebar = ({ open, onClose, user }) => {
                   primaryTypographyProps={{ fontSize: '0.85rem' }}
                   secondaryTypographyProps={{ fontSize: '0.7rem' }}
                 />
-                <Chip label="Sample" size="small" variant="outlined" />
               </ListItemButton>
             </ListItem>
           ))}

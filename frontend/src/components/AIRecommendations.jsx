@@ -317,9 +317,11 @@ const AIRecommendations = ({ context = 'production', refreshInterval = 300000 })
                     {getCategoryIcon(rec.category)}
                   </ListItemIcon>
                   <ListItemText
+                    primaryTypographyProps={{ component: 'div' }}
+                    secondaryTypographyProps={{ component: 'div' }}
                     primary={
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                        <Typography variant="subtitle2">
+                        <Typography variant="subtitle2" component="span">
                           {rec.title}
                         </Typography>
                         <Chip 
@@ -342,10 +344,10 @@ const AIRecommendations = ({ context = 'production', refreshInterval = 300000 })
                     }
                     secondary={
                       <Box>
-                        <Typography variant="body2" sx={{ mb: 0.5 }}>
+                        <Typography variant="body2" component="span" display="block" sx={{ mb: 0.5 }}>
                           {rec.summary}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" component="span" display="block" color="text.secondary">
                           Implementation: {rec.implementation_time} | Expected: {rec.expected_benefit}
                         </Typography>
                       </Box>

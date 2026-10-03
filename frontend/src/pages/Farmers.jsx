@@ -86,12 +86,6 @@ const Farmers = () => {
       refetchInterval: 300000,
       enabled: isAuthenticated,
       retry: false,
-      onSuccess: (data) => {
-        console.log('Farmers data received:', data);
-        if (data?.farmers?.length > 0) {
-          console.log('Sample farmer data:', data.farmers[0]);
-        }
-      },
       onError: (error) => {
         console.error('Farmers fetch error:', error);
       }
@@ -105,12 +99,6 @@ const Farmers = () => {
       refetchInterval: 300000,
       enabled: isAuthenticated,
       retry: false,
-      onSuccess: (data) => {
-        console.log('Analytics data received:', data);
-        if (data?.analytics) {
-          console.log('Analytics metrics:', data.analytics);
-        }
-      },
       onError: (error) => {
         console.error('Analytics fetch error:', error);
       }
@@ -134,12 +122,6 @@ const Farmers = () => {
       refetchInterval: 300000,
       enabled: isAuthenticated,
       retry: false,
-      onSuccess: (data) => {
-        console.log('Contracts data received:', data);
-        if (data?.contracts?.length > 0) {
-          console.log('Sample contract data:', data.contracts[0]);
-        }
-      },
       onError: (error) => {
         console.error('Contracts fetch error:', error);
       }

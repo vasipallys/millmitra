@@ -18,29 +18,89 @@ import {
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import authService from '../services/authService';
 
+const DEFAULT_PREFERENCES = {
+  theme: 'light',
+  language: 'en',
+  timezone: 'Asia/Kolkata',
+  notifications: {
+    email: true,
+    push: true,
+    sms: false,
+  },
+};
+
+const emptyProfile = () => ({
+  first_name: '',
+  last_name: '',
+  email: '',
+  phone: '',
+  department: '',
+  role: '',
+  username: '',
+  preferences: {
+    ...DEFAULT_PREFERENCES,
+    notifications: { ...DEFAULT_PREFERENCES.notifications },
+  },
+});
+
+const pickAccount = (source) => {
+  if (!source || typeof source !== 'object') return {};
+  return source.user && typeof source.user === 'object' ? source.user : source;
+};
+
+const mergeProfile = (...sources) => {
+  const next = emptyProfile();
+  sources.forEach((raw) => {
+    const source = pickAccount(raw);
+    if (!source || Object.keys(source).length === 0) return;
+    ['first_name', 'last_name', 'email', 'phone', 'department', 'role', 'username', 'last_login'].forEach((field) => {
+      if (source[field] != null && source[field] !== '') {
+        next[field] = source[field];
+      }
+    });
+    const incomingPrefs = source.preferences && typeof source.preferences === 'object'
+      ? source.preferences
+      : {};
+    const incomingNotes = incomingPrefs.notifications && typeof incomingPrefs.notifications === 'object'
+      ? incomingPrefs.notifications
+      : {};
+    next.preferences = {
+      ...next.preferences,
+      theme: incomingPrefs.theme || next.preferences.theme,
+      language: incomingPrefs.language || next.preferences.language,
+      timezone: incomingPrefs.timezone || next.preferences.timezone,
+      notifications: {
+        ...next.preferences.notifications,
+        email: incomingNotes.email ?? incomingNotes.emailAlerts ?? next.preferences.notifications.email,
+        push: incomingNotes.push ?? incomingNotes.pushNotifications ?? next.preferences.notifications.push,
+        sms: incomingNotes.sms ?? incomingNotes.smsAlerts ?? next.preferences.notifications.sms,
+      },
+    };
+  });
+  return next;
+};
+
+const accountInitials = (account) => {
+  const first = (account?.first_name || '').trim();
+  const last = (account?.last_name || '').trim();
+  if (first && last) return `${first[0]}${last[0]}`.toUpperCase();
+  const label = account?.username || account?.email || 'Account';
+  return (label[0] || 'A').toUpperCase();
+};
+
+const accountDisplayName = (account) => {
+  const first = (account?.first_name || '').trim();
+  const last = (account?.last_name || '').trim();
+  if (first || last) return `${first} ${last}`.trim();
+  return account?.username || account?.email || 'Account';
+};
+
 const ProfilePanel = ({ open, onClose, user }) => {
   const [activeTab, setActiveTab] = useState(0);
   const [editMode, setEditMode] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [passwordError, setPasswordError] = useState('');
-  const [profileData, setProfileData] = useState({
-    first_name: '',
-    last_name: '',
-    email: '',
-    phone: '',
-    department: '',
-    role: '',
-    preferences: {
-      theme: 'light',
-      language: 'en',
-      timezone: 'Asia/Kolkata',
-      notifications: {
-        email: true,
-        push: true,
-        sms: false
-      }
-    }
-  });
+  const [profileData, setProfileData] = useState(emptyProfile);
   const [passwordData, setPasswordData] = useState({
     current_password: '',
     new_password: '',
@@ -49,42 +109,19 @@ const ProfilePanel = ({ open, onClose, user }) => {
 
   const queryClient = useQueryClient();
 
-  // Initialize profile data
   useEffect(() => {
-    if (user) {
-      setProfileData({
-        first_name: user.first_name || '',
-        last_name: user.last_name || '',
-        email: user.email || '',
-        phone: user.phone || '',
-        department: user.department || '',
-        role: user.role || '',
-        preferences: {
-          theme: user.preferences?.theme || 'light',
-          language: user.preferences?.language || 'en',
-          timezone: user.preferences?.timezone || 'Asia/Kolkata',
-          notifications: {
-            email: user.preferences?.notifications?.email ?? true,
-            push: user.preferences?.notifications?.push ?? true,
-            sms: user.preferences?.notifications?.sms ?? false
-          }
-        }
-      });
-    }
+    setProfileData((prev) => mergeProfile(prev, user));
   }, [user]);
 
-  // Fetch user profile
-  const { data: userProfile, isLoading } = useQuery(
+  const { isLoading } = useQuery(
     'user-profile',
     () => authService.getUserProfile(),
     {
       enabled: open,
       retry: false,
       onSuccess: (data) => {
-        if (data.user) {
-          setProfileData(prev => ({ ...prev, ...data.user }));
-        }
-      }
+        setProfileData((prev) => mergeProfile(prev, user, data));
+      },
     }
   );
 
@@ -121,15 +158,21 @@ const ProfilePanel = ({ open, onClose, user }) => {
   };
 
   const handlePreferenceChange = (category, field, value) => {
-    setProfileData(prev => ({
-      ...prev,
-      preferences: {
-        ...prev.preferences,
-        [category]: typeof prev.preferences[category] === 'object' 
-          ? { ...prev.preferences[category], [field]: value }
-          : value
-      }
-    }));
+    setProfileData((prev) => {
+      const preferences = prev.preferences || { ...DEFAULT_PREFERENCES };
+      const current = preferences[category];
+      return {
+        ...prev,
+        preferences: {
+          ...DEFAULT_PREFERENCES,
+          ...preferences,
+          notifications: { ...DEFAULT_PREFERENCES.notifications, ...(preferences.notifications || {}) },
+          [category]: current && typeof current === 'object' && field != null
+            ? { ...current, [field]: value }
+            : value,
+        },
+      };
+    });
   };
 
   const handleSaveProfile = () => {
@@ -160,18 +203,15 @@ const ProfilePanel = ({ open, onClose, user }) => {
       <DialogTitle>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Avatar sx={{ width: 56, height: 56, bgcolor: 'primary.main' }}>
-            {user?.username?.charAt(0).toUpperCase() || 'U'}
+            {accountInitials(profileData)}
           </Avatar>
           <Box>
             <Typography variant="h6">
-              {user?.first_name && user?.last_name 
-                ? `${user.first_name} ${user.last_name}` 
-                : user?.username || 'User Profile'
-              }
+              {isLoading && !profileData.username && !profileData.email ? 'Account' : accountDisplayName(profileData)}
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Chip label={user?.role || 'Operator'} size="small" color="primary" />
-              <Chip label={user?.department || 'General'} size="small" variant="outlined" />
+              <Chip label={profileData.role || 'Operator'} size="small" color="primary" />
+              <Chip label={profileData.department || 'General'} size="small" variant="outlined" />
             </Box>
           </Box>
         </Box>
@@ -306,7 +346,10 @@ const ProfilePanel = ({ open, onClose, user }) => {
                 InputProps={{
                   startAdornment: <Key sx={{ mr: 1, color: 'text.secondary' }} />,
                   endAdornment: (
-                    <IconButton onClick={() => setShowPassword(!showPassword)}>
+                    <IconButton
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
                       {showPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   )
@@ -375,7 +418,7 @@ const ProfilePanel = ({ open, onClose, user }) => {
               <FormControl fullWidth>
                 <InputLabel>Theme</InputLabel>
                 <Select
-                  value={profileData.preferences.theme}
+                  value={profileData.preferences?.theme || 'light'}
                   onChange={(e) => handlePreferenceChange('theme', null, e.target.value)}
                   label="Theme"
                 >
@@ -389,7 +432,7 @@ const ProfilePanel = ({ open, onClose, user }) => {
               <FormControl fullWidth>
                 <InputLabel>Language</InputLabel>
                 <Select
-                  value={profileData.preferences.language}
+                  value={profileData.preferences?.language || 'en'}
                   onChange={(e) => handlePreferenceChange('language', null, e.target.value)}
                   label="Language"
                 >
@@ -403,7 +446,7 @@ const ProfilePanel = ({ open, onClose, user }) => {
               <FormControl fullWidth>
                 <InputLabel>Timezone</InputLabel>
                 <Select
-                  value={profileData.preferences.timezone}
+                  value={profileData.preferences?.timezone || 'Asia/Kolkata'}
                   onChange={(e) => handlePreferenceChange('timezone', null, e.target.value)}
                   label="Timezone"
                 >
@@ -423,7 +466,7 @@ const ProfilePanel = ({ open, onClose, user }) => {
               <ListItemIcon><Email /></ListItemIcon>
               <ListItemText primary="Email Notifications" secondary="Receive notifications via email" />
               <Switch
-                checked={profileData.preferences.notifications.email}
+                checked={Boolean(profileData.preferences?.notifications?.email)}
                 onChange={(e) => handlePreferenceChange('notifications', 'email', e.target.checked)}
               />
             </ListItem>
@@ -431,7 +474,7 @@ const ProfilePanel = ({ open, onClose, user }) => {
               <ListItemIcon><Notifications /></ListItemIcon>
               <ListItemText primary="Push Notifications" secondary="Receive browser push notifications" />
               <Switch
-                checked={profileData.preferences.notifications.push}
+                checked={Boolean(profileData.preferences?.notifications?.push)}
                 onChange={(e) => handlePreferenceChange('notifications', 'push', e.target.checked)}
               />
             </ListItem>
@@ -439,7 +482,7 @@ const ProfilePanel = ({ open, onClose, user }) => {
               <ListItemIcon><Phone /></ListItemIcon>
               <ListItemText primary="SMS Notifications" secondary="Receive notifications via SMS" />
               <Switch
-                checked={profileData.preferences.notifications.sms}
+                checked={Boolean(profileData.preferences?.notifications?.sms)}
                 onChange={(e) => handlePreferenceChange('notifications', 'sms', e.target.checked)}
               />
             </ListItem>

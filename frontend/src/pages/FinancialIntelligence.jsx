@@ -42,8 +42,19 @@ import {
 } from '@mui/icons-material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
 import DemoBanner from '../components/DemoBanner';
+import PreviewModeToggle from '../components/PreviewModeToggle';
+import { usePreviewMode } from '../hooks/usePreviewMode';
+import { financeService } from '../services/financeService';
+import {
+  cashFlowFromInvoices,
+  derivedFinanceHealth,
+  financeInsightsFromRecords,
+  financialSeriesFromCashFlow,
+  unwrapList,
+} from '../utils/previewLiveData';
 
 const FinancialIntelligence = () => {
+  const { mode, setMode, isSample } = usePreviewMode('financial-intelligence');
   const [activeTab, setActiveTab] = useState(0);
   const [dashboardData, setDashboardData] = useState(null);
   const [cashFlowData, setCashFlowData] = useState(null);
@@ -111,17 +122,9 @@ const FinancialIntelligence = () => {
   ];
 
   useEffect(() => {
-    loadDashboardData();
-    loadInsights();
-    loadAlerts();
-  }, []);
-
-  const loadDashboardData = async () => {
-    try {
-      setLoading(true);
-      
-      // In a real app, these would be actual API calls
-      setTimeout(() => {
+    let cancelled = false;
+    const load = async () => {
+      if (isSample) {
         setDashboardData({
           summary: {
             monthly_revenue: 1250000,
@@ -132,41 +135,86 @@ const FinancialIntelligence = () => {
             pending_amount: 145000
           }
         });
-        
         setCashFlowData(mockCashFlowTrend);
         setHealthScore(mockHealthScoreData);
+        setInsights(mockInsights);
+        setAlerts([
+          {
+            type: 'warning',
+            category: 'payments',
+            title: 'Overdue Payments',
+            message: '3 payments are overdue',
+            action_required: true
+          }
+        ]);
         setLoading(false);
-      }, 1000);
-      
-    } catch (error) {
-      console.error('Failed to load dashboard data:', error);
-      setLoading(false);
-    }
-  };
-
-  const loadInsights = async () => {
-    try {
-      setInsights(mockInsights);
-    } catch (error) {
-      console.error('Failed to load insights:', error);
-    }
-  };
-
-  const loadAlerts = async () => {
-    try {
-      setAlerts([
-        {
-          type: 'warning',
-          category: 'payments',
-          title: 'Overdue Payments',
-          message: '3 payments are overdue',
-          action_required: true
+        return;
+      }
+      setLoading(true);
+      try {
+        const [summary, cashFlow, receivables, invoicesPayload] = await Promise.all([
+          financeService.getFinancialSummary(30),
+          financeService.getCashFlow('monthly'),
+          financeService.getAccountsReceivable(),
+          financeService.getInvoices({ limit: 50 }),
+        ]);
+        if (cancelled) return;
+        const invoices = unwrapList(invoicesPayload, ['invoices', 'items']);
+        const revenue = Number(summary?.total_revenue || 0);
+        const expenses = Number(summary?.total_expenses || 0);
+        const profit = Number(summary?.net_profit ?? (revenue - expenses));
+        setDashboardData({
+          summary: {
+            monthly_revenue: revenue,
+            monthly_expenses: expenses,
+            monthly_profit: profit,
+            profit_margin: revenue ? (profit / revenue) * 100 : 0,
+            pending_payments: Number(receivables?.overdue_count || invoices.filter((inv) => String(inv.status).toLowerCase() !== 'paid').length),
+            pending_amount: Number(receivables?.total_outstanding || summary?.outstanding_receivables || 0),
+          }
+        });
+        const series = financialSeriesFromCashFlow(cashFlow);
+        setCashFlowData(series.length ? series : cashFlowFromInvoices(invoices));
+        setHealthScore(derivedFinanceHealth(summary, receivables));
+        setInsights(financeInsightsFromRecords({ summary, receivables, invoices }));
+        setAlerts(
+          Number(receivables?.overdue_count) > 0
+            ? [{
+                type: 'warning',
+                category: 'payments',
+                title: 'Overdue invoices',
+                message: `${receivables.overdue_count} invoice(s) overdue totaling ₹${Number(receivables.total_overdue || 0).toLocaleString('en-IN')}`,
+                action_required: true
+              }]
+            : []
+        );
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Failed to load dashboard data:', error);
+          setDashboardData({
+            summary: {
+              monthly_revenue: 0,
+              monthly_expenses: 0,
+              monthly_profit: 0,
+              profit_margin: 0,
+              pending_payments: 0,
+              pending_amount: 0,
+            }
+          });
+          setCashFlowData([]);
+          setHealthScore(derivedFinanceHealth({}, {}));
+          setInsights(financeInsightsFromRecords({ summary: {}, receivables: {}, invoices: [] }));
+          setAlerts([]);
         }
-      ]);
-    } catch (error) {
-      console.error('Failed to load alerts:', error);
-    }
-  };
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [isSample]);
 
   const handleSmartPaymentScheduling = () => {
     const amount = Number(paymentForm.amount);
@@ -233,20 +281,23 @@ const FinancialIntelligence = () => {
 
   return (
     <Box>
-      <DemoBanner title="Financial Intelligence" />
+      <DemoBanner title="Financial Intelligence" mode={mode} />
       {pageMessage && (
         <Alert severity={pageMessage.severity} sx={{ mb: 2 }} onClose={() => setPageMessage(null)}>
           {pageMessage.text}
         </Alert>
       )}
       {/* Header */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" fontWeight="bold">
-          Financial Intelligence
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          AI-powered financial analytics and smart payment management
-        </Typography>
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
+        <Box>
+          <Typography variant="h4" component="h1" fontWeight="bold">
+            Financial Intelligence
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Invoices, payments, aging, and cash flow from Finance. Sample figures are opt-in.
+          </Typography>
+        </Box>
+        <PreviewModeToggle mode={mode} onChange={setMode} />
       </Box>
 
       {/* Alerts */}
@@ -369,6 +420,11 @@ const FinancialIntelligence = () => {
                 <Typography variant="h6" gutterBottom>
                   Cash Flow Trend
                 </Typography>
+                {!cashFlowData?.length ? (
+                  <Typography variant="body2" color="text.secondary" sx={{ py: 6, textAlign: 'center' }}>
+                    No invoice or cash-flow series yet.
+                  </Typography>
+                ) : (
                 <ResponsiveContainer width="100%" height={300}>
                   <AreaChart data={cashFlowData}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -378,6 +434,7 @@ const FinancialIntelligence = () => {
                     <Area type="monotone" dataKey="net" stroke="#2E7D32" fill="#4CAF50" fillOpacity={0.3} />
                   </AreaChart>
                 </ResponsiveContainer>
+                )}
               </CardContent>
             </Card>
           </Grid>
@@ -387,7 +444,7 @@ const FinancialIntelligence = () => {
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  Financial Health Score
+                  {isSample ? 'Financial Health Score' : 'Collection rate'}
                 </Typography>
                 <Box sx={{ textAlign: 'center', mb: 2 }}>
                   <Typography variant="h2" color="primary.main">
@@ -434,6 +491,11 @@ const FinancialIntelligence = () => {
                 <Typography variant="h6" gutterBottom>
                   Detailed Cash Flow Analysis
                 </Typography>
+                {!cashFlowData?.length ? (
+                  <Typography variant="body2" color="text.secondary" sx={{ py: 6, textAlign: 'center' }}>
+                    No cash-flow records yet.
+                  </Typography>
+                ) : (
                 <ResponsiveContainer width="100%" height={400}>
                   <LineChart data={cashFlowData}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -445,6 +507,7 @@ const FinancialIntelligence = () => {
                     <Line type="monotone" dataKey="net" stroke="#2196F3" strokeWidth={3} name="Net Cash Flow" />
                   </LineChart>
                 </ResponsiveContainer>
+                )}
               </CardContent>
             </Card>
           </Grid>
@@ -500,7 +563,9 @@ const FinancialIntelligence = () => {
                 </Typography>
                 <Alert severity="info" sx={{ mb: 2 }}>
                   <Typography variant="body2">
-                    Your financial health is good but can be improved. Focus on the areas below.
+                    {isSample
+                      ? 'Sample health notes. Focus on the areas below.'
+                      : 'These percentages are derived from Finance invoices and payments, not a credit rating or ML score.'}
                   </Typography>
                 </Alert>
                 
