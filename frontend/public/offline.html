@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Mill ERP - Offline</title>
+    <title>MillMitra — Offline</title>
     <style>
         body {
             font-family: 'Roboto', Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background: linear-gradient(135deg, #1976d2, #42a5f5);
+            background: linear-gradient(135deg, #1B5E20, #2E7D32);
             color: white;
             display: flex;
             justify-content: center;
@@ -26,9 +26,11 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
         .offline-icon {
-            font-size: 80px;
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
             margin-bottom: 20px;
-            opacity: 0.8;
+            opacity: 0.9;
         }
         h1 {
             font-size: 2.5rem;
@@ -111,33 +113,31 @@
 </head>
 <body>
     <div class="offline-container">
-        <div class="offline-icon pulse">📡</div>
-        <h1>You're Offline</h1>
-        <p>Don't worry! Smart Mill ERP works offline too. You can still access cached data and perform essential operations.</p>
+        <div class="offline-icon pulse">MillMitra</div>
+        <h1>You are offline</h1>
+        <p>The mill app cannot reach the server. Cached pages may still open. Live farmers, stock, and invoices need a connection.</p>
         
         <div class="features">
-            <h3>🌟 Available Offline Features:</h3>
+            <h3>What you can try</h3>
             <ul>
-                <li>View cached dashboard data</li>
-                <li>Browse farmer information</li>
-                <li>Check inventory levels</li>
-                <li>Review production records</li>
-                <li>Access quality test results</li>
-                <li>View financial summaries</li>
+                <li>Confirm the mill server is running</li>
+                <li>Open a page you used earlier today</li>
+                <li>Retry once the network is back</li>
             </ul>
         </div>
         
         <button class="retry-btn" onclick="checkConnection()">
-            🔄 Check Connection
+            Retry connection
         </button>
         
         <button class="retry-btn" onclick="goToApp()">
-            🏠 Go to App
+            Open MillMitra
         </button>
         
         <div id="status" class="status offline">
-            📶 Connection Status: Offline
+            Status: Offline
         </div>
+        <p id="retry-note" style="display:none;margin-top:12px;font-size:0.95rem;"></p>
     </div>
 
     <script>
@@ -145,7 +145,7 @@
         function updateConnectionStatus() {
             const status = document.getElementById('status');
             if (navigator.onLine) {
-                status.textContent = '📶 Connection Status: Online';
+                status.textContent = 'Status: Online';
                 status.className = 'status online';
                 
                 // Auto-redirect to app when online
@@ -153,7 +153,7 @@
                     window.location.href = '/';
                 }, 2000);
             } else {
-                status.textContent = '📶 Connection Status: Offline';
+                status.textContent = 'Status: Offline';
                 status.className = 'status offline';
             }
         }
@@ -171,7 +171,11 @@
                 window.location.href = '/';
             })
             .catch(() => {
-                alert('Still offline. Please check your internet connection.');
+                const note = document.getElementById('retry-note');
+                if (note) {
+                    note.style.display = 'block';
+                    note.textContent = 'Still offline. Check the mill server or your network, then retry.';
+                }
             });
         }
 

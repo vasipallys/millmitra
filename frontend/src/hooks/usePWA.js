@@ -1,8 +1,33 @@
 import { useState, useEffect } from 'react';
+import { clearDevServiceWorkers, isDevRuntime } from '../utils/pwaRuntime';
+
+let productionSwPromise = null;
+const updateListeners = new Set();
+
+function registerProductionServiceWorker() {
+  if (isDevRuntime() || !('serviceWorker' in navigator)) {
+    return Promise.resolve(null);
+  }
+  if (!productionSwPromise) {
+    productionSwPromise = navigator.serviceWorker.register('/sw.js').then((registration) => {
+      registration.addEventListener('updatefound', () => {
+        const newWorker = registration.installing;
+        if (!newWorker) return;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            updateListeners.forEach((notify) => notify());
+          }
+        });
+      });
+      return registration;
+    });
+  }
+  return productionSwPromise;
+}
 
 /**
- * Custom hook for Progressive Web App functionality
- * Handles installation prompts, offline status, and service worker updates
+ * Progressive Web App helpers: install prompt, offline flag, production SW.
+ * Development never registers sw.js — it fights Vite HMR and can 503 SPA routes.
  */
 export const usePWA = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -13,40 +38,59 @@ export const usePWA = () => {
   const [swRegistration, setSwRegistration] = useState(null);
 
   useEffect(() => {
-    // Register service worker
-    registerServiceWorker();
+    let cancelled = false;
 
-    // Listen for online/offline events
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
-
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Listen for install prompt
-    const handleBeforeInstallPrompt = (e) => {
-      e.preventDefault();
-      setInstallPrompt(e);
+    const handleBeforeInstallPrompt = (event) => {
+      if (isDevRuntime()) {
+        return;
+      }
+      event.preventDefault();
+      setInstallPrompt(event);
       setIsInstallable(true);
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    // Check if app is already installed
     const handleAppInstalled = () => {
       setIsInstalled(true);
       setIsInstallable(false);
       setInstallPrompt(null);
     };
 
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
-    // Check if running in standalone mode (installed)
     if (window.matchMedia('(display-mode: standalone)').matches) {
       setIsInstalled(true);
     }
 
+    const notifyUpdate = () => {
+      if (!cancelled) setUpdateAvailable(true);
+    };
+    updateListeners.add(notifyUpdate);
+
+    (async () => {
+      if (isDevRuntime()) {
+        const shouldReload = await clearDevServiceWorkers();
+        if (shouldReload && !cancelled) {
+          window.location.reload();
+        }
+        return;
+      }
+      try {
+        const registration = await registerProductionServiceWorker();
+        if (!cancelled) setSwRegistration(registration);
+      } catch {
+        // Install still works from the manifest; SW is optional for the mill UI.
+      }
+    })();
+
     return () => {
+      cancelled = true;
+      updateListeners.delete(notifyUpdate);
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -54,53 +98,23 @@ export const usePWA = () => {
     };
   }, []);
 
-  // Register service worker
-  const registerServiceWorker = async () => {
-    if ('serviceWorker' in navigator) {
-      try {
-        const registration = await navigator.serviceWorker.register('/sw.js');
-        setSwRegistration(registration);
-
-        // Check for updates
-        registration.addEventListener('updatefound', () => {
-          const newWorker = registration.installing;
-          
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              setUpdateAvailable(true);
-            }
-          });
-        });
-
-        console.log('Service Worker registered successfully');
-      } catch (error) {
-        console.error('Service Worker registration failed:', error);
-      }
-    }
-  };
-
-  // Install PWA
   const installPWA = async () => {
     if (!installPrompt) return false;
 
     try {
       const result = await installPrompt.prompt();
-      
       if (result.outcome === 'accepted') {
         setIsInstalled(true);
         setIsInstallable(false);
         setInstallPrompt(null);
         return true;
       }
-      
       return false;
-    } catch (error) {
-      console.error('PWA installation failed:', error);
+    } catch {
       return false;
     }
   };
 
-  // Update service worker
   const updateServiceWorker = () => {
     if (swRegistration && swRegistration.waiting) {
       swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
@@ -109,79 +123,66 @@ export const usePWA = () => {
     }
   };
 
-  // Cache data for offline use
   const cacheData = async (key, data) => {
     try {
       if ('caches' in window) {
         const cache = await caches.open('smart-mill-data');
-        const response = new Response(JSON.stringify(data));
-        await cache.put(key, response);
+        await cache.put(key, new Response(JSON.stringify(data)));
         return true;
       }
       return false;
-    } catch (error) {
-      console.error('Failed to cache data:', error);
+    } catch {
       return false;
     }
   };
 
-  // Get cached data
   const getCachedData = async (key) => {
     try {
       if ('caches' in window) {
         const cache = await caches.open('smart-mill-data');
         const response = await cache.match(key);
-        
         if (response) {
           return await response.json();
         }
       }
       return null;
-    } catch (error) {
-      console.error('Failed to get cached data:', error);
+    } catch {
       return null;
     }
   };
 
-  // Store offline action
   const storeOfflineAction = async (action) => {
     try {
       const offlineActions = JSON.parse(localStorage.getItem('offlineActions') || '[]');
       offlineActions.push({
         id: Date.now(),
         timestamp: new Date().toISOString(),
-        ...action
+        ...action,
       });
       localStorage.setItem('offlineActions', JSON.stringify(offlineActions));
       return true;
-    } catch (error) {
-      console.error('Failed to store offline action:', error);
+    } catch {
       return false;
     }
   };
 
-  // Get offline actions
   const getOfflineActions = () => {
     try {
       return JSON.parse(localStorage.getItem('offlineActions') || '[]');
-    } catch (error) {
-      console.error('Failed to get offline actions:', error);
+    } catch {
       return [];
     }
   };
 
-  // Clear offline actions
   const clearOfflineActions = () => {
     try {
       localStorage.removeItem('offlineActions');
       return true;
-    } catch (error) {
-      console.error('Failed to clear offline actions:', error);
+    } catch {
       return false;
     }
   };
 
-  // Sync offline actions when online
   const syncOfflineActions = async (syncFunction) => {
     if (!isOnline) return false;
 
@@ -192,21 +193,19 @@ export const usePWA = () => {
       try {
         await syncFunction(action);
         syncedActions.push(action.id);
-      } catch (error) {
-        console.error('Failed to sync action:', action.id, error);
+      } catch {
+        // Leave unsynced actions for the next pass.
       }
     }
 
-    // Remove synced actions
     if (syncedActions.length > 0) {
-      const remainingActions = actions.filter(action => !syncedActions.includes(action.id));
+      const remainingActions = actions.filter((action) => !syncedActions.includes(action.id));
       localStorage.setItem('offlineActions', JSON.stringify(remainingActions));
     }
 
     return syncedActions.length;
   };
 
-  // Request notification permission
   const requestNotificationPermission = async () => {
     if ('Notification' in window) {
       const permission = await Notification.requestPermission();
@@ -215,39 +214,31 @@ export const usePWA = () => {
     return false;
   };
 
-  // Show notification
   const showNotification = (title, options = {}) => {
     if ('Notification' in window && Notification.permission === 'granted') {
       return new Notification(title, {
         icon: '/logo192.png',
         badge: '/logo192.png',
-        ...options
+        ...options,
       });
     }
     return null;
   };
 
   return {
-    // Status
     isOnline,
     isInstallable,
     isInstalled,
     updateAvailable,
-    
-    // Actions
     installPWA,
     updateServiceWorker,
-    
-    // Data management
     cacheData,
     getCachedData,
     storeOfflineAction,
     getOfflineActions,
     clearOfflineActions,
     syncOfflineActions,
-    
-    // Notifications
     requestNotificationPermission,
-    showNotification
+    showNotification,
   };
 };

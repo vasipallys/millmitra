@@ -6,9 +6,11 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 3000,
-    // Do not pin HMR to another port. Vite 4 retries listen() when 3000 is
-    // taken; a separate hmr.port caused ERR_SERVER_ALREADY_LISTEN.
+    // HMR shares the HTTP port Vite actually bound. Do not set hmr.port —
+    // that opened a second listener (ERR_SERVER_ALREADY_LISTEN). Open the
+    // URL Vite prints (3000, or the next free port if 3000 is taken).
     strictPort: false,
+    hmr: true,
     proxy: {
       '/api': {
         target: 'http://localhost:5000',
