@@ -29,11 +29,15 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid
+    const url = error.config?.url || '';
+    const isAuthCall = /\/auth\/(login|me|logout|verify-otp|complete-login)/.test(url);
+    if (error.response?.status === 401 && !isAuthCall) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      localStorage.removeItem('sessionToken');
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

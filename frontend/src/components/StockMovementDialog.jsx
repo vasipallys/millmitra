@@ -22,6 +22,7 @@ import { Add, Remove, SwapHoriz } from '@mui/icons-material';
 const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, movementType = 'in' }) => {
   const [formData, setFormData] = useState({
     stock_id: stockItem?.id || '',
+    stock_kind: stockItem?.type || 'product',
     movement_type: movementType, // 'in', 'out', 'transfer'
     quantity: '',
     unit_price: stockItem?.unit_price || '',
@@ -107,6 +108,7 @@ const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, moveme
     // Reset form
     setFormData({
       stock_id: '',
+      stock_kind: 'product',
       movement_type: 'in',
       quantity: '',
       unit_price: '',
@@ -175,6 +177,35 @@ const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, moveme
                 </Typography>
               </Alert>
             </Grid>
+          )}
+
+          {!stockItem && (
+            <>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth required>
+                  <InputLabel>Stock Type</InputLabel>
+                  <Select
+                    value={formData.stock_kind || 'product'}
+                    label="Stock Type"
+                    onChange={(e) => handleInputChange('stock_kind', e.target.value)}
+                  >
+                    <MenuItem value="paddy">Paddy</MenuItem>
+                    <MenuItem value="product">Product</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  required
+                  label="Lot ID"
+                  type="number"
+                  value={formData.stock_id}
+                  onChange={(e) => handleInputChange('stock_id', e.target.value)}
+                  helperText="Numeric id shown on the stock card"
+                />
+              </Grid>
+            </>
           )}
 
           {/* Basic Movement Details */}

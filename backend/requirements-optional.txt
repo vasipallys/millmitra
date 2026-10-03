@@ -1,13 +1,13 @@
-# Optional Advanced Features - Install separately if needed
-# Note: Some packages may not be compatible with Python 3.13 on Windows
-# Install these only if you need specific advanced features
+# Legacy optional list. Prefer:
+#   pip install -r requirements-ml.txt
+# TensorFlow is unused by mill ERP. Do not pin tensorflow<2.16 (no Python 3.13 wheels).
 
 # ============================================================================
 # ADVANCED AI/ML PACKAGES
 # ============================================================================
 
 # Deep Learning Frameworks (install only if needed and compatible)
-# tensorflow>=2.13.0,<2.16.0  # Uncomment if TensorFlow is available for your Python version
+# tensorflow>=2.20.0  # Unused by mill routes; 2.13-2.15 have no cp313 wheels
 # torch>=2.0.0  # Uncomment if PyTorch is available for your Python version
 # torchvision>=0.15.0  # Computer vision for PyTorch
 # transformers>=4.30.0  # Requires torch/tensorflow

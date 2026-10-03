@@ -27,7 +27,6 @@ import QualityControl from './pages/QualityControl';
 import FinancialIntelligence from './pages/FinancialIntelligence';
 import ComplianceGST from './pages/ComplianceGST';
 import AnalyticsReporting from './pages/AnalyticsReporting';
-import ToastDemo from './pages/ToastDemo';
 
 // Services
 import { authService } from './services/authService';
@@ -205,7 +204,7 @@ function AppContent() {
             flexGrow: 1,
             p: 0, // Remove padding to eliminate gaps
             bgcolor: 'background.default',
-            overflow: 'hidden' // Prevent any overflow issues
+            overflow: 'auto'
           }}>
             <Routes>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -224,7 +223,6 @@ function AppContent() {
               <Route path="/analytics-reporting" element={<AnalyticsReporting />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/settings" element={<Settings />} />
-              <Route path="/toast-demo" element={<ToastDemo />} />
             </Routes>
           </Box>
         </Box>

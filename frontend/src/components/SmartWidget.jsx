@@ -54,6 +54,8 @@ const SmartWidget = ({ widget }) => {
         return renderList();
       case 'alert':
         return renderAlert();
+      case 'status':
+        return renderStatus();
       default:
         return <Typography>Widget type not supported</Typography>;
     }
@@ -150,6 +152,35 @@ const SmartWidget = ({ widget }) => {
             Action: {widget.data.action}
           </Typography>
         )}
+      </Box>
+    );
+  };
+
+  const renderStatus = () => {
+    const data = { ...(widget.data || {}), ...(widgetData || {}) };
+    const skip = new Set(['endpoint', 'chart_type', 'items']);
+    const entries = Object.entries(data).filter(
+      ([key, value]) => !skip.has(key) && value !== undefined && value !== null && typeof value !== 'object'
+    );
+    if (!entries.length) {
+      return (
+        <Typography variant="body2" color="textSecondary">
+          No status data
+        </Typography>
+      );
+    }
+    return (
+      <Box py={1}>
+        {entries.map(([key, value]) => (
+          <Box key={key} display="flex" justifyContent="space-between" py={0.5}>
+            <Typography variant="body2" color="textSecondary" sx={{ textTransform: 'capitalize' }}>
+              {key.replace(/_/g, ' ')}
+            </Typography>
+            <Typography variant="body2" fontWeight="medium">
+              {String(value)}
+            </Typography>
+          </Box>
+        ))}
       </Box>
     );
   };

@@ -2,9 +2,28 @@ import os
 from datetime import timedelta
 import secrets
 
+
+def _persistent_secret(env_name, filename):
+    """Reuse a generated secret across process restarts so JWTs stay valid."""
+    value = os.environ.get(env_name)
+    if value:
+        return value
+    instance_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'instance')
+    os.makedirs(instance_dir, exist_ok=True)
+    path = os.path.join(instance_dir, filename)
+    if os.path.isfile(path):
+        stored = open(path, 'r', encoding='utf-8').read().strip()
+        if stored:
+            return stored
+    generated = secrets.token_hex(32)
+    with open(path, 'w', encoding='utf-8') as handle:
+        handle.write(generated)
+    return generated
+
+
 class Config:
     # Basic Flask configuration
-    SECRET_KEY = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
+    SECRET_KEY = _persistent_secret('SECRET_KEY', '.secret_key')
 
     # Database configuration - PostgreSQL preferred, SQLite fallback
     DATABASE_URL = os.environ.get('DATABASE_URL') or 'sqlite:///rice_mill_erp.db'
@@ -22,7 +41,7 @@ class Config:
     SQLALCHEMY_ENGINE_OPTIONS = _engine_options
 
     # JWT configuration
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or secrets.token_hex(32)
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or SECRET_KEY
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
 
@@ -129,6 +148,8 @@ class TestingConfig(Config):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
     WTF_CSRF_ENABLED = False
+    SECRET_KEY = 'test-secret-key'
+    JWT_SECRET_KEY = 'test-secret-key'
     
 class ProductionConfig(Config):
     DEBUG = False

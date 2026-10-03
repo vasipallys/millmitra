@@ -3,7 +3,6 @@ AI-Powered Quality Control Service
 Advanced computer vision and machine learning for rice quality assessment
 """
 
-import cv2
 import numpy as np
 import base64
 from PIL import Image
@@ -11,6 +10,13 @@ from io import BytesIO
 import json
 from datetime import datetime, timedelta
 from typing import Dict, List, Tuple, Optional
+
+try:
+    import cv2
+    CV2_AVAILABLE = True
+except ImportError:
+    cv2 = None
+    CV2_AVAILABLE = False
 # Temporarily disable sklearn imports to avoid dependency conflicts
 # from sklearn.cluster import KMeans
 # from sklearn.ensemble import RandomForestClassifier
@@ -54,6 +60,11 @@ class QualityControlService:
         """
         Comprehensive AI-powered rice quality analysis
         """
+        if not CV2_AVAILABLE:
+            return {
+                'success': False,
+                'error': 'OpenCV is not installed. Core mill routes work without it. For vision extras: pip install opencv-python'
+            }
         try:
             # Decode and preprocess image
             image = self._decode_image(image_data)

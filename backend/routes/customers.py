@@ -242,8 +242,8 @@ def get_customer_interactions(customer_id):
 @customers_bp.route('/<int:customer_id>/interactions', methods=['POST'])
 @jwt_required()
 def create_customer_interaction():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
+    user = current_user()
+    user_id = user.id if user else None
     
     customer_id = request.view_args['customer_id']
     customer = Customer.query.get_or_404(customer_id)
@@ -299,8 +299,8 @@ def get_customer_segments():
 @customers_bp.route('/segments', methods=['POST'])
 @jwt_required()
 def create_customer_segment():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
+    user = current_user()
+    user_id = user.id if user else None
     
     data = request.get_json()
     
@@ -344,8 +344,8 @@ def get_customer_contracts(customer_id):
 @customers_bp.route('/<int:customer_id>/contracts', methods=['POST'])
 @jwt_required()
 def create_customer_contract():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
+    user = current_user()
+    user_id = user.id if user else None
     
     customer_id = request.view_args['customer_id']
     customer = Customer.query.get_or_404(customer_id)
@@ -444,8 +444,8 @@ def get_communication_campaigns():
 @customers_bp.route('/communication/campaigns', methods=['POST'])
 @jwt_required()
 def create_communication_campaign():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
+    user = current_user()
+    user_id = user.id if user else None
     
     data = request.get_json()
     
@@ -488,8 +488,8 @@ def get_customer_surveys():
 @customers_bp.route('/feedback/surveys', methods=['POST'])
 @jwt_required()
 def create_customer_survey():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
+    user = current_user()
+    user_id = user.id if user else None
     
     data = request.get_json()
     
@@ -524,8 +524,8 @@ def get_loyalty_programs():
 @customers_bp.route('/loyalty/programs', methods=['POST'])
 @jwt_required()
 def create_loyalty_program():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
+    user = current_user()
+    user_id = user.id if user else None
     
     data = request.get_json()
     
@@ -604,8 +604,8 @@ def get_support_tickets():
 @customers_bp.route('/support/tickets', methods=['POST'])
 @jwt_required()
 def create_support_ticket():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
+    user = current_user()
+    user_id = user.id if user else None
     
     data = request.get_json()
     

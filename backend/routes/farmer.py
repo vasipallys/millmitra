@@ -4,6 +4,7 @@ from models import User, Farmer, FarmerContract, Payment
 from models.farmer_edit_request import FarmerEditRequest
 from extensions import db
 from datetime import datetime, timedelta
+from utils import current_user
 import json
 
 farmer_bp = Blueprint('farmer', __name__)
@@ -22,8 +23,13 @@ except ImportError:
 @jwt_required()
 def register_farmer():
     try:
-        user_id = get_jwt_identity()
-        user = User.query.get(user_id)
+        user = current_user()
+        if not user:
+            return jsonify({
+                'success': False,
+                'message': 'User not found'
+            }), 401
+        user_id = user.id
 
         data = request.get_json()
 
@@ -160,8 +166,8 @@ def get_farmer_details(farmer_id):
 def update_farmer(farmer_id):
     """Submit farmer information update for verification"""
     try:
-        user_id = get_jwt_identity()
-        user = User.query.get(user_id)
+        user = current_user()
+        user_id = user.id if user else None
 
         data = request.get_json()
         reason = data.pop('edit_reason', 'Information update')
@@ -277,8 +283,8 @@ def approve_edit_request(request_id):
     """Approve farmer edit request"""
     try:
         # Get authenticated user from JWT
-        user_id = get_jwt_identity()
-        user = User.query.get(user_id) if user_id else None
+        user = current_user()
+        user_id = user.id if user else None if user_id else None
 
         data = request.get_json()
         comments = data.get('comments', '')
@@ -332,8 +338,8 @@ def reject_edit_request(request_id):
     """Reject farmer edit request"""
     try:
         # Get authenticated user from JWT
-        user_id = get_jwt_identity()
-        user = User.query.get(user_id) if user_id else None
+        user = current_user()
+        user_id = user.id if user else None if user_id else None
 
         data = request.get_json()
         comments = data.get('comments', '')
@@ -535,8 +541,8 @@ def get_contracts():
 def update_contract(contract_id):
     """Update contract information"""
     try:
-        user_id = get_jwt_identity()
-        user = User.query.get(user_id)
+        user = current_user()
+        user_id = user.id if user else None
 
         data = request.get_json()
 
@@ -583,8 +589,8 @@ def update_contract(contract_id):
 @jwt_required()
 def create_contract():
     try:
-        user_id = get_jwt_identity()
-        user = User.query.get(user_id)
+        user = current_user()
+        user_id = user.id if user else None
 
         data = request.get_json()
 
@@ -712,8 +718,8 @@ def get_procurements():
 @jwt_required()
 def record_procurement():
     try:
-        user_id = get_jwt_identity()
-        user = User.query.get(user_id)
+        user = current_user()
+        user_id = user.id if user else None
 
         data = request.get_json()
 
@@ -1006,8 +1012,8 @@ def test_analytics():
 @farmer_bp.route('/seasonal-planning', methods=['POST'])
 @jwt_required()
 def create_seasonal_plan():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
+    user = current_user()
+    user_id = user.id if user else None
     
     data = request.get_json()
     
@@ -1056,8 +1062,8 @@ def get_quality_trends():
 def verify_farmer(farmer_id):
     """Verify farmer status (admin action)"""
     try:
-        user_id = get_jwt_identity()
-        user = User.query.get(user_id)
+        user = current_user()
+        user_id = user.id if user else None
         
         # Check if user has permission to verify farmers
         if not user or user.role not in ['admin', 'manager']:

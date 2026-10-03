@@ -30,7 +30,7 @@ import {
 
 const drawerWidth = 240;
 
-const menuItems = [
+const coreMenuItems = [
   {
     text: 'Dashboard',
     icon: <DashboardIcon />,
@@ -74,34 +74,37 @@ const menuItems = [
     description: 'Customer Relations'
   },
   {
+    text: 'Settings',
+    icon: <SettingsIcon />,
+    path: '/settings',
+    description: 'System Configuration'
+  },
+];
+
+const previewMenuItems = [
+  {
     text: 'Analytics',
     icon: <AnalyticsIcon />,
     path: '/analytics',
-    description: 'Business Intelligence'
+    description: 'Sample insights'
   },
   {
     text: 'Quality Control',
     icon: <QualityIcon />,
     path: '/quality-control',
-    description: 'AI Quality Assessment'
+    description: 'Sample quality UI'
   },
   {
     text: 'Financial Intelligence',
     icon: <FinancialIntelligenceIcon />,
     path: '/financial-intelligence',
-    description: 'Smart Financial Analytics'
+    description: 'Sample finance UI'
   },
   {
     text: 'Compliance & GST',
     icon: <ComplianceIcon />,
     path: '/compliance-gst',
-    description: 'Tax & Regulatory Compliance'
-  },
-  {
-    text: 'Settings',
-    icon: <SettingsIcon />,
-    path: '/settings',
-    description: 'System Configuration'
+    description: 'Sample GST UI'
   },
 ];
 
@@ -154,7 +157,7 @@ const Sidebar = ({ open, onClose, user }) => {
       {/* Navigation Menu */}
       <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
         <List sx={{ pt: 1 }}>
-          {menuItems.map((item) => (
+          {coreMenuItems.map((item) => (
             <ListItem key={item.text} disablePadding>
               <ListItemButton
                 onClick={() => handleNavigation(item.path)}
@@ -198,6 +201,32 @@ const Sidebar = ({ open, onClose, user }) => {
                     color: isActive(item.path) ? 'rgba(255,255,255,0.7)' : 'text.secondary',
                   }}
                 />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+        <Divider sx={{ my: 1 }} />
+        <Typography variant="caption" color="text.secondary" sx={{ px: 2 }}>
+          Preview
+        </Typography>
+        <List dense>
+          {previewMenuItems.map((item) => (
+            <ListItem key={item.text} disablePadding>
+              <ListItemButton
+                onClick={() => handleNavigation(item.path)}
+                selected={isActive(item.path)}
+                sx={{ mx: 1, mb: 0.5, borderRadius: 2 }}
+              >
+                <ListItemIcon sx={{ minWidth: 40, color: 'text.secondary' }}>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText
+                  primary={item.text}
+                  secondary={item.description}
+                  primaryTypographyProps={{ fontSize: '0.85rem' }}
+                  secondaryTypographyProps={{ fontSize: '0.7rem' }}
+                />
+                <Chip label="Sample" size="small" variant="outlined" />
               </ListItemButton>
             </ListItem>
           ))}

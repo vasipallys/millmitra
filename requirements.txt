@@ -1,4 +1,11 @@
 # ==================================================
+# Legacy kitchen-sink list. Do NOT pip install this file on Python 3.13.
+# Use the installable mill ERP set:
+#   cd backend
+#   .\venv\Scripts\activate
+#   pip install -r requirements.txt
+# Optional ML extras: pip install -r requirements-ml.txt
+# ==================================================
 # Rice Mill Management System - Requirements
 # Versionless, generated on 2025-07-30
 # ==================================================

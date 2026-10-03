@@ -11,24 +11,43 @@ import numpy as np
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple, Any
 from collections import defaultdict
-import spacy
-from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
-import torch
+
+try:
+    import spacy
+except ImportError:
+    spacy = None
+
+try:
+    from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
+except ImportError:
+    pipeline = None
+    AutoTokenizer = None
+    AutoModelForSequenceClassification = None
+
+try:
+    import torch
+except ImportError:
+    torch = None
 
 # Try to load spaCy model with error handling
 try:
+    if spacy is None:
+        raise ImportError("spacy is not installed")
     nlp = spacy.load("en_core_web_sm")
     SPACY_AVAILABLE = True
 except OSError:
     print("Warning: spaCy English model not found. Please install with: python -m spacy download en_core_web_sm")
     SPACY_AVAILABLE = False
+    nlp = None
 except Exception as e:
     print(f"Warning: spaCy import failed: {e}")
     SPACY_AVAILABLE = False
+    nlp = None
 
 # Try to load transformers with error handling
 try:
-    # Initialize transformer models for various NLP tasks
+    if pipeline is None:
+        raise ImportError("transformers is not installed")
     sentiment_classifier = pipeline("sentiment-analysis", model="cardiffnlp/twitter-roberta-base-sentiment-latest")
     zero_shot_classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
     question_answerer = pipeline("question-answering", model="deepset/roberta-base-squad2")

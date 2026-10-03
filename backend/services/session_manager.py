@@ -3,7 +3,10 @@ Session Management Service
 Handles user sessions, authentication state, and security
 """
 
-import redis
+try:
+    import redis
+except ImportError:
+    redis = None
 import json
 import uuid
 from datetime import datetime, timedelta
@@ -25,7 +28,7 @@ class SessionManager:
     def init_app(self, app):
         """Initialize session manager with Flask app"""
         redis_url = app.config.get('SESSION_REDIS_URL')
-        if redis_url:
+        if redis_url and redis is not None:
             try:
                 self.redis_client = redis.from_url(redis_url, decode_responses=True)
                 # Test connection
@@ -36,6 +39,9 @@ class SessionManager:
                 print(f"Warning: Redis connection failed: {e}. Falling back to database-only sessions.")
                 self.redis_client = None
                 self.use_redis = False
+        elif redis is None:
+            print("Warning: redis package not installed. Using database-only sessions.")
+            self.use_redis = False
         else:
             print("Redis URL not configured. Using database-only sessions.")
             self.use_redis = False
@@ -92,6 +98,7 @@ class SessionManager:
             return session_token
             
         except Exception as e:
+            db.session.rollback()
             current_app.logger.error(f"Error creating session: {str(e)}")
             return None
     

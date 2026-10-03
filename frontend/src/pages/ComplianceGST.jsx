@@ -46,6 +46,7 @@ import {
   Gavel,
 } from '@mui/icons-material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import DemoBanner from '../components/DemoBanner';
 
 const ComplianceGST = () => {
   const [activeTab, setActiveTab] = useState(0);
@@ -173,7 +174,7 @@ const ComplianceGST = () => {
         alert('GST calculation failed: ' + result.error);
       }
     } catch (error) {
-      alert('Network error during GST calculation');
+      alert('GST calculation is a preview feature and is not connected to live mill data.');
     }
   };
 
@@ -204,7 +205,7 @@ const ComplianceGST = () => {
         alert('Invoice generation failed: ' + result.error);
       }
     } catch (error) {
-      alert('Network error during invoice generation');
+      alert('Invoice generation is a preview feature and is not connected to live mill data.');
     }
   };
 
@@ -256,6 +257,7 @@ const ComplianceGST = () => {
 
   return (
     <Box>
+      <DemoBanner title="Compliance & GST" />
       {/* Header */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" component="h1" fontWeight="bold">

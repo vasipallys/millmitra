@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import PaddyStock, ProductStock, User
+from models import PaddyStock, ProductStock, StockMovement, User
 from models.farmer import Farmer
 from extensions import db
 from datetime import datetime
@@ -288,51 +288,30 @@ def get_inventory_valuation_simple():
 @inventory_bp.route('/movements', methods=['GET'])
 @jwt_required()
 def get_movements():
-    """Get stock movements"""
+    """Get persisted stock movements."""
     try:
-        # Mock stock movements data
-        mock_movements = [
-            {
-                'id': 1,
-                'type': 'inbound',
-                'item_type': 'paddy',
-                'variety': 'Basmati',
-                'quantity': 500.0,
-                'unit': 'kg',
-                'reference_number': 'IN001',
-                'date': datetime.now().isoformat(),
-                'source': 'Farmer Purchase',
-                'destination': 'Warehouse A',
-                'notes': 'Fresh paddy delivery',
-                'status': 'completed'
-            },
-            {
-                'id': 2,
-                'type': 'outbound',
-                'item_type': 'paddy',
-                'variety': 'Basmati',
-                'quantity': 200.0,
-                'unit': 'kg',
-                'reference_number': 'OUT001',
-                'date': datetime.now().isoformat(),
-                'source': 'Warehouse A',
-                'destination': 'Processing Unit',
-                'notes': 'Sent for milling',
-                'status': 'completed'
-            }
-        ]
-
+        page = request.args.get('page', 1, type=int)
+        per_page = min(request.args.get('per_page', 50, type=int), 200)
+        query = StockMovement.query.order_by(StockMovement.created_at.desc())
+        movement_type = request.args.get('type') or request.args.get('movement_type')
+        if movement_type:
+            query = query.filter(StockMovement.movement_type == movement_type)
+        pagination = query.paginate(page=page, per_page=per_page, error_out=False)
         return jsonify({
             'success': True,
-            'movements': mock_movements,
-            'total': len(mock_movements)
+            'movements': [m.to_dict() for m in pagination.items],
+            'total': pagination.total,
+            'page': pagination.page,
+            'pages': pagination.pages,
         })
-
     except Exception as e:
+        db.session.rollback()
         return jsonify({
-            'success': False,
-            'error': 'This data is not available offline'
-        }), 503
+            'success': True,
+            'movements': [],
+            'total': 0,
+            'message': str(e)
+        })
 
 # Paddy Stock Management
 @inventory_bp.route('/paddy-stock', methods=['GET'])
@@ -358,8 +337,7 @@ def get_paddy_stock():
 @inventory_bp.route('/paddy-stock', methods=['POST'])
 @jwt_required()
 def add_paddy_stock():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
+    user = current_user()
     
     data = request.get_json()
     
@@ -389,8 +367,7 @@ def add_paddy_stock():
 @inventory_bp.route('/paddy-stock/<int:stock_id>', methods=['PUT'])
 @jwt_required()
 def update_paddy_stock(stock_id):
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
+    user = current_user()
     
     data = request.get_json()
     stock = inventory_service.update_paddy_stock(stock_id, user, data)
@@ -424,8 +401,7 @@ def get_product_stock():
 @inventory_bp.route('/product-stock', methods=['POST'])
 @jwt_required()
 def add_product_stock():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
+    user = current_user()
     
     data = request.get_json()
     
@@ -462,43 +438,113 @@ def get_transactions():
 @inventory_bp.route('/transactions', methods=['POST'])
 @jwt_required()
 def create_transaction():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-    
-    data = request.get_json()
-    
-    # AI transaction validation
-    validation_result = ai_inventory.validate_transaction(data)
-    
-    if not validation_result['valid']:
-        return jsonify({
-            'success': False,
-            'errors': validation_result['errors']
-        }), 400
-    
-    # AI impact analysis
-    impact_analysis = ai_inventory.analyze_transaction_impact(data)
-    
-    # AI fraud detection
-    fraud_check = ai_inventory.detect_transaction_fraud(data)
-    
-    if fraud_check['is_suspicious']:
-        return jsonify({
-            'success': False,
-            'message': 'Transaction flagged for review',
-            'fraud_indicators': fraud_check['indicators']
-        }), 400
-    
-    transaction = inventory_service.create_transaction(user, data)
-    
-    # AI post-transaction recommendations
-    recommendations = ai_inventory.get_post_transaction_recommendations(transaction.id)
-    
+    user = current_user()
+    if not user:
+        return jsonify({'success': False, 'message': 'User not found'}), 401
+
+    data = request.get_json() or {}
+    try:
+        quantity = float(data.get('quantity') or 0)
+    except (TypeError, ValueError):
+        return jsonify({'success': False, 'message': 'Quantity must be a number'}), 400
+    if quantity <= 0:
+        return jsonify({'success': False, 'message': 'Quantity must be greater than zero'}), 400
+
+    movement_type = (data.get('movement_type') or data.get('type') or 'in').lower()
+    if movement_type in ('inbound', 'stock_in', 'purchase'):
+        movement_type = 'in'
+    if movement_type in ('outbound', 'stock_out', 'sale'):
+        movement_type = 'out'
+    if movement_type not in ('in', 'out', 'transfer'):
+        return jsonify({'success': False, 'message': 'movement_type must be in, out, or transfer'}), 400
+
+    stock_id = data.get('stock_id')
+    try:
+        stock_id = int(stock_id) if stock_id not in (None, '') else None
+    except (TypeError, ValueError):
+        stock_id = None
+    if not stock_id:
+        return jsonify({'success': False, 'message': 'stock_id is required (inventory lot id)'}), 400
+
+    stock_kind = (data.get('stock_kind') or data.get('item_type') or '').lower()
+    stock = None
+    if stock_kind == 'paddy':
+        stock = PaddyStock.query.get(stock_id)
+    elif stock_kind == 'product':
+        stock = ProductStock.query.get(stock_id)
+    else:
+        stock = ProductStock.query.get(stock_id)
+        if stock:
+            stock_kind = 'product'
+        else:
+            stock = PaddyStock.query.get(stock_id)
+            stock_kind = 'paddy' if stock else stock_kind
+    if not stock:
+        return jsonify({'success': False, 'message': 'Stock lot not found'}), 404
+
+    if stock_kind == 'paddy':
+        available = stock.remaining_quantity if stock.remaining_quantity is not None else stock.quantity
+    else:
+        available = stock.quantity or 0
+
+    try:
+        unit_price = float(data.get('unit_price') or 0) or None
+    except (TypeError, ValueError):
+        unit_price = None
+    if unit_price is None:
+        unit_price = getattr(stock, 'market_price', None) or getattr(stock, 'purchase_price', None) or getattr(stock, 'unit_cost', None)
+
+    if movement_type == 'out':
+        if quantity > (available or 0):
+            return jsonify({
+                'success': False,
+                'message': f'Insufficient stock. Available: {available or 0} kg'
+            }), 400
+        if stock_kind == 'paddy':
+            stock.remaining_quantity = (available or 0) - quantity
+            stock.processed_quantity = (stock.processed_quantity or 0) + quantity
+        else:
+            stock.quantity = (available or 0) - quantity
+    elif movement_type == 'in':
+        if stock_kind == 'paddy':
+            stock.remaining_quantity = (available or 0) + quantity
+            stock.quantity = (stock.quantity or 0) + quantity
+        else:
+            stock.quantity = (available or 0) + quantity
+    elif movement_type == 'transfer':
+        location_to = data.get('location_to')
+        if stock_kind == 'product' and location_to:
+            stock.storage_location = location_to
+        elif stock_kind == 'paddy' and location_to:
+            stock.warehouse_id = location_to
+
+    movement = StockMovement(
+        stock_kind=stock_kind or 'product',
+        stock_id=stock.id,
+        movement_type=movement_type,
+        quantity=quantity,
+        unit_price=unit_price,
+        total_value=(unit_price or 0) * quantity if unit_price else None,
+        reference_type=data.get('reference_type') or data.get('reason'),
+        reference_number=data.get('reference_number') or data.get('reference'),
+        reason=data.get('reason'),
+        notes=data.get('notes'),
+        location_from=data.get('location_from') or data.get('source'),
+        location_to=data.get('location_to') or data.get('destination'),
+        variety=getattr(stock, 'variety', None) or getattr(stock, 'product_name', None),
+        created_by=user.id
+    )
+    db.session.add(movement)
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
     return jsonify({
         'success': True,
-        'transaction': transaction.to_dict(),
-        'impact_analysis': impact_analysis,
-        'recommendations': recommendations
+        'transaction': movement.to_dict(),
+        'movement': movement.to_dict(),
+        'message': 'Stock movement recorded'
     }), 201
 
 # Inventory Analytics
@@ -860,8 +906,7 @@ def get_demand_forecast():
 @inventory_bp.route('/cycle-count', methods=['POST'])
 @jwt_required()
 def initiate_cycle_count():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
+    user = current_user()
     
     data = request.get_json()
     

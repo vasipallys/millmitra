@@ -41,6 +41,7 @@ import {
   SmartToy,
 } from '@mui/icons-material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
+import DemoBanner from '../components/DemoBanner';
 
 const FinancialIntelligence = () => {
   const [activeTab, setActiveTab] = useState(0);
@@ -184,7 +185,7 @@ const FinancialIntelligence = () => {
         alert('Payment scheduling failed: ' + result.error);
       }
     } catch (error) {
-      alert('Network error during payment scheduling');
+      alert('Payment scheduling is a preview feature and is not connected to live mill data.');
     }
   };
 
@@ -225,6 +226,7 @@ const FinancialIntelligence = () => {
 
   return (
     <Box>
+      <DemoBanner title="Financial Intelligence" />
       {/* Header */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" component="h1" fontWeight="bold">

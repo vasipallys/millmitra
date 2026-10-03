@@ -38,6 +38,7 @@ import {
   GetApp,
 } from '@mui/icons-material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import DemoBanner from '../components/DemoBanner';
 
 const QualityControl = () => {
   const [activeTab, setActiveTab] = useState(0);
@@ -173,7 +174,7 @@ const QualityControl = () => {
         alert('Analysis failed: ' + result.error);
       }
     } catch (error) {
-      alert('Network error during analysis');
+      alert('Quality analysis is a preview feature and is not connected to live mill data.');
     } finally {
       setIsAnalyzing(false);
     }
@@ -216,6 +217,7 @@ const QualityControl = () => {
 
   return (
     <Box>
+      <DemoBanner title="Quality Control" />
       {/* Header */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" component="h1" fontWeight="bold">

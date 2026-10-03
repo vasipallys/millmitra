@@ -5,7 +5,12 @@ This module implements advanced computer vision techniques using deep learning m
 for more accurate rice quality assessment.
 """
 
-import cv2
+try:
+    import cv2
+    CV2_AVAILABLE = True
+except ImportError:
+    cv2 = None
+    CV2_AVAILABLE = False
 import numpy as np
 from PIL import Image
 from typing import Dict, List, Tuple, Optional
@@ -23,28 +28,33 @@ try:
     PYTORCH_AVAILABLE = True
 except ImportError:
     PYTORCH_AVAILABLE = False
+    torch = None
+    nn = None
     print("Warning: PyTorch not available, using traditional computer vision only")
 except Exception as e:
     PYTORCH_AVAILABLE = False
+    torch = None
+    nn = None
     print(f"Warning: PyTorch import failed: {e}")
 
 
-class RiceQualityCNN(nn.Module):
-    """CNN model for rice quality assessment"""
-    def __init__(self, num_classes=5):  # A+, A, B, C, D grades
-        if PYTORCH_AVAILABLE:
+if PYTORCH_AVAILABLE:
+    class RiceQualityCNN(nn.Module):
+        """CNN model for rice quality assessment"""
+        def __init__(self, num_classes=5):
             super(RiceQualityCNN, self).__init__()
             self.resnet = resnet18(weights=ResNet18_Weights.DEFAULT)
             self.resnet.fc = nn.Linear(self.resnet.fc.in_features, num_classes)
-        else:
-            # Placeholder when PyTorch is not available
-            pass
-        
-    def forward(self, x):
-        if PYTORCH_AVAILABLE:
+
+        def forward(self, x):
             return self.resnet(x)
-        else:
-            # Placeholder when PyTorch is not available
+else:
+    class RiceQualityCNN:
+        """Placeholder when PyTorch is not installed."""
+        def __init__(self, num_classes=5):
+            pass
+
+        def forward(self, x):
             return None
 
 

@@ -110,17 +110,24 @@ def login():
             expires_delta=timedelta(hours=8)
         )
 
-        # Create session
-        from services.session_manager import session_manager
-        session_token = session_manager.create_session(
-            user_id=user.id,
-            device_info=device_info,
-            ip_address=request.remote_addr
-        )
+        # Create session (non-fatal: JWT login still succeeds if session store is down)
+        session_token = None
+        try:
+            from services.session_manager import session_manager
+            session_token = session_manager.create_session(
+                user_id=user.id,
+                device_info=device_info,
+                ip_address=request.remote_addr
+            )
+        except Exception as e:
+            print(f"[WARN] Session create failed: {e}")
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
 
         # Update user login info
         user.last_login = datetime.utcnow()
-        user.login_count = getattr(user, 'login_count', 0) + 1
 
         # Log successful login
         try:

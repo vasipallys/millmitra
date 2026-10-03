@@ -11,7 +11,7 @@ import json
 # Import all models from the models directory
 from models.user import User, AuthLog, UserSession
 from models.farmer import Farmer
-from models.inventory import ProductStock, PaddyStock
+from models.inventory import ProductStock, PaddyStock, StockMovement
 from models.production import ProductionBatch, QualityTest
 from models.sales import Customer
 from models.finance import Payment, Expense
@@ -26,6 +26,7 @@ __all__ = [
     'Farmer',
     'ProductStock',
     'PaddyStock',
+    'StockMovement',
     'ProductionBatch',
     'QualityTest',
     'Customer',

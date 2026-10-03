@@ -338,3 +338,51 @@ class ProductStock(db.Model):
             'category': self.product_type,
             'last_updated': self.updated_at.isoformat() if self.updated_at else None
         }
+
+
+class StockMovement(db.Model):
+    """Persisted inventory in/out/transfer against a paddy or product lot."""
+    __tablename__ = 'stock_movements'
+
+    id = db.Column(db.Integer, primary_key=True)
+    stock_kind = db.Column(db.String(20), nullable=False)  # paddy, product
+    stock_id = db.Column(db.Integer, nullable=False)
+    movement_type = db.Column(db.String(20), nullable=False)  # in, out, transfer
+    quantity = db.Column(db.Float, nullable=False)
+    unit_price = db.Column(db.Float)
+    total_value = db.Column(db.Float)
+    reference_type = db.Column(db.String(80))
+    reference_number = db.Column(db.String(80))
+    reason = db.Column(db.String(120))
+    notes = db.Column(db.Text)
+    location_from = db.Column(db.String(80))
+    location_to = db.Column(db.String(80))
+    variety = db.Column(db.String(80))
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'stock_kind': self.stock_kind,
+            'item_type': self.stock_kind,
+            'stock_id': self.stock_id,
+            'movement_type': self.movement_type,
+            'type': self.movement_type,
+            'quantity': self.quantity,
+            'unit': 'kg',
+            'unit_price': self.unit_price,
+            'total_value': self.total_value,
+            'reference_type': self.reference_type or self.reason,
+            'reference_number': self.reference_number,
+            'reference': self.reference_number,
+            'reason': self.reason,
+            'notes': self.notes,
+            'location_from': self.location_from,
+            'location_to': self.location_to,
+            'variety': self.variety,
+            'status': 'completed',
+            'created_by': self.created_by,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'date': self.created_at.isoformat() if self.created_at else None,
+        }

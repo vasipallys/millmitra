@@ -1,4 +1,6 @@
 from models import User, ProductionBatch, QualityTest, PaddyStock, ProductStock, SalesOrder, Customer, Farmer
+from models.financial import Invoice
+from models.finance import Payment
 from extensions import db
 from datetime import datetime, timedelta
 from sqlalchemy import func, and_
@@ -38,34 +40,39 @@ class SmartDashboardService:
         widgets = []
         role = (user.role or '').lower()
 
-        factories = []
-        if role in ('manager', 'admin', 'administrator', 'super_admin'):
+        factories = [
+            self._create_current_batch_widget,
+            self._create_production_overview_widget,
+            self._create_inventory_alerts_widget,
+            lambda: self._create_alerts_widget(user),
+        ]
+
+        if role in ('manager', 'admin', 'administrator', 'super_admin', 'finance'):
             factories.extend([
-                self._create_production_overview_widget,
                 self._create_quality_trends_widget,
                 self._create_financial_summary_widget,
-                lambda: self._create_alerts_widget(user),
+                self._create_sales_pipeline_widget,
+                self._create_customer_insights_widget,
             ])
 
-        if role in ('operator', 'supervisor', 'manager', 'admin', 'administrator'):
+        if role in ('operator', 'supervisor', 'quality_control', 'manager', 'admin', 'administrator'):
             factories.extend([
-                self._create_current_batch_widget,
                 self._create_quality_control_widget,
                 self._create_machine_status_widget,
-                self._create_safety_widget,
             ])
 
         if role in ('sales', 'manager', 'admin', 'administrator'):
             factories.extend([
                 self._create_sales_pipeline_widget,
                 self._create_customer_insights_widget,
-                self._create_inventory_alerts_widget,
             ])
 
+        seen = set()
         for factory in factories:
             try:
                 widget = factory()
-                if widget:
+                if widget and widget.get('id') not in seen:
+                    seen.add(widget['id'])
                     widgets.append(widget)
             except Exception:
                 db.session.rollback()
@@ -269,13 +276,18 @@ class SmartDashboardService:
         ).scalar() or 0
         
         inventory_value = (
-            db.session.query(func.sum(PaddyStock.quantity * PaddyStock.purchase_price)).scalar() or 0
+            db.session.query(
+                func.sum(
+                    func.coalesce(PaddyStock.remaining_quantity, PaddyStock.quantity)
+                    * PaddyStock.purchase_price
+                )
+            ).scalar() or 0
         ) + (
             db.session.query(func.sum(ProductStock.quantity * ProductStock.market_price)).scalar() or 0
         )
         
         pending_orders = SalesOrder.query.filter(
-            SalesOrder.status.in_(['pending', 'processing'])
+            SalesOrder.status.in_(['pending', 'confirmed', 'processing'])
         ).count()
         
         active_farmers = Farmer.query.filter(
@@ -368,93 +380,136 @@ class SmartDashboardService:
         }
     
     def _create_alerts_widget(self, user: User):
-        """Create alerts widget"""
-        alert_count = len(self.get_smart_alerts(user))
-
+        """Create alerts widget from live mill alerts."""
+        alerts = self.get_smart_alerts(user)
+        items = [
+            {
+                'title': a.get('title') or a.get('type') or 'Alert',
+                'description': a.get('message') or a.get('action') or '',
+            }
+            for a in (alerts or [])[:8]
+        ]
+        if not items:
+            items = [{'title': 'All clear', 'description': 'No operational alerts right now'}]
         return {
             'id': 'alerts',
             'title': 'Smart Alerts',
             'type': 'list',
-            'priority': 10 if alert_count > 0 else 5,
+            'priority': 10 if alerts else 5,
             'data': {
-                'count': alert_count,
-                'endpoint': '/dashboard/alerts'
+                'count': len(alerts or []),
+                'items': items,
             }
         }
 
     def _create_financial_summary_widget(self):
-        """Create financial summary widget"""
+        """Create financial summary widget from invoices and payments."""
+        start = datetime.utcnow() - timedelta(days=30)
+        invoices = Invoice.query.filter(Invoice.invoice_date >= start).all()
+        revenue = sum(inv.total_amount or 0 for inv in invoices if (inv.status or '') != 'cancelled')
+        collected = 0.0
+        try:
+            collected = sum(p.amount or 0 for p in Payment.query.filter(Payment.payment_date >= start).all())
+        except Exception:
+            db.session.rollback()
         return {
             'id': 'financial_summary',
             'title': 'Financial Summary',
             'type': 'metric',
             'priority': 9,
             'data': {
-                'revenue': 0,
+                'revenue': revenue,
                 'expenses': 0,
-                'profit': 0,
-                'chart_type': 'bar',
-                'endpoint': '/dashboard/metrics/financial'
+                'profit': collected,
+                'value': f'₹{revenue:,.0f}',
+                'subtitle': f'Collected ₹{collected:,.0f} (30 days)',
             }
         }
 
     def _create_current_batch_widget(self):
-        """Create current batch widget"""
+        """Create current batch widget from live production."""
+        batch = ProductionBatch.query.filter(
+            ProductionBatch.status.in_(['in_progress', 'started', 'paused', 'planned'])
+        ).order_by(ProductionBatch.start_time.desc()).first()
+        if not batch:
+            return {
+                'id': 'current_batch',
+                'title': 'Current Batch',
+                'type': 'status',
+                'priority': 10,
+                'data': {
+                    'batch_id': 'None',
+                    'status': 'No active batch',
+                    'progress': '0%',
+                }
+            }
+        progress = batch.completion_percentage or 0
         return {
             'id': 'current_batch',
             'title': 'Current Batch',
             'type': 'status',
             'priority': 10,
             'data': {
-                'batch_id': 'N/A',
-                'status': 'No active batch',
-                'progress': 0,
-                'endpoint': '/production/current-status'
+                'batch_id': batch.batch_number,
+                'status': batch.status,
+                'progress': f'{progress:.0f}%',
+                'variety': batch.paddy_variety or '—',
             }
         }
 
     def _create_quality_control_widget(self):
-        """Create quality control widget"""
+        """Create quality control widget from today's tests."""
+        start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        tests = QualityTest.query.filter(QualityTest.test_date >= start).all()
+        passed = [t for t in tests if (getattr(t, 'grade', None) or '').upper() in ('A', 'B', 'PASS')]
+        pass_rate = (len(passed) / len(tests) * 100) if tests else 0
         return {
             'id': 'quality_control',
             'title': 'Quality Control',
             'type': 'metric',
             'priority': 7,
             'data': {
-                'tests_today': 0,
-                'pass_rate': 100,
+                'tests_today': len(tests),
+                'pass_rate': pass_rate,
+                'value': f'{pass_rate:.0f}%',
+                'subtitle': f'{len(tests)} tests today',
                 'endpoint': '/dashboard/metrics/quality'
             }
         }
 
     def _create_machine_status_widget(self):
-        """Create machine status widget"""
+        """Create machine status widget from equipment records when available."""
+        online = offline = maintenance = 0
+        try:
+            from models.maintenance import Equipment
+            rows = Equipment.query.all()
+            for eq in rows:
+                status = (eq.status or 'active').lower()
+                if status in ('active', 'online', 'running'):
+                    online += 1
+                elif status in ('maintenance', 'servicing'):
+                    maintenance += 1
+                else:
+                    offline += 1
+        except Exception:
+            db.session.rollback()
+        total = online + offline + maintenance
         return {
             'id': 'machine_status',
             'title': 'Machine Status',
             'type': 'status',
             'priority': 6,
             'data': {
-                'online': 0,
-                'offline': 0,
-                'maintenance': 0,
-                'endpoint': '/dashboard/machine-status'
+                'online': online,
+                'offline': offline,
+                'maintenance': maintenance,
+                'total': total or 'No equipment records',
             }
         }
 
     def _create_safety_widget(self):
-        """Create safety widget"""
-        return {
-            'id': 'safety',
-            'title': 'Safety Status',
-            'type': 'status',
-            'priority': 8,
-            'data': {
-                'incidents': 0,
-                'days_safe': 30,
-                'endpoint': '/dashboard/safety'
-            }
-        }
+        """Safety module is not implemented; omit from dashboard."""
+        return None
 
     def _create_sales_pipeline_widget(self):
         """Open sales orders grouped by status, with empty fallbacks."""

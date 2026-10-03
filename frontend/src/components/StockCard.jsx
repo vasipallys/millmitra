@@ -34,13 +34,13 @@ const StockCard = ({
   onViewDetails,
   onReorder 
 }) => {
+  const [anchorEl, setAnchorEl] = React.useState(null);
+  const open = Boolean(anchorEl);
+
   // Return early if stock is not provided
   if (!stock) {
     return null;
   }
-
-  const [anchorEl, setAnchorEl] = React.useState(null);
-  const open = Boolean(anchorEl);
 
   const handleMenuClick = (event) => {
     setAnchorEl(event.currentTarget);

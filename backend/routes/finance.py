@@ -224,8 +224,8 @@ def get_financial_summary():
 @finance_bp.route('/accounts', methods=['POST'])
 @jwt_required()
 def create_account():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
+    user = current_user()
+    user_id = user.id if user else None
     
     data = request.get_json()
     account = finance_service.create_chart_of_accounts(user, data)
@@ -243,8 +243,8 @@ def create_account():
 @finance_bp.route('/journal-entries', methods=['POST'])
 @jwt_required()
 def create_journal_entry():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
+    user = current_user()
+    user_id = user.id if user else None
     
     data = request.get_json()
     
@@ -366,28 +366,49 @@ def record_payment():
 @finance_bp.route('/summary')
 @jwt_required()
 def get_summary():
-    start_date = request.args.get('start_date')
-    end_date = request.args.get('end_date')
-    
-    summary = finance_service.get_financial_summary(start_date, end_date)
-    
-    # AI insights
-    ai_insights = ai_finance.analyze_financial_trends(summary)
-    
-    return jsonify({
-        'summary': summary,
-        'ai_insights': ai_insights
-    })
+    return get_financial_summary()
 
 @finance_bp.route('/aging-report')
 @jwt_required()
 def get_aging_report():
-    report_type = request.args.get('type', 'receivables')
-    aging_data = finance_service.get_aging_report(report_type)
-    
+    now = datetime.utcnow()
+    buckets = {
+        'current': 0.0,
+        '1_30': 0.0,
+        '31_60': 0.0,
+        '61_90': 0.0,
+        'over_90': 0.0,
+    }
+    unpaid = Invoice.query.filter(Invoice.status.in_(['pending', 'overdue', 'partial'])).all()
+    details = []
+    for inv in unpaid:
+        due = inv.due_date or inv.invoice_date
+        days = (now - due).days if due else 0
+        amount = float(inv.total_amount or 0)
+        if days <= 0:
+            bucket = 'current'
+        elif days <= 30:
+            bucket = '1_30'
+        elif days <= 60:
+            bucket = '31_60'
+        elif days <= 90:
+            bucket = '61_90'
+        else:
+            bucket = 'over_90'
+        buckets[bucket] += amount
+        details.append({
+            'invoice_id': inv.id,
+            'invoice_number': inv.invoice_number,
+            'amount': amount,
+            'days_overdue': max(days, 0),
+            'bucket': bucket,
+            'status': inv.status,
+        })
     return jsonify({
-        'aging_report': aging_data,
-        'report_type': report_type
+        'aging_report': buckets,
+        'buckets': buckets,
+        'invoices': details,
+        'report_type': request.args.get('type', 'receivables')
     })
 
 

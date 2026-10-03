@@ -287,10 +287,14 @@ python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
+Confirm the venv is this repo (`millmitra\\backend\\venv`), not another clone such as `ricemill\\backend\\venv`.
+
 2. **Install dependencies**
 ```bash
 pip install -r requirements.txt
 ```
+
+Core mill ERP does not need TensorFlow. Optional ML extras: `pip install -r requirements-ml.txt`.
 
 3. **Configure environment**
 ```bash

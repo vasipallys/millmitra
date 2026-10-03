@@ -22,7 +22,7 @@ const Dashboard = () => {
   const queryClient = useQueryClient();
 
   // Fetch dashboard data
-  const { data: overview, isLoading: overviewLoading } = useQuery(
+  const { data: overview, isLoading: overviewLoading, isError: overviewError } = useQuery(
     ['dashboard-overview', timeRange],
     () => dashboardService.getOverview(timeRange),
     { refetchInterval: 30000 } // Refresh every 30 seconds
@@ -95,6 +95,12 @@ const Dashboard = () => {
         <AlertsPanel alerts={alerts.alerts} />
       )}
 
+      {overviewError && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          Dashboard metrics could not be loaded. Other mill pages still work.
+        </Alert>
+      )}
+
       {/* Key Metrics Summary */}
       <Grid container spacing={3} mb={3}>
         <Grid item xs={12} sm={6} md={2.4}>
@@ -146,6 +152,13 @@ const Dashboard = () => {
 
       {/* Smart Widgets */}
       <Grid container spacing={3}>
+        {(!widgets?.widgets || widgets.widgets.length === 0) && (
+          <Grid item xs={12}>
+            <Alert severity="info">
+              No widgets yet. Production, inventory, and sales data will appear here as you use the mill.
+            </Alert>
+          </Grid>
+        )}
         {widgets?.widgets?.map((widget, index) => (
           <Grid item xs={12} md={widget.size || 6} key={widget.id}>
             <SmartWidget widget={widget} />

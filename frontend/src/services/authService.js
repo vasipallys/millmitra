@@ -94,9 +94,9 @@ class AuthService {
       const response = await api.get(`${API_BASE}/me`);
       return response.data.user;
     } catch (error) {
-      // If API call fails, fall back to localStorage but clear invalid token
-      console.error('Token validation failed:', error);
-      this.logout();
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('sessionToken');
       return null;
     }
   }

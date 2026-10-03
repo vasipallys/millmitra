@@ -69,7 +69,9 @@ const Inventory = () => {
     {
       onSuccess: (result, variables) => {
         console.log('Stock added successfully:', result);
-        queryClient.invalidateQueries([`${stockType}-stock`, 'inventory-overview']);
+        queryClient.invalidateQueries('paddy-stock');
+        queryClient.invalidateQueries('product-stock');
+        queryClient.invalidateQueries('inventory-overview');
         setAddStockOpen(false);
 
         // Show success toast
@@ -86,8 +88,15 @@ const Inventory = () => {
 
   const createMovementMutation = useMutation(inventoryService.createStockMovement, {
     onSuccess: () => {
-      queryClient.invalidateQueries(['paddy-stock', 'product-stock', 'inventory-overview']);
+      queryClient.invalidateQueries('paddy-stock');
+      queryClient.invalidateQueries('product-stock');
+      queryClient.invalidateQueries('inventory-overview');
+      queryClient.invalidateQueries('stock-movements');
       setMovementDialogOpen(false);
+      toast.inventory.movementRecorded('stock', 'inventory', '');
+    },
+    onError: (error) => {
+      toast.inventory.error('Stock Movement', error.response?.data?.message || error.message);
     }
   });
 
@@ -325,23 +334,50 @@ const Inventory = () => {
   );
 };
 
+const PADDY_VARIETIES = [
+  { value: 'basmati', label: 'Basmati' },
+  { value: 'jasmine', label: 'Jasmine' },
+  { value: 'long_grain', label: 'Long Grain' },
+  { value: 'short_grain', label: 'Short Grain' },
+];
+
+const PRODUCT_TYPES = [
+  { value: 'basmati_rice', label: 'Basmati Rice' },
+  { value: 'jasmine_rice', label: 'Jasmine Rice' },
+  { value: 'long_grain_rice', label: 'Long Grain Rice' },
+  { value: 'short_grain_rice', label: 'Short Grain Rice' },
+];
+
+const QUALITY_GRADES = [
+  { value: 'A', label: 'Grade A' },
+  { value: 'B', label: 'Grade B' },
+  { value: 'C', label: 'Grade C' },
+];
+
+const SELECT_MENU_PROPS = {
+  disablePortal: true,
+  disableAutoFocusItem: true,
+  PaperProps: { sx: { maxHeight: 240 } },
+};
+
+const emptyStockForm = () => ({
+  variety: '',
+  quantity: '',
+  purchase_price: '',
+  quality_grade: 'A',
+  moisture_content: '',
+  storage_location: '',
+  supplier_id: '',
+  harvest_date: '',
+  expiry_date: '',
+  notes: ''
+});
+
 const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit, loading }) => {
-  const [formData, setFormData] = useState({
-    variety: '',
-    quantity: '',
-    purchase_price: '',
-    quality_grade: 'A',
-    moisture_content: '',
-    storage_location: '',
-    supplier_id: '',
-    harvest_date: '',
-    expiry_date: '',
-    notes: ''
-  });
-
+  const [formData, setFormData] = useState(emptyStockForm);
   const validation = useValidation();
+  const varietyOptions = stockType === 'paddy' ? PADDY_VARIETIES : PRODUCT_TYPES;
 
-  // Real-time validation function
   const validateField = (fieldName, value) => {
     switch (fieldName) {
       case 'variety':
@@ -352,11 +388,11 @@ const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit,
         }
         break;
       case 'quantity':
-        if (!value || value <= 0) {
+        if (value === '' || value === null || Number(value) <= 0) {
           validation.addError('Quantity', 'Quantity must be greater than 0', 'Enter the quantity in kilograms (kg)');
         } else {
           validation.removeError('Quantity');
-          if (value > 100000) {
+          if (Number(value) > 100000) {
             validation.addWarning('Quantity', 'Large quantity detected', 'Please verify this is the correct amount');
           } else {
             validation.removeWarning('Quantity');
@@ -364,11 +400,11 @@ const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit,
         }
         break;
       case 'purchase_price':
-        if (!value || value <= 0) {
+        if (value === '' || value === null || Number(value) <= 0) {
           validation.addError('Price', `${stockType === 'paddy' ? 'Purchase price' : 'Selling price'} must be greater than 0`, 'Enter the price per kilogram in rupees');
         } else {
           validation.removeError('Price');
-          if (value > 1000) {
+          if (Number(value) > 1000) {
             validation.addWarning('Price', 'High price detected', 'Please verify this is the correct price per kg');
           } else {
             validation.removeWarning('Price');
@@ -376,81 +412,77 @@ const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit,
         }
         break;
       case 'storage_location':
-        if (!value || value.trim().length < 2) {
+        if (!value || String(value).trim().length < 2) {
           validation.addError('Storage Location', 'Storage location is required', 'Enter the warehouse or storage area name');
         } else {
           validation.removeError('Storage Location');
         }
         break;
       case 'moisture_content':
-        if (value && (value < 0 || value > 100)) {
+        if (value !== '' && value !== null && (Number(value) < 0 || Number(value) > 100)) {
           validation.addError('Moisture Content', 'Moisture content must be between 0 and 100%', 'Enter a valid moisture percentage');
         } else {
           validation.removeError('Moisture Content');
-          if (stockType === 'paddy' && value && value > 14) {
+          if (stockType === 'paddy' && value !== '' && Number(value) > 14) {
             validation.addWarning('Moisture Content', 'High moisture content detected', 'Moisture above 14% may require additional drying');
           } else {
             validation.removeWarning('Moisture Content');
           }
         }
         break;
+      default:
+        break;
     }
+  };
+
+  const updateField = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    validateField(field, value);
+  };
+
+  const handleStockTypeChange = (nextType) => {
+    onStockTypeChange(nextType);
+    setFormData((prev) => ({ ...prev, variety: '' }));
+    validation.removeError('Variety');
   };
 
   const handleSubmit = () => {
-    // Run final validation on all fields
-    validateField('variety', formData.variety);
-    validateField('quantity', formData.quantity);
-    validateField('purchase_price', formData.purchase_price);
-    validateField('storage_location', formData.storage_location);
-    validateField('moisture_content', formData.moisture_content);
+    const next = formData;
+    validateField('variety', next.variety);
+    validateField('quantity', next.quantity);
+    validateField('purchase_price', next.purchase_price);
+    validateField('storage_location', next.storage_location);
+    validateField('moisture_content', next.moisture_content);
 
-    // Check if there are any validation errors
-    if (validation.hasErrors) {
-      console.log('Form has validation errors, cannot submit');
+    const quantityOk = next.quantity !== '' && Number(next.quantity) > 0;
+    const priceOk = next.purchase_price !== '' && Number(next.purchase_price) > 0;
+    const locationOk = next.storage_location && String(next.storage_location).trim().length >= 2;
+    const moistureOk = next.moisture_content === '' || next.moisture_content === null
+      || (Number(next.moisture_content) >= 0 && Number(next.moisture_content) <= 100);
+    if (!next.variety || !quantityOk || !priceOk || !locationOk || !moistureOk) {
       return;
     }
 
-    console.log('Submitting form data:', formData);
-    onSubmit(formData);
-  };
-
-  const resetForm = () => {
-    setFormData({
-      variety: '',
-      quantity: '',
-      purchase_price: '',
-      quality_grade: 'A',
-      moisture_content: '',
-      storage_location: '',
-      supplier_id: '',
-      harvest_date: '',
-      expiry_date: '',
-      notes: ''
-    });
+    onSubmit(next);
   };
 
   useEffect(() => {
     if (!open) {
-      resetForm();
+      setFormData(emptyStockForm());
       validation.clearAll();
-    } else {
-      // Run initial validation when dialog opens
-      setTimeout(() => {
-        validateField('variety', formData.variety);
-        validateField('quantity', formData.quantity);
-        validateField('purchase_price', formData.purchase_price);
-        validateField('storage_location', formData.storage_location);
-        validateField('moisture_content', formData.moisture_content);
-      }, 100);
     }
   }, [open]);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="md"
+      fullWidth
+      disableRestoreFocus
+    >
       <DialogTitle>Add New Stock</DialogTitle>
-      <DialogContent>
-        {/* Validation Error Display */}
+      <DialogContent sx={{ overflow: 'visible' }}>
         <ValidationErrorDisplay
           errors={validation.errors}
           warnings={validation.warnings}
@@ -466,83 +498,58 @@ const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit,
                 labelId="stock-type-label"
                 label="Stock Type"
                 value={stockType}
-                onChange={(e) => onStockTypeChange(e.target.value)}
+                onChange={(e) => handleStockTypeChange(e.target.value)}
+                MenuProps={SELECT_MENU_PROPS}
               >
                 <MenuItem value="paddy">Paddy Stock</MenuItem>
                 <MenuItem value="product">Product Stock</MenuItem>
               </Select>
             </FormControl>
           </Grid>
-          
+
           <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              select
-              label={stockType === 'paddy' ? 'Paddy Variety' : 'Product Type'}
-              value={formData.variety}
-              onChange={(e) => {
-                console.log('Variety dropdown changed:', e.target.value);
-                const newValue = e.target.value;
-                setFormData(prevData => ({...prevData, variety: newValue}));
-              }}
-              SelectProps={{
-                native: false,
-                MenuProps: {
-                  PaperProps: {
-                    style: {
-                      maxHeight: 200,
-                      zIndex: 10000,
-                    },
-                  },
-                },
-              }}
-            >
-              {stockType === 'paddy' ? (
-                <>
-                  <MenuItem value="basmati">Basmati</MenuItem>
-                  <MenuItem value="jasmine">Jasmine</MenuItem>
-                  <MenuItem value="long_grain">Long Grain</MenuItem>
-                  <MenuItem value="short_grain">Short Grain</MenuItem>
-                </>
-              ) : (
-                <>
-                  <MenuItem value="basmati_rice">Basmati Rice</MenuItem>
-                  <MenuItem value="jasmine_rice">Jasmine Rice</MenuItem>
-                  <MenuItem value="long_grain_rice">Long Grain Rice</MenuItem>
-                  <MenuItem value="short_grain_rice">Short Grain Rice</MenuItem>
-                </>
-              )}
-            </TextField>
+            <FormControl fullWidth>
+              <InputLabel id="stock-variety-label">
+                {stockType === 'paddy' ? 'Paddy Variety' : 'Product Type'}
+              </InputLabel>
+              <Select
+                labelId="stock-variety-label"
+                label={stockType === 'paddy' ? 'Paddy Variety' : 'Product Type'}
+                value={formData.variety}
+                onChange={(e) => updateField('variety', e.target.value)}
+                MenuProps={SELECT_MENU_PROPS}
+              >
+                {varietyOptions.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </Grid>
-          
+
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
               label="Quantity (kg)"
               type="number"
+              inputProps={{ min: 0, step: 'any' }}
               value={formData.quantity}
-              onChange={(e) => {
-                const newValue = e.target.value;
-                setFormData({...formData, quantity: newValue});
-                validateField('quantity', newValue);
-              }}
+              onChange={(e) => updateField('quantity', e.target.value)}
             />
           </Grid>
-          
+
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
               label={stockType === 'paddy' ? 'Purchase Price (₹/kg)' : 'Selling Price (₹/kg)'}
               type="number"
+              inputProps={{ min: 0, step: 'any' }}
               value={formData.purchase_price}
-              onChange={(e) => {
-                const newValue = e.target.value;
-                setFormData({...formData, purchase_price: newValue});
-                validateField('purchase_price', newValue);
-              }}
+              onChange={(e) => updateField('purchase_price', e.target.value)}
             />
           </Grid>
-          
+
           <Grid item xs={12} md={6}>
             <FormControl fullWidth>
               <InputLabel id="quality-grade-label">Quality Grade</InputLabel>
@@ -550,49 +557,38 @@ const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit,
                 labelId="quality-grade-label"
                 label="Quality Grade"
                 value={formData.quality_grade}
-                onChange={(e) => setFormData({...formData, quality_grade: e.target.value})}
-                MenuProps={{
-                  PaperProps: {
-                    style: {
-                      maxHeight: 200,
-                    },
-                  },
-                }}
+                onChange={(e) => updateField('quality_grade', e.target.value)}
+                MenuProps={SELECT_MENU_PROPS}
               >
-                <MenuItem value="A">Grade A</MenuItem>
-                <MenuItem value="B">Grade B</MenuItem>
-                <MenuItem value="C">Grade C</MenuItem>
+                {QUALITY_GRADES.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
           </Grid>
-          
+
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
               label="Storage Location"
               value={formData.storage_location}
-              onChange={(e) => {
-                const newValue = e.target.value;
-                setFormData({...formData, storage_location: newValue});
-                validateField('storage_location', newValue);
-              }}
+              onChange={(e) => updateField('storage_location', e.target.value)}
             />
           </Grid>
-          
+
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
               label="Moisture Content (%)"
               type="number"
+              inputProps={{ min: 0, max: 100, step: 'any' }}
               value={formData.moisture_content}
-              onChange={(e) => {
-                const newValue = e.target.value;
-                setFormData({...formData, moisture_content: newValue});
-                validateField('moisture_content', newValue);
-              }}
+              onChange={(e) => updateField('moisture_content', e.target.value)}
             />
           </Grid>
-          
+
           <Grid item xs={12}>
             <TextField
               fullWidth
@@ -600,7 +596,7 @@ const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit,
               multiline
               rows={3}
               value={formData.notes}
-              onChange={(e) => setFormData({...formData, notes: e.target.value})}
+              onChange={(e) => updateField('notes', e.target.value)}
             />
           </Grid>
         </Grid>
@@ -640,6 +636,15 @@ const StockMovementsTab = () => {
               </TableRow>
             </TableHead>
             <TableBody>
+              {(!movements?.movements || movements.movements.length === 0) && (
+                <TableRow>
+                  <TableCell colSpan={6} align="center">
+                    <Typography color="text.secondary" sx={{ py: 3 }}>
+                      No stock movements recorded yet
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              )}
               {movements?.movements?.map((movement) => (
                 <TableRow key={movement.id}>
                   <TableCell>

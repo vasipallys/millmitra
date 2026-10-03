@@ -50,6 +50,7 @@ import {
   PieChart,
 } from '@mui/icons-material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart as RechartsBarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, AreaChart, Area } from 'recharts';
+import DemoBanner from '../components/DemoBanner';
 
 const AnalyticsReporting = () => {
   const [activeTab, setActiveTab] = useState(0);
@@ -217,7 +218,7 @@ const AnalyticsReporting = () => {
         alert('Report generation failed: ' + result.error);
       }
     } catch (error) {
-      alert('Network error during report generation');
+      alert('Report generation is a preview feature and is not connected to live mill data.');
     }
   };
 
@@ -242,7 +243,7 @@ const AnalyticsReporting = () => {
         alert('Predictive analysis failed: ' + result.error);
       }
     } catch (error) {
-      alert('Network error during predictive analysis');
+      alert('Predictive analysis is a preview feature and is not connected to live mill data.');
     }
   };
 
@@ -283,6 +284,7 @@ const AnalyticsReporting = () => {
 
   return (
     <Box>
+      <DemoBanner title="Analytics & Reporting" />
       {/* Header */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" component="h1" fontWeight="bold">

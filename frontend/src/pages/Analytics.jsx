@@ -43,6 +43,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import DemoBanner from '../components/DemoBanner';
 
 const Analytics = () => {
   const [timeRange, setTimeRange] = useState('30d');
@@ -141,6 +142,7 @@ const Analytics = () => {
 
   return (
     <Box>
+      <DemoBanner title="Business Analytics" />
       {/* Header */}
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h4" component="h1" fontWeight="bold">

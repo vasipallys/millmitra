@@ -210,13 +210,8 @@ def main():
     except subprocess.CalledProcessError:
         print("Failed to upgrade pip, continuing anyway...")
     
-    # Choose requirements file based on Python version
-    if python_check == "py313":
-        requirements_file = "requirements-py313.txt"
-        print(f"📋 Using Python 3.13 compatible requirements: {requirements_file}")
-    else:
-        requirements_file = "requirements.txt"
-        print(f"📋 Using standard requirements: {requirements_file}")
+    requirements_file = "requirements.txt"
+    print("Using core mill requirements.txt (Python 3.13 compatible; TensorFlow not required)")
     
     # Try to install from requirements file first
     if Path(requirements_file).exists():

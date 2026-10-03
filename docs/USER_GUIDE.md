@@ -85,10 +85,13 @@ Do this once on the mill PC, or whenever you set up a new machine.
 2. Go into the backend folder:
 
    ```powershell
-   cd backend
+   cd D:\GenAi\millmitra\backend
    python -m venv venv
-   venv\Scripts\activate
-   pip install -r requirements.txt
+   .\venv\Scripts\activate
+   python -c "import sys; print(sys.executable)"
+   # Must print ...\millmitra\backend\venv\Scripts\python.exe
+   # If it prints ricemill\backend\venv, deactivate and activate this venv again.
+   python -m pip install -r requirements.txt
    ```
 
 3. Copy `.env.example` to `.env` if you do not already have an `.env` file, and set the database connection if your mill uses PostgreSQL. A local SQLite file is used when no database URL is set.

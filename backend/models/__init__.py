@@ -50,7 +50,7 @@ except ImportError:
     pass
 
 try:
-    from .inventory import PaddyStock, ProductStock
+    from .inventory import PaddyStock, ProductStock, StockMovement
 except ImportError:
     pass
 
@@ -102,7 +102,7 @@ except ImportError:
 # Export all models
 __all__ = [
     'User', 'AuthLog', 'AIInteraction', 'UserSession', 'UserPreference',
-    'Farmer', 'FarmerContract', 'PaddyProcurement', 'PaddyStock', 'ProductStock',
+    'Farmer', 'FarmerContract', 'PaddyProcurement', 'PaddyStock', 'ProductStock', 'StockMovement',
     'ProductionBatch', 'QualityTest', 'Customer', 'SalesOrder',
     'Payment', 'Expense', 'Budget', 'Transaction', 'Invoice',
     'FinancialAlert', 'CashFlowForecast', 'FinancialHealthScore', 'PaymentSchedule',

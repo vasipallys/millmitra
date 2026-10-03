@@ -6,6 +6,7 @@ from config import Config
 
 # Import models to ensure they're registered
 from models.farmer_edit_request import FarmerEditRequest
+from models.inventory import StockMovement  # noqa: F401
 
 # Import all blueprints
 from routes.auth import auth_bp
