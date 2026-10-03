@@ -12,6 +12,7 @@ class Customer(db.Model):
     __tablename__ = 'customers'
     
     id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.String(36), index=True)
     customer_code = db.Column(db.String(20), unique=True, nullable=False)
     name = db.Column(db.String(100), nullable=False)
     customer_type = db.Column(db.String(50))  # retailer, wholesaler, distributor, export
@@ -241,6 +242,7 @@ class SalesOrder(db.Model):
     __tablename__ = 'sales_orders'
     
     id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.String(36), index=True)
     order_number = db.Column(db.String(50), unique=True, nullable=False)
     customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
     

@@ -12,6 +12,7 @@ class Farmer(db.Model):
     __tablename__ = 'farmers'
     
     id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.String(36), index=True)
     farmer_code = db.Column(db.String(20), unique=True, nullable=False)
     name = db.Column(db.String(100), nullable=False)
     phone = db.Column(db.String(15), nullable=False)
@@ -189,6 +190,7 @@ class PaddyProcurement(db.Model):
     __tablename__ = 'paddy_procurements'
     
     id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.String(36), index=True)
     procurement_number = db.Column(db.String(50), unique=True, nullable=False)
     farmer_id = db.Column(db.Integer, db.ForeignKey('farmers.id'), nullable=False)
     
@@ -250,6 +252,7 @@ class FarmerContract(db.Model):
     __tablename__ = 'farmer_contracts'
     
     id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.String(36), index=True)
     contract_number = db.Column(db.String(50), unique=True, nullable=False)
     farmer_id = db.Column(db.Integer, db.ForeignKey('farmers.id'), nullable=False)
     

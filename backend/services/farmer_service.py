@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from sqlalchemy import func, and_, or_
 from extensions import db
+from services.tenant_scope import tq, t_get, t_get_or_404
 from models.farmer import Farmer, FarmerContract, PaddyProcurement
 from models.user import User
 from models.finance import Payment
@@ -146,11 +147,11 @@ class FarmerService:
         
         # Update contract if linked
         if procurement.contract_id:
-            contract = FarmerContract.query.get(procurement.contract_id)
+            contract = t_get(FarmerContract, procurement.contract_id)
             contract.actual_quantity_delivered += procurement.quantity
         
         # Update farmer's last transaction date and ratings
-        farmer = Farmer.query.get(procurement.farmer_id)
+        farmer = t_get(Farmer, procurement.farmer_id)
         farmer.last_transaction_date = procurement.procurement_date
         
         if quality_assessment and quality_assessment.get('score'):
@@ -190,7 +191,7 @@ class FarmerService:
         # Update procurement payment status if linked
         procurement_id = payment_data.get('procurement_id')
         if procurement_id:
-            procurement = PaddyProcurement.query.get(procurement_id)
+            procurement = t_get(PaddyProcurement, procurement_id)
             total_paid = db.session.query(func.sum(Payment.amount)).filter(
                 Payment.payment_category == 'farmer_payment',
                 Payment.description.like(f'%procurement {procurement.id}%'),
@@ -206,11 +207,11 @@ class FarmerService:
         
         # Update contract payment tracking
         if payment.contract_id:
-            contract = FarmerContract.query.get(payment.contract_id)
+            contract = t_get(FarmerContract, payment.contract_id)
             contract.total_amount_paid += payment.amount
         
         # Update farmer reliability score
-        farmer = Farmer.query.get(payment.farmer_id)
+        farmer = t_get(Farmer, payment.farmer_id)
         if payment.payment_type == 'procurement':
             # Positive impact on reliability for timely payments
             farmer.reliability_score = min(5.0, (farmer.reliability_score or 0) + 0.1)
@@ -221,16 +222,16 @@ class FarmerService:
     def get_farmer_dashboard_data(self, farmer_id: int):
         """Get comprehensive farmer dashboard data"""
         
-        farmer = Farmer.query.get_or_404(farmer_id)
+        farmer = t_get_or_404(Farmer, farmer_id)
         
         # Active contracts
-        active_contracts = FarmerContract.query.filter(
+        active_contracts = tq(FarmerContract).filter(
             FarmerContract.farmer_id == farmer_id,
             FarmerContract.status == 'active'
         ).all()
         
         # Recent procurements
-        recent_procurements = PaddyProcurement.query.filter(
+        recent_procurements = tq(PaddyProcurement).filter(
             PaddyProcurement.farmer_id == farmer_id
         ).order_by(PaddyProcurement.procurement_date.desc()).limit(10).all()
         
@@ -275,7 +276,7 @@ class FarmerService:
     def get_farmers_list(self, filters: dict = None):
         """Get filtered list of farmers"""
         
-        query = Farmer.query
+        query = tq(Farmer)
         
         if filters:
             if filters.get('district'):
@@ -300,7 +301,7 @@ class FarmerService:
         district_code = district[:3].upper()
         year = datetime.now().year % 100
         
-        last_farmer = Farmer.query.filter(
+        last_farmer = tq(Farmer).filter(
             Farmer.farmer_code.like(f"F{district_code}{year}%")
         ).order_by(Farmer.id.desc()).first()
         
@@ -315,7 +316,7 @@ class FarmerService:
         today = datetime.now()
         prefix = f"CON-{today.year}{today.month:02d}"
         
-        last_contract = FarmerContract.query.filter(
+        last_contract = tq(FarmerContract).filter(
             FarmerContract.contract_number.like(f"{prefix}%")
         ).order_by(FarmerContract.id.desc()).first()
         
@@ -330,7 +331,7 @@ class FarmerService:
         today = datetime.now()
         prefix = f"PROC-{today.year}{today.month:02d}{today.day:02d}"
         
-        last_proc = PaddyProcurement.query.filter(
+        last_proc = tq(PaddyProcurement).filter(
             PaddyProcurement.procurement_number.like(f"{prefix}%")
         ).order_by(PaddyProcurement.id.desc()).first()
         
@@ -345,7 +346,7 @@ class FarmerService:
         today = datetime.now()
         prefix = f"FPAY-{today.year}{today.month:02d}"
         
-        last_payment = Payment.query.filter(
+        last_payment = tq(Payment).filter(
             Payment.payment_category == 'farmer_payment',
             Payment.payment_id.like(f"{prefix}%")
         ).order_by(Payment.id.desc()).first()

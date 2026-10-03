@@ -13,6 +13,7 @@ class Transaction(db.Model):
     __tablename__ = 'transactions'
     
     id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.String(36), index=True)
     transaction_id = db.Column(db.String(50), unique=True, nullable=False)
     transaction_type = db.Column(db.String(20), nullable=False)  # income, expense
     amount = db.Column(db.Float, nullable=False)
@@ -42,6 +43,7 @@ class Invoice(db.Model):
     __tablename__ = 'invoices'
     
     id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.String(36), index=True)
     invoice_number = db.Column(db.String(50), unique=True, nullable=False)
     customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'))
     invoice_date = db.Column(db.DateTime, nullable=False)
@@ -198,6 +200,7 @@ class PaymentSchedule(db.Model):
     __tablename__ = 'payment_schedules'
     
     id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.String(36), index=True)
     schedule_id = db.Column(db.String(50), unique=True, nullable=False)
     farmer_id = db.Column(db.Integer, db.ForeignKey('farmers.id'))
     amount = db.Column(db.Float, nullable=False)

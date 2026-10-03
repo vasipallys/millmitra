@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from models import Transaction, Invoice, Customer, User, ProductionBatch, QualityTest
 from services.analytics_reporting_service import AnalyticsReportingService
 from extensions import db
+from services.tenant_scope import tq, t_get, t_get_or_404
 
 analytics_reporting_bp = Blueprint('analytics_reporting', __name__)
 analytics_service = AnalyticsReportingService()
@@ -199,21 +200,21 @@ def analytics_dashboard_overview():
         last_30_days = current_date - timedelta(days=30)
         
         # Production metrics
-        production_batches = ProductionBatch.query.filter(
+        production_batches = tq(ProductionBatch).filter(
             ProductionBatch.production_date >= last_30_days
         ).all()
         
         total_production = sum(batch.quantity_produced for batch in production_batches)
         
         # Quality metrics
-        quality_tests = QualityTest.query.filter(
+        quality_tests = tq(QualityTest).filter(
             QualityTest.test_date >= last_30_days
         ).all()
         
         avg_quality_score = 87.5  # Mock calculation
         
         # Financial metrics
-        transactions = Transaction.query.filter(
+        transactions = tq(Transaction).filter(
             Transaction.transaction_date >= last_30_days
         ).all()
         
@@ -499,7 +500,7 @@ def get_smart_alerts():
 @jwt_required()
 def list_saved_reports():
     from models.saved_report import SavedReport
-    rows = SavedReport.query.order_by(SavedReport.created_at.desc()).limit(50).all()
+    rows = tq(SavedReport).order_by(SavedReport.created_at.desc()).limit(50).all()
     return jsonify({'success': True, 'reports': [row.to_dict() for row in rows]})
 
 

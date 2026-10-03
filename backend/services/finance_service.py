@@ -4,6 +4,7 @@ from sqlalchemy import func, and_, or_
 from models.finance import ChartOfAccounts, JournalEntry, Invoice, Payment, Budget
 from models.user import User
 from extensions import db
+from services.tenant_scope import tq, t_get, t_get_or_404
 
 class FinanceService:
     def __init__(self):
@@ -88,7 +89,7 @@ class FinanceService:
         db.session.add(payment)
         
         # Update invoice paid amount
-        invoice = Invoice.query.get(payment_data['invoice_id'])
+        invoice = t_get(Invoice, payment_data['invoice_id'])
         if invoice:
             invoice.paid_amount += payment_data['amount']
             if invoice.paid_amount >= invoice.total_amount:
@@ -149,7 +150,7 @@ class FinanceService:
         
         invoice_type = 'sales' if report_type == 'receivables' else 'purchase'
         
-        invoices = Invoice.query.filter(
+        invoices = tq(Invoice).filter(
             and_(
                 Invoice.invoice_type == invoice_type,
                 Invoice.status != 'paid'
@@ -203,7 +204,7 @@ class FinanceService:
         today = datetime.now()
         prefix = f"{'SI' if invoice_type == 'sales' else 'PI'}{today.strftime('%Y%m')}"
         
-        last_invoice = Invoice.query.filter(
+        last_invoice = tq(Invoice).filter(
             and_(
                 Invoice.invoice_number.like(f"{prefix}%"),
                 Invoice.invoice_type == invoice_type
@@ -223,7 +224,7 @@ class FinanceService:
         today = datetime.now()
         prefix = f"PAY{today.strftime('%Y%m')}"
         
-        last_payment = Payment.query.filter(
+        last_payment = tq(Payment).filter(
             Payment.payment_number.like(f"{prefix}%")
         ).order_by(Payment.id.desc()).first()
         

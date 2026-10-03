@@ -3,7 +3,7 @@ import {
   Grid, Card, CardContent, Typography, Box, Button, Chip,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField,
-  Select, MenuItem, FormControl, InputLabel, Alert, LinearProgress,
+  Alert, LinearProgress,
   Tabs, Tab
 } from '@mui/material';
 import {
@@ -19,6 +19,7 @@ import AIRecommendations from '../components/AIRecommendations';
 import { getApiErrorMessage } from '../utils/apiError';
 import { PageEmpty, PageHeader, PageShell, QueryErrorAlert } from '../components/common/PageChrome';
 import { useI18n } from '../i18n/I18nContext';
+import LookupSelect from '../components/common/LookupSelect';
 
 const Production = () => {
   const { t, statusLabel } = useI18n();
@@ -526,18 +527,12 @@ const CreateBatchDialog = ({ open, onClose, onSubmit, loading }) => {
       <DialogContent>
         <Grid container spacing={2} sx={{ mt: 1 }}>
           <Grid item xs={12} md={6}>
-            <FormControl fullWidth>
-              <InputLabel>{t('paddyVariety')}</InputLabel>
-              <Select
-                value={formData.paddy_variety}
-                onChange={(e) => setFormData({...formData, paddy_variety: e.target.value})}
-              >
-                <MenuItem value="basmati">Basmati</MenuItem>
-                <MenuItem value="jasmine">Jasmine</MenuItem>
-                <MenuItem value="long_grain">Long Grain</MenuItem>
-                <MenuItem value="short_grain">Short Grain</MenuItem>
-              </Select>
-            </FormControl>
+            <LookupSelect
+              group="paddy_variety"
+              label={t('paddyVariety')}
+              value={formData.paddy_variety}
+              onChange={(e) => setFormData({ ...formData, paddy_variety: e.target.value })}
+            />
           </Grid>
           <Grid item xs={12} md={6}>
             <TextField
@@ -549,17 +544,12 @@ const CreateBatchDialog = ({ open, onClose, onSubmit, loading }) => {
             />
           </Grid>
           <Grid item xs={12} md={6}>
-            <FormControl fullWidth>
-              <InputLabel>{t('qualityGrade')}</InputLabel>
-              <Select
-                value={formData.quality_grade}
-                onChange={(e) => setFormData({...formData, quality_grade: e.target.value})}
-              >
-                <MenuItem value="A">{t('gradeA')}</MenuItem>
-                <MenuItem value="B">{t('gradeB')}</MenuItem>
-                <MenuItem value="C">{t('gradeC')}</MenuItem>
-              </Select>
-            </FormControl>
+            <LookupSelect
+              group="quality_grade"
+              label={t('qualityGrade')}
+              value={formData.quality_grade}
+              onChange={(e) => setFormData({ ...formData, quality_grade: e.target.value })}
+            />
           </Grid>
           <Grid item xs={12} md={6}>
             <TextField

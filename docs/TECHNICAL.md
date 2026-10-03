@@ -2,7 +2,7 @@
 
 For engineers working in `D:\GenAi\millmitra`. This matches the product as implemented: React/Vite office UI and Flask/SQLAlchemy mill API.
 
-Related: [User Guide](USER_GUIDE.md), [Business document](BUSINESS.md).
+Related: [User Guide](USER_GUIDE.md), [Business document](BUSINESS.md), [SaaS architecture](SAAS_ARCHITECTURE.md) (design only; how-to is in the User Guide).
 
 ---
 
@@ -49,7 +49,8 @@ millmitra/
 ├── docs/
 │   ├── USER_GUIDE.md
 │   ├── BUSINESS.md
-│   └── TECHNICAL.md
+│   ├── TECHNICAL.md
+│   └── SAAS_ARCHITECTURE.md   # tenant design; how-to is USER_GUIDE §4.6
 ├── ai-services/               # optional; not needed for core ERP
 └── README.md
 ```
@@ -79,7 +80,7 @@ Do **not** bind port 5000 with system Python (`C:\Python313\python.exe app.py`).
 
 Default DB: SQLite `sqlite:///rice_mill_erp.db`. Set `DATABASE_URL` for PostgreSQL.
 
-Demo users are ensured on **startup** (`services/demo_users.py`) if missing — passwords of existing rows are not reset: `admin/admin123`, `manager/manager123`, `operator/operator123`, `quality/quality123`, `sales/sales123`, `accountant/accountant123` (emails `@ricemill.com`). Role defaults live in `services/access_control.py` and table `role_permissions`.
+Demo users are ensured on **startup** (`services/demo_users.py`) if missing — passwords of existing rows are not reset: `admin/admin123`, `manager/manager123`, `operator/operator123`, `quality/quality123`, `sales/sales123`, `accountant/accountant123` (emails `@ricemill.com`). Role defaults live in `services/access_control.py` and table `role_permissions` (per tenant). Startup migrate (`services/tenant_migration.py`) adds `tenant_id` / `is_platform_admin` if missing, creates slug `default`, and gives every existing user a membership. Users are not deleted.
 
 ### Frontend
 
@@ -130,7 +131,7 @@ Flask app (backend/app.py)
 ### JWT
 
 - Login: `POST /api/auth/login` with `username` (username, email, or phone) and `password`.
-- Token identity is **`str(user.id)`**. Always resolve users with `utils.current_user()` / `current_user_id()` (int), never `User.query.get(get_jwt_identity())` with the raw string.
+- Token identity is **`str(user.id)`**. Login also sets JWT claim **`tenant_id`** from the user’s first `TenantMembership` (demo users: slug `default` after startup migrate). Always resolve users with `utils.current_user()` / `current_user_id()` (int), never `User.query.get(get_jwt_identity())` with the raw string.
 - Access expiry: 8 hours on the login call; config default `JWT_ACCESS_TOKEN_EXPIRES` is 24 hours if unset on other tokens.
 - `GET /api/auth/me` confirms the token.
 - `POST /api/auth/logout` invalidates the optional session token; JWT is discarded client-side.
@@ -153,7 +154,7 @@ Allowed origins: `http://localhost:<any port>` and `http://127.0.0.1:<any port>`
 
 ## 6. Live API surface
 
-Prefix `/api` unless noted. JWT required except login, username suggest, OTP verify, and health.
+Prefix `/api` unless noted. JWT required except login, username suggest, OTP verify, health, and **optional** JWT on `POST /api/tenants`.
 
 ### Auth (`/api/auth`)
 
@@ -283,13 +284,33 @@ Blueprint has **no** `/api` prefix on the blueprint; paths are absolute:
 
 ### Users and access (`/api`, admin / `users` permission)
 
+Lists and creates are scoped to the **current tenant** (`TenantMembership` for `g.tenant_id`). `POST /users` creates a global `User` plus a membership on this mill.
+
 | Method | Path | Purpose |
 | --- | --- | --- |
-| GET | `/users` | List users |
-| POST | `/users` | Create user (username, password, role) |
-| PATCH | `/users/<id>` | Change role or `is_active` (cannot deactivate self) |
-| GET | `/access` | Permission matrix |
-| PUT | `/access` | Toggle `{ role, permission, allowed }` |
+| GET | `/users` | List users who are members of this mill |
+| POST | `/users` | Create user (username, password, role) and membership on this mill |
+| PATCH | `/users/<id>` | Change this mill’s membership role or `is_active` (cannot deactivate self) |
+| GET | `/access` | Permission matrix for this mill |
+| PUT | `/access` | Toggle `{ role, permission, allowed }` for this mill |
+
+### Tenants (`/api/tenants`)
+
+How-to for operators: [USER_GUIDE §4.6–4.7](USER_GUIDE.md#46-add-a-mill-tenant). There is **no** create-tenant UI. Navbar switcher calls `mine` + `switch` only (`frontend/src/services/tenantService.js`). Access guard does not require a module permission for `/api/tenants`.
+
+| Method | Path | Auth | Purpose |
+| --- | --- | --- | --- |
+| POST | `/api/tenants` | JWT **optional** | Create mill. Body: `name` (required), optional `slug`. **No token:** also send `username` + `password` (or `owner: { username, password, email, first_name }`) to create a new admin user. **With token:** the signed-in user becomes admin of the new mill (`TenantMembership.role = admin`). Idempotent on slug (existing row returned). Status on create is **ACTIVE**. |
+| GET | `/api/tenants/mine` | JWT | Mills this user belongs to, plus `current` |
+| POST | `/api/tenants/<id>/switch` | JWT | New JWT with that `tenant_id` if the user is a member; else **403** |
+
+`User.is_platform_admin` exists (default **false**). Demo users are not platform admins. The route’s `owner` / `as_owner` branches for a platform admin do not change day-to-day create: any JWT user becomes owner.
+
+No `PATCH` / suspend / activate / delete tenant route. Stored status strings: `ACTIVE`, `TRIAL`, `SUSPENDED`. `Tenant.is_suspended()` is true only for `SUSPENDED`. Suspended members get **403** on mill APIs; `/api/tenants` and `/api/auth/me` still work.
+
+Other **403** on mill routes: no membership, `X-Tenant-ID` / claim not in the user’s memberships, or RBAC. Frontend does not send `X-Tenant-ID`; it relies on the JWT claim after login or switch.
+
+Slug rule (`services/tenant_service.py`): normalized lower-case `[a-z0-9-]+`, must match `^[a-z0-9][a-z0-9-]{1,78}[a-z0-9]$` unless the slug is `default`.
 
 ### Health
 
@@ -309,19 +330,21 @@ Registered but **not** mill-of-record: biometric, quality-vision, financial-inte
 Runtime models live under `backend/models/`.
 
 ```
-User ──┬── Farmer (created_by)
-       ├── PaddyStock (farmer_id, remaining_quantity)
-       ├── ProductStock (variety, quantity)
-       ├── StockMovement (stock_kind, stock_id, movement_type, quantity)
-       ├── ProductionBatch (paddy_stock_id, paddy_input_quantity, rice_output, status)
-       ├── QualityTest (batch_id)
-       ├── Customer
-       ├── SalesOrder (customer_id, items JSON)
-       ├── Invoice (customer_id, items JSON, status)
-       └── Payment
+Tenant
+User ── TenantMembership (user_id, tenant_id, role)
+User ──┬── Farmer (created_by)          [+ tenant_id]
+       ├── PaddyStock                   [+ tenant_id]
+       ├── ProductStock                 [+ tenant_id]
+       ├── StockMovement                [+ tenant_id]
+       ├── ProductionBatch              [+ tenant_id]
+       ├── QualityTest                  [+ tenant_id]
+       ├── Customer                     [+ tenant_id]
+       ├── SalesOrder                   [+ tenant_id]
+       ├── Invoice                      [+ tenant_id]
+       └── Payment                      [+ tenant_id]
 ```
 
-Also: `FarmerContract`, `PaddyProcurement`, `FarmerEditRequest`, `AuthLog`, `UserSession`.
+Also: `FarmerContract`, `PaddyProcurement`, `FarmerEditRequest`, `AuthLog`, `UserSession`, `LookupOption`, `RolePermission`, `MillConfig`, `Notification`. Mill-owned tables in `services/tenant_migration.py` `TENANT_TABLES` carry `tenant_id`. **Users** stay global. One SQLite file (`backend/instance/rice_mill_erp.db`) holds every tenant. Settings backup copies that whole file.
 
 Invoice and sales order lines are **JSON**, not line tables. Product stock match on invoice create is by product name / variety string.
 
@@ -358,7 +381,7 @@ Sidebar: core items first (filtered by `user.permissions`); Preview group withou
 Clients:
 
 - `src/services/api.js` — Axios + `productionAPI`, `inventoryAPI`, `salesAPI`
-- `authService.js`, `inventoryService.js`, `financeService.js`, `dashboardService.js`, farmer/customer services
+- `authService.js`, `inventoryService.js`, `financeService.js`, `dashboardService.js`, `tenantService.js` (`/tenants/mine`, `/tenants/:id/switch`), farmer/customer services
 
 401 interceptor must not redirect during login.
 

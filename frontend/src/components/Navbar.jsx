@@ -33,6 +33,8 @@ import notificationService from '../services/notificationService';
 import LanguageSwitcher from '../i18n/LanguageSwitcher';
 import { useI18n } from '../i18n/I18nContext';
 import api from '../services/api';
+import { tenantService } from '../services/tenantService';
+import { useQueryClient } from 'react-query';
 
 const accountLabel = (account) => (
   account?.username || account?.email || 'Account'
@@ -49,8 +51,11 @@ const focusFirstIn = (node, selector) => {
   }
 };
 
-const Navbar = ({ onMenuClick, onLogout, user }) => {
+const Navbar = ({ onMenuClick, onLogout, user, onUserChange }) => {
   const [anchorEl, setAnchorEl] = useState(null);
+  const [tenantAnchor, setTenantAnchor] = useState(null);
+  const [tenants, setTenants] = useState([]);
+  const queryClient = useQueryClient();
   const [notificationAnchor, setNotificationAnchor] = useState(null);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -69,6 +74,11 @@ const Navbar = ({ onMenuClick, onLogout, user }) => {
       return undefined;
     }
     let cancelled = false;
+    tenantService.mine().then((data) => {
+      if (!cancelled) setTenants(data?.tenants || []);
+    }).catch(() => {
+      if (!cancelled) setTenants(user?.tenant ? [user.tenant] : []);
+    });
     api.get('/user/mill-settings').then((response) => {
       if (cancelled) return;
       const ai = response.data?.settings?.ai || {};
@@ -155,6 +165,49 @@ const Navbar = ({ onMenuClick, onLogout, user }) => {
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
           {t('appTitle')}
         </Typography>
+
+        {user?.tenant?.name && (
+          <Chip
+            label={user.tenant.name}
+            size="small"
+            variant="outlined"
+            color="secondary"
+            sx={{ mr: 1, cursor: tenants.length > 1 ? 'pointer' : 'default' }}
+            onClick={tenants.length > 1 ? (event) => setTenantAnchor(event.currentTarget) : undefined}
+            aria-label={t('millName')}
+          />
+        )}
+        <Menu
+          anchorEl={tenantAnchor}
+          open={Boolean(tenantAnchor)}
+          onClose={() => setTenantAnchor(null)}
+        >
+          {tenants.map((item) => (
+            <MenuItem
+              key={item.id}
+              selected={item.id === user?.tenant?.id}
+              onClick={async () => {
+                setTenantAnchor(null);
+                if (item.id === user?.tenant?.id) return;
+                try {
+                  const result = await tenantService.switchTo(item.id);
+                  if (result?.access_token) {
+                    localStorage.setItem('token', result.access_token);
+                    if (result.user) {
+                      localStorage.setItem('user', JSON.stringify(result.user));
+                      onUserChange?.(result.user);
+                    }
+                    queryClient.clear();
+                  }
+                } catch {
+                  // keep current mill
+                }
+              }}
+            >
+              {item.name}
+            </MenuItem>
+          ))}
+        </Menu>
 
         <Chip
           label={roleLabel(user?.role)}

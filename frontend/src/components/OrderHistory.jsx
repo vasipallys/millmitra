@@ -14,8 +14,11 @@ import {
 import { useQuery } from 'react-query';
 import { customerService } from '../services/customerService';
 import { downloadText, toCsv } from '../utils/downloadFile';
+import { LookupFilterSelect } from './common/LookupSelect';
+import { useI18n } from '../i18n/I18nContext';
 
 const OrderHistory = ({ customerId, showAllOrders = false }) => {
+  const { t } = useI18n();
   const [filters, setFilters] = useState({
     status: 'all',
     payment_status: 'all',
@@ -108,36 +111,22 @@ const OrderHistory = ({ customerId, showAllOrders = false }) => {
               />
             </Grid>
             <Grid item xs={12} md={2}>
-              <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  value={filters.status}
-                  onChange={handleFilterChange('status')}
-                >
-                  <MenuItem value="all">All Status</MenuItem>
-                  <MenuItem value="pending">Pending</MenuItem>
-                  <MenuItem value="confirmed">Confirmed</MenuItem>
-                  <MenuItem value="processing">Processing</MenuItem>
-                  <MenuItem value="shipped">Shipped</MenuItem>
-                  <MenuItem value="delivered">Delivered</MenuItem>
-                  <MenuItem value="cancelled">Cancelled</MenuItem>
-                </Select>
-              </FormControl>
+              <LookupFilterSelect
+                group="order_status"
+                label={t('status')}
+                value={filters.status}
+                onChange={handleFilterChange('status')}
+                allValue="all"
+              />
             </Grid>
             <Grid item xs={12} md={2}>
-              <FormControl fullWidth>
-                <InputLabel>Payment Status</InputLabel>
-                <Select
-                  value={filters.payment_status}
-                  onChange={handleFilterChange('payment_status')}
-                >
-                  <MenuItem value="all">All Payment</MenuItem>
-                  <MenuItem value="pending">Pending</MenuItem>
-                  <MenuItem value="paid">Paid</MenuItem>
-                  <MenuItem value="overdue">Overdue</MenuItem>
-                  <MenuItem value="partial">Partial</MenuItem>
-                </Select>
-              </FormControl>
+              <LookupFilterSelect
+                group="payment_status"
+                label={t('paymentStatus')}
+                value={filters.payment_status}
+                onChange={handleFilterChange('payment_status')}
+                allValue="all"
+              />
             </Grid>
             <Grid item xs={12} md={2}>
               <FormControl fullWidth>

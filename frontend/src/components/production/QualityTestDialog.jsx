@@ -8,6 +8,7 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { productionAPI } from '../../services/api';
 import { useI18n } from '../../i18n/I18nContext';
+import LookupSelect from '../common/LookupSelect';
 
 const validationSchema = Yup.object({
   test_type: Yup.string().required('Test type is required'),
@@ -129,39 +130,25 @@ const QualityTestDialog = ({ open, onClose, batch, onSuccess }) => {
             </Grid>
 
             <Grid item xs={12} sm={4}>
-              <TextField
-                select
-                fullWidth
-                label={t('testType')}
+              <LookupSelect
+                group="test_type"
                 name="test_type"
+                label={t('testType')}
                 value={formik.values.test_type}
                 onChange={formik.handleChange}
                 error={formik.touched.test_type && Boolean(formik.errors.test_type)}
                 helperText={formik.touched.test_type && formik.errors.test_type}
-              >
-                {testTypes.map((type) => (
-                  <MenuItem key={type} value={type}>
-                    {testTypeLabels[type] || type}
-                  </MenuItem>
-                ))}
-              </TextField>
+              />
             </Grid>
 
             <Grid item xs={12} sm={4}>
-              <TextField
-                select
-                fullWidth
-                label={t('testStage')}
+              <LookupSelect
+                group="test_stage"
                 name="test_stage"
+                label={t('testStage')}
                 value={formik.values.test_stage}
                 onChange={formik.handleChange}
-              >
-                {testStages.map((stage) => (
-                  <MenuItem key={stage} value={stage}>
-                    {testStageLabels[stage] || stage}
-                  </MenuItem>
-                ))}
-              </TextField>
+              />
             </Grid>
 
             <Grid item xs={12} sm={4}>
@@ -327,20 +314,13 @@ const QualityTestDialog = ({ open, onClose, batch, onSuccess }) => {
             </Grid>
 
             <Grid item xs={12} sm={6}>
-              <TextField
-                select
-                fullWidth
-                label={t('testMethod')}
+              <LookupSelect
+                group="test_method"
                 name="test_method"
+                label={t('testMethod')}
                 value={formik.values.test_method}
                 onChange={formik.handleChange}
-              >
-                {testMethods.map((method) => (
-                  <MenuItem key={method} value={method}>
-                    {testMethodLabels[method] || method}
-                  </MenuItem>
-                ))}
-              </TextField>
+              />
             </Grid>
 
             <Grid item xs={12}>

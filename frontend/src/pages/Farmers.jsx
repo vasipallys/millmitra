@@ -21,6 +21,7 @@ import RecordProcurementDialog from '../components/farmer/RecordProcurementDialo
 import { getApiErrorMessage } from '../utils/apiError';
 import { PageHeader, PageShell, QueryErrorAlert } from '../components/common/PageChrome';
 import { useI18n } from '../i18n/I18nContext';
+import LookupSelect from '../components/common/LookupSelect';
 
 const Farmers = () => {
   const [tabValue, setTabValue] = useState(0);
@@ -1285,31 +1286,22 @@ const Farmers = () => {
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    select
+                  <LookupSelect
+                    group="farming_type"
                     label={t('farmingType')}
-                    defaultValue={selectedFarmer.farming_type || 'conventional'}
-                    margin="normal"
-                  >
-                    <MenuItem value="organic">{t('organic')}</MenuItem>
-                    <MenuItem value="conventional">{t('conventional')}</MenuItem>
-                    <MenuItem value="mixed">{t('mixed')}</MenuItem>
-                  </TextField>
+                    value={editFormData.farming_type || selectedFarmer.farming_type || 'conventional'}
+                    onChange={(e) => handleEditFormChange('farming_type', e.target.value)}
+                    sx={{ mt: 2 }}
+                  />
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    select
+                  <LookupSelect
+                    group="irrigation_type"
                     label={t('irrigationType')}
-                    defaultValue={selectedFarmer.irrigation_type || 'bore_well'}
-                    margin="normal"
-                  >
-                    <MenuItem value="bore_well">{t('boreWell')}</MenuItem>
-                    <MenuItem value="canal">{t('canal')}</MenuItem>
-                    <MenuItem value="rain_fed">{t('rainFed')}</MenuItem>
-                    <MenuItem value="mixed">{t('mixed')}</MenuItem>
-                  </TextField>
+                    value={editFormData.irrigation_type || selectedFarmer.irrigation_type || 'bore_well'}
+                    onChange={(e) => handleEditFormChange('irrigation_type', e.target.value)}
+                    sx={{ mt: 2 }}
+                  />
                 </Grid>
 
                 {/* Banking Information */}
@@ -1358,18 +1350,13 @@ const Farmers = () => {
                   </Typography>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    select
+                  <LookupSelect
+                    group="payment_terms"
                     label={t('paymentTerms')}
-                    defaultValue={selectedFarmer.payment_terms || 'immediate'}
-                    margin="normal"
-                  >
-                    <MenuItem value="immediate">Immediate</MenuItem>
-                    <MenuItem value="15_days">15 Days</MenuItem>
-                    <MenuItem value="30_days">30 Days</MenuItem>
-                    <MenuItem value="45_days">45 Days</MenuItem>
-                  </TextField>
+                    value={editFormData.payment_terms || selectedFarmer.payment_terms || 'immediate'}
+                    onChange={(e) => handleEditFormChange('payment_terms', e.target.value)}
+                    sx={{ mt: 2 }}
+                  />
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <TextField

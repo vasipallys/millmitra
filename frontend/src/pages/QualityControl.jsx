@@ -20,7 +20,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  MenuItem,
   TextField,
   Tabs,
   Tab,
@@ -43,6 +42,7 @@ import { useI18n } from '../i18n/I18nContext';
 import PreviewModeToggle from '../components/PreviewModeToggle';
 import { usePreviewMode } from '../hooks/usePreviewMode';
 import { productionAPI } from '../services/api';
+import LookupSelect from '../components/common/LookupSelect';
 import {
   gradeDistributionFromTests,
   normalizeQualityTests,
@@ -326,18 +326,13 @@ const QualityControl = () => {
                 </Typography>
                 
                 <Box sx={{ mb: 2 }}>
-                  <TextField
-                    fullWidth
-                    select
+                  <LookupSelect
+                    group="paddy_variety"
                     label={t('variety')}
                     value={selectedVariety}
                     onChange={(e) => setSelectedVariety(e.target.value)}
                     sx={{ mb: 2 }}
-                  >
-                    <MenuItem value="basmati">Basmati Rice</MenuItem>
-                    <MenuItem value="jasmine">Jasmine Rice</MenuItem>
-                    <MenuItem value="brown">Brown Rice</MenuItem>
-                  </TextField>
+                  />
                   
                   <TextField
                     fullWidth

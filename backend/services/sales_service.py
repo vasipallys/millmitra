@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import func, and_, or_
 from models.sales import Customer, SalesOrder, SalesOrderItem, Quotation, QuotationItem, SalesLead
 from extensions import db
+from services.tenant_scope import tq, t_get, t_get_or_404
 import uuid
 
 class SalesService:
@@ -9,14 +10,14 @@ class SalesService:
     def generate_customer_code(self):
         """Generate unique customer code"""
         prefix = "CUST"
-        count = Customer.query.count() + 1
+        count = tq(Customer).count() + 1
         return f"{prefix}{count:06d}"
     
     def generate_order_number(self):
         """Generate unique order number"""
         prefix = "SO"
         today = datetime.now().strftime("%y%m%d")
-        count = SalesOrder.query.filter(
+        count = tq(SalesOrder).filter(
             func.date(SalesOrder.created_at) == datetime.now().date()
         ).count() + 1
         return f"{prefix}{today}{count:03d}"
@@ -73,11 +74,11 @@ class SalesService:
     
     def update_customer_metrics(self, customer_id):
         """Update customer metrics based on order history"""
-        customer = Customer.query.get(customer_id)
+        customer = t_get(Customer, customer_id)
         if not customer:
             return None
         
-        orders = SalesOrder.query.filter_by(
+        orders = tq(SalesOrder).filter_by(
             customer_id=customer_id,
             status='completed'
         ).all()
@@ -139,7 +140,7 @@ class SalesService:
         
         db.session.commit()
         from services.notification_service import sales_order_created
-        sales_order_created(order, Customer.query.get(order.customer_id))
+        sales_order_created(order, t_get(Customer, order.customer_id))
         
         # Update customer metrics
         self.update_customer_metrics(order.customer_id)
@@ -148,7 +149,7 @@ class SalesService:
     
     def update_order_status(self, order_id, status, user):
         """Update order status with validation"""
-        order = SalesOrder.query.get(order_id)
+        order = t_get(SalesOrder, order_id)
         if not order:
             return None
         
@@ -300,7 +301,7 @@ class SalesService:
         start_date = end_date - timedelta(days=days)
         
         # Current period metrics
-        current_orders = SalesOrder.query.filter(
+        current_orders = tq(SalesOrder).filter(
             SalesOrder.created_at >= start_date
         ).all()
         
@@ -309,7 +310,7 @@ class SalesService:
         
         # Previous period for comparison
         prev_start = start_date - timedelta(days=days)
-        prev_orders = SalesOrder.query.filter(
+        prev_orders = tq(SalesOrder).filter(
             and_(SalesOrder.created_at >= prev_start, SalesOrder.created_at < start_date)
         ).all()
         
@@ -363,12 +364,12 @@ class SalesService:
     
     def get_customer_analytics(self, customer_id):
         """Get detailed customer analytics"""
-        customer = Customer.query.get(customer_id)
+        customer = t_get(Customer, customer_id)
         if not customer:
             return None
         
         # Order history
-        orders = SalesOrder.query.filter_by(customer_id=customer_id).order_by(SalesOrder.order_date.desc()).all()
+        orders = tq(SalesOrder).filter_by(customer_id=customer_id).order_by(SalesOrder.order_date.desc()).all()
         
         # Monthly trends
         monthly_data = db.session.query(

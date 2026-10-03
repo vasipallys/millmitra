@@ -16,6 +16,7 @@ import {
   Chip
 } from '@mui/material';
 import { useI18n } from '../../i18n/I18nContext';
+import LookupSelect from '../common/LookupSelect';
 
 const RecordPaymentDialog = ({ open, onClose, onSubmit, invoice = null, loading = false }) => {
   const { t } = useI18n();
@@ -131,17 +132,12 @@ const RecordPaymentDialog = ({ open, onClose, onSubmit, invoice = null, loading 
 
           {/* Payment Type */}
           <Grid item xs={12} sm={6}>
-            <FormControl fullWidth>
-              <InputLabel>Payment Type</InputLabel>
-              <Select
-                value={formData.payment_type}
-                onChange={(e) => handleInputChange('payment_type', e.target.value)}
-                label={t('paymentType')}
-              >
-                <MenuItem value="full">{t('payFull')}</MenuItem>
-                <MenuItem value="partial">{t('payPartial')}</MenuItem>
-              </Select>
-            </FormControl>
+            <LookupSelect
+              group="payment_type"
+              label={t('paymentType')}
+              value={formData.payment_type}
+              onChange={(e) => handleInputChange('payment_type', e.target.value)}
+            />
           </Grid>
 
           {/* Payment Amount */}
@@ -160,26 +156,12 @@ const RecordPaymentDialog = ({ open, onClose, onSubmit, invoice = null, loading 
 
           {/* Payment Method */}
           <Grid item xs={12} sm={6}>
-            <FormControl fullWidth>
-              <InputLabel>Payment Method</InputLabel>
-              <Select
-                value={formData.payment_method}
-                onChange={(e) => handleInputChange('payment_method', e.target.value)}
-                label={t('paymentMethod')}
-              >
-                {paymentMethods.map((method) => (
-                  <MenuItem key={method.value} value={method.value}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Chip 
-                        label={method.label} 
-                        size="small" 
-                        color={getPaymentMethodColor(method.value)}
-                      />
-                    </Box>
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <LookupSelect
+              group="payment_method"
+              label={t('paymentMethod')}
+              value={formData.payment_method}
+              onChange={(e) => handleInputChange('payment_method', e.target.value)}
+            />
           </Grid>
 
           {/* Payment Date */}

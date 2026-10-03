@@ -131,6 +131,49 @@ class RemediationTests(unittest.TestCase):
         self.assertEqual(bad.status_code, 401)
         message = ((bad.get_json() or {}).get('error') or (bad.get_json() or {}).get('message') or '')
         self.assertIn('not recognized', message.lower())
+        with app.app_context():
+            from flask_jwt_extended import decode_token
+            from models.tenant import TenantMembership
+            claims = decode_token(payload.get('access_token'))
+            tenant_id = claims.get('tenant_id')
+            self.assertTrue(tenant_id)
+            self.assertEqual(tenant_id, ((payload.get('user') or {}).get('tenant') or {}).get('id'))
+            membership = TenantMembership.query.filter_by(
+                user_id=(payload.get('user') or {}).get('id'),
+                tenant_id=tenant_id,
+            ).first()
+            self.assertIsNotNone(membership)
+
+    def test_login_admin_token_tenant_matches_membership(self):
+        from flask_jwt_extended import decode_token
+        from models.tenant import TenantMembership
+        from services.demo_users import ensure_demo_users
+        from services.tenant_migration import ensure_default_tenant, ensure_user_memberships, migrate_tenant_schema
+
+        with app.app_context():
+            migrate_tenant_schema()
+            ensure_demo_users()
+            ensure_user_memberships(ensure_default_tenant())
+        ok = self.client.post(
+            '/api/auth/login',
+            json={'username': 'admin', 'password': 'admin123', 'method': 'password'},
+        )
+        self.assertEqual(ok.status_code, 200, ok.get_data(as_text=True))
+        payload = ok.get_json() or {}
+        token = payload.get('access_token')
+        user = payload.get('user') or {}
+        self.assertTrue(token)
+        self.assertEqual((user.get('tenant') or {}).get('slug'), 'default')
+        with app.app_context():
+            claims = decode_token(token)
+            tenant_id = claims.get('tenant_id')
+            self.assertTrue(tenant_id)
+            self.assertEqual(tenant_id, (user.get('tenant') or {}).get('id'))
+            membership = TenantMembership.query.filter_by(
+                user_id=user.get('id'),
+                tenant_id=tenant_id,
+            ).first()
+            self.assertIsNotNone(membership)
 
     def test_roles_access_and_sales_user(self):
         from flask_jwt_extended import create_access_token
@@ -309,6 +352,70 @@ class RemediationTests(unittest.TestCase):
             if row:
                 db.session.delete(row)
                 db.session.commit()
+
+    def test_lookups_operator_cannot_create_and_inactive_hidden(self):
+        from flask_jwt_extended import create_access_token
+        from extensions import db
+        from models.lookup import LookupOption
+        from models.user import User
+        from services.access_control import ensure_role_permissions
+        from services.demo_users import ensure_demo_users
+        from services.lookup_service import ensure_lookup_options
+
+        with app.app_context():
+            db.create_all()
+            ensure_demo_users()
+            ensure_role_permissions()
+            ensure_lookup_options()
+            operator = User.query.filter_by(username='operator').first()
+            admin = User.query.filter_by(username='admin').first()
+            self.assertIsNotNone(operator)
+            self.assertIsNotNone(admin)
+            op_token = create_access_token(identity=str(operator.id))
+            ad_token = create_access_token(identity=str(admin.id))
+            row = LookupOption.query.filter_by(
+                group_key='product_type',
+                value='zz_inactive_test',
+            ).first()
+            if not row:
+                row = LookupOption(
+                    group_key='product_type',
+                    value='zz_inactive_test',
+                    label_en='Inactive test',
+                    label_hi='Inactive test',
+                    label_te='Inactive test',
+                    sort_order=99,
+                    is_active=False,
+                    is_locked=False,
+                )
+                db.session.add(row)
+            else:
+                row.is_active = False
+            db.session.commit()
+
+        forbidden = self.client.post(
+            '/api/lookups',
+            json={'group_key': 'product_type', 'value': 'zz_operator_create', 'label_en': 'Nope'},
+            headers={'Authorization': f'Bearer {op_token}'},
+        )
+        self.assertEqual(forbidden.status_code, 403, forbidden.get_data(as_text=True))
+
+        listed = self.client.get(
+            '/api/lookups?group=product_type',
+            headers={'Authorization': f'Bearer {op_token}'},
+        )
+        self.assertEqual(listed.status_code, 200, listed.get_data(as_text=True))
+        values = [item.get('value') for item in (listed.get_json() or {}).get('options', [])]
+        self.assertNotIn('zz_inactive_test', values)
+        self.assertTrue(values, 'active product types should be seeded')
+
+        admin_list = self.client.get(
+            '/api/lookups/admin?group=product_type',
+            headers={'Authorization': f'Bearer {ad_token}'},
+        )
+        self.assertEqual(admin_list.status_code, 200, admin_list.get_data(as_text=True))
+        admin_values = [item.get('value') for item in (admin_list.get_json() or {}).get('options', [])]
+        self.assertIn('zz_inactive_test', admin_values)
 
 
 if __name__ == '__main__':

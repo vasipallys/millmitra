@@ -12,6 +12,7 @@ class Payment(db.Model):
     __tablename__ = 'payments'
     
     id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.String(36), index=True)
     payment_id = db.Column(db.String(50), unique=True, nullable=False)
     
     # Payment details
@@ -163,6 +164,7 @@ class Expense(db.Model):
     __tablename__ = 'expenses'
     
     id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.String(36), index=True)
     expense_id = db.Column(db.String(50), unique=True, nullable=False)
     
     # Expense details

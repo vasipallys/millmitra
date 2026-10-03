@@ -23,6 +23,7 @@ import {
 } from '@mui/material';
 import { Assignment, Science, CheckCircle } from '@mui/icons-material';
 import { useI18n } from '../i18n/I18nContext';
+import LookupSelect from './common/LookupSelect';
 
 const QualityTestDialog = ({ open, onClose, onSubmit, batch = null }) => {
   const { t } = useI18n();
@@ -157,20 +158,12 @@ const QualityTestDialog = ({ open, onClose, onSubmit, batch = null }) => {
             </Grid>
             
             <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>{t('testType')}</InputLabel>
-                <Select
-                  value={formData.test_type}
-                  onChange={(e) => handleInputChange('test_type', e.target.value)}
-                  label={t('testType')}
-                >
-                  {testTypes.map((type) => (
-                    <MenuItem key={type.value} value={type.value}>
-                      {type.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <LookupSelect
+                group="quality_test_type"
+                label={t('testType')}
+                value={formData.test_type}
+                onChange={(e) => handleInputChange('test_type', e.target.value)}
+              />
             </Grid>
             
             <Grid item xs={12} sm={6}>
@@ -184,20 +177,12 @@ const QualityTestDialog = ({ open, onClose, onSubmit, batch = null }) => {
             </Grid>
             
             <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>{t('equipmentUsed')}</InputLabel>
-                <Select
-                  value={formData.test_conditions.equipment_used}
-                  onChange={(e) => handleInputChange('test_conditions.equipment_used', e.target.value)}
-                  label={t('equipmentUsed')}
-                >
-                  {equipmentOptions.map((equipment) => (
-                    <MenuItem key={equipment.value} value={equipment.value}>
-                      {equipment.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <LookupSelect
+                group="equipment"
+                label={t('equipmentUsed')}
+                value={formData.test_conditions.equipment_used}
+                onChange={(e) => handleInputChange('test_conditions.equipment_used', e.target.value)}
+              />
             </Grid>
             
             <Grid item xs={12} sm={6}>

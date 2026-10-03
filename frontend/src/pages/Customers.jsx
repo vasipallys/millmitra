@@ -21,6 +21,7 @@ import CustomerAnalytics from '../components/CustomerAnalytics';
 import InteractionDialog from '../components/InteractionDialog';
 import { getApiErrorMessage } from '../utils/apiError';
 import { PageHeader, PageShell, QueryErrorAlert } from '../components/common/PageChrome';
+import LookupSelect, { LookupFilterSelect } from '../components/common/LookupSelect';
 
 const Customers = () => {
   const { t } = useI18n();
@@ -209,32 +210,24 @@ const Customers = () => {
               />
             </Grid>
             <Grid item xs={12} md={3}>
-              <FormControl fullWidth>
-                <InputLabel>Segment</InputLabel>
-                <Select
-                  value={segmentFilter}
-                  onChange={(e) => setSegmentFilter(e.target.value)}
-                >
-                  <MenuItem value="">All Segments</MenuItem>
-                  <MenuItem value="premium">Premium</MenuItem>
-                  <MenuItem value="regular">Regular</MenuItem>
-                  <MenuItem value="budget">Budget</MenuItem>
-                </Select>
-              </FormControl>
+              <LookupFilterSelect
+                group="customer_segment"
+                label={t('segment')}
+                value={segmentFilter}
+                onChange={(e) => setSegmentFilter(e.target.value)}
+                allValue=""
+                allLabel={t('lookupAll')}
+              />
             </Grid>
             <Grid item xs={12} md={3}>
-              <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                  <MenuItem value="">All Status</MenuItem>
-                  <MenuItem value="active">Active</MenuItem>
-                  <MenuItem value="inactive">Inactive</MenuItem>
-                  <MenuItem value="blocked">Blocked</MenuItem>
-                </Select>
-              </FormControl>
+              <LookupFilterSelect
+                group="customer_status"
+                label={t('status')}
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                allValue=""
+                allLabel={t('lookupAll')}
+              />
             </Grid>
             <Grid item xs={12} md={2}>
               <Button
@@ -432,17 +425,12 @@ const AddCustomerForm = ({ onSubmit, loading, onCancel }) => {
           />
         </Grid>
         <Grid item xs={12} md={6}>
-          <FormControl fullWidth>
-            <InputLabel>{t('customerType')}</InputLabel>
-            <Select
-              value={formData.customer_type}
-              onChange={handleChange('customer_type')}
-            >
-              <MenuItem value="individual">{t('typeIndividual')}</MenuItem>
-              <MenuItem value="business">{t('typeBusiness')}</MenuItem>
-              <MenuItem value="distributor">{t('typeDistributor')}</MenuItem>
-            </Select>
-          </FormControl>
+          <LookupSelect
+            group="customer_type"
+            label={t('customerType')}
+            value={formData.customer_type}
+            onChange={handleChange('customer_type')}
+          />
         </Grid>
         <Grid item xs={12} md={6}>
           <TextField
@@ -513,18 +501,12 @@ const AddCustomerForm = ({ onSubmit, loading, onCancel }) => {
           />
         </Grid>
         <Grid item xs={12} md={6}>
-          <FormControl fullWidth>
-            <InputLabel>{t('paymentTerms')}</InputLabel>
-            <Select
-              value={formData.payment_terms}
-              onChange={handleChange('payment_terms')}
-            >
-              <MenuItem value="cash">{t('payCash')}</MenuItem>
-              <MenuItem value="credit_7">{t('credit7')}</MenuItem>
-              <MenuItem value="credit_15">{t('credit15')}</MenuItem>
-              <MenuItem value="credit_30">{t('credit30')}</MenuItem>
-            </Select>
-          </FormControl>
+          <LookupSelect
+            group="payment_terms"
+            label={t('paymentTerms')}
+            value={formData.payment_terms}
+            onChange={handleChange('payment_terms')}
+          />
         </Grid>
       </Grid>
       <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>

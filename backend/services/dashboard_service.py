@@ -2,6 +2,7 @@ from models import User, ProductionBatch, QualityTest, PaddyStock, ProductStock,
 from models.financial import Invoice
 from models.finance import Payment
 from extensions import db
+from services.tenant_scope import tq, t_get, t_get_or_404
 from datetime import datetime, timedelta
 from sqlalchemy import func, and_
 import requests
@@ -140,7 +141,7 @@ class SmartDashboardService:
         start_date = end_date - timedelta(days=days)
         
         # Raw metrics
-        batches = ProductionBatch.query.filter(
+        batches = tq(ProductionBatch).filter(
             ProductionBatch.start_time >= start_date
         ).all()
         
@@ -174,7 +175,7 @@ class SmartDashboardService:
         end_date = datetime.utcnow()
         start_date = end_date - timedelta(days=days)
         
-        quality_tests = QualityTest.query.filter(
+        quality_tests = tq(QualityTest).filter(
             QualityTest.test_date >= start_date
         ).all()
         
@@ -206,8 +207,8 @@ class SmartDashboardService:
     def get_inventory_metrics(self):
         """Get inventory metrics with AI optimization suggestions"""
         
-        paddy_stock = PaddyStock.query.all()
-        product_stock = ProductStock.query.all()
+        paddy_stock = tq(PaddyStock).all()
+        product_stock = tq(ProductStock).all()
         
         # Calculate inventory values
         total_paddy_value = sum((stock.quantity or 0) * (stock.purchase_price or 0) for stock in paddy_stock)
@@ -237,7 +238,7 @@ class SmartDashboardService:
         start_date = end_date - timedelta(days=days)
 
         # Get sales data
-        sales_orders = SalesOrder.query.filter(
+        sales_orders = tq(SalesOrder).filter(
             SalesOrder.order_date >= start_date,
             SalesOrder.order_date <= end_date
         ).all()
@@ -319,17 +320,17 @@ class SmartDashboardService:
             ).scalar() or 0
         )
         
-        pending_orders = SalesOrder.query.filter(
+        pending_orders = tq(SalesOrder).filter(
             SalesOrder.status.in_(['pending', 'confirmed', 'processing'])
         ).count()
         
         try:
-            active_farmers = Farmer.query.filter(
+            active_farmers = tq(Farmer).filter(
                 Farmer.last_transaction_date >= start_date
             ).count()
         except Exception:
             db.session.rollback()
-            active_farmers = Farmer.query.filter_by(is_active=True).count()
+            active_farmers = tq(Farmer).filter_by(is_active=True).count()
         
         return {
             'total_production': float(total_production),
@@ -394,7 +395,7 @@ class SmartDashboardService:
         }
 
     def _get_efficiency_trends(self, start_date: datetime, end_date: datetime):
-        batches = ProductionBatch.query.filter(
+        batches = tq(ProductionBatch).filter(
             ProductionBatch.start_time >= start_date,
             ProductionBatch.start_time <= end_date,
         ).all()
@@ -411,7 +412,7 @@ class SmartDashboardService:
         return {'paddy_purchase_cost': cost}
 
     def _get_current_batch_info(self):
-        batch = ProductionBatch.query.filter(
+        batch = tq(ProductionBatch).filter(
             ProductionBatch.status.in_(['in_progress', 'started', 'paused', 'planned'])
         ).order_by(ProductionBatch.start_time.desc()).first()
         if not batch:
@@ -435,7 +436,7 @@ class SmartDashboardService:
         return {status or 'unknown': count for status, count in rows}
 
     def _get_customer_insights(self):
-        return {'customer_count': Customer.query.count()}
+        return {'customer_count': tq(Customer).count()}
 
     def _get_revenue_forecast(self):
         start = datetime.utcnow() - timedelta(days=30)
@@ -472,7 +473,7 @@ class SmartDashboardService:
     
     def _create_production_overview_widget(self):
         """Create production overview widget"""
-        recent_batches = ProductionBatch.query.filter(
+        recent_batches = tq(ProductionBatch).filter(
             ProductionBatch.start_time >= datetime.utcnow() - timedelta(days=7)
         ).count()
         
@@ -527,11 +528,11 @@ class SmartDashboardService:
     def _create_financial_summary_widget(self):
         """Create financial summary widget from invoices and payments."""
         start = datetime.utcnow() - timedelta(days=30)
-        invoices = Invoice.query.filter(Invoice.invoice_date >= start).all()
+        invoices = tq(Invoice).filter(Invoice.invoice_date >= start).all()
         revenue = sum(inv.total_amount or 0 for inv in invoices if (inv.status or '') != 'cancelled')
         collected = 0.0
         try:
-            collected = sum(p.amount or 0 for p in Payment.query.filter(Payment.payment_date >= start).all())
+            collected = sum(p.amount or 0 for p in tq(Payment).filter(Payment.payment_date >= start).all())
         except Exception:
             db.session.rollback()
         return {
@@ -550,7 +551,7 @@ class SmartDashboardService:
 
     def _create_current_batch_widget(self):
         """Create current batch widget from live production."""
-        batch = ProductionBatch.query.filter(
+        batch = tq(ProductionBatch).filter(
             ProductionBatch.status.in_(['in_progress', 'started', 'paused', 'planned'])
         ).order_by(ProductionBatch.start_time.desc()).first()
         if not batch:
@@ -582,7 +583,7 @@ class SmartDashboardService:
     def _create_quality_control_widget(self):
         """Create quality control widget from today's tests."""
         start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-        tests = QualityTest.query.filter(QualityTest.test_date >= start).all()
+        tests = tq(QualityTest).filter(QualityTest.test_date >= start).all()
         passed = [t for t in tests if (getattr(t, 'grade', None) or '').upper() in ('A', 'B', 'PASS')]
         pass_rate = (len(passed) / len(tests) * 100) if tests else 0
         return {
@@ -655,7 +656,7 @@ class SmartDashboardService:
             open_filter = SalesOrder.status.in_(
                 ['pending', 'confirmed', 'processing', 'shipped']
             )
-            open_orders = SalesOrder.query.filter(open_filter).count()
+            open_orders = tq(SalesOrder).filter(open_filter).count()
             pipeline_value = db.session.query(
                 func.coalesce(func.sum(SalesOrder.total_amount), 0)
             ).filter(open_filter).scalar() or 0
@@ -692,9 +693,9 @@ class SmartDashboardService:
         total = 0
         active = 0
         try:
-            total = Customer.query.count()
+            total = tq(Customer).count()
             try:
-                active = Customer.query.filter_by(is_active=True).count()
+                active = tq(Customer).filter_by(is_active=True).count()
             except Exception:
                 db.session.rollback()
                 active = total
@@ -718,7 +719,7 @@ class SmartDashboardService:
         """Low product (and empty paddy) stock alerts for the dashboard."""
         items = []
         try:
-            for stock in ProductStock.query.all():
+            for stock in tq(ProductStock).all():
                 qty = stock.quantity or 0
                 min_level = stock.minimum_stock_level or stock.reorder_point or 0
                 if min_level and qty < min_level:
@@ -728,7 +729,7 @@ class SmartDashboardService:
                         'description': f'{qty:.0f} kg remaining (min {min_level:.0f} kg)'
                     })
             if not items:
-                for stock in PaddyStock.query.all():
+                for stock in tq(PaddyStock).all():
                     remaining = (
                         stock.remaining_quantity
                         if stock.remaining_quantity is not None
@@ -777,7 +778,7 @@ class SmartDashboardService:
         alerts = []
         
         # Check for low efficiency
-        recent_batches = ProductionBatch.query.filter(
+        recent_batches = tq(ProductionBatch).filter(
             ProductionBatch.start_time >= datetime.utcnow() - timedelta(hours=24)
         ).all()
         
@@ -800,7 +801,7 @@ class SmartDashboardService:
         alerts = []
         
         # Check recent quality scores
-        recent_tests = QualityTest.query.filter(
+        recent_tests = tq(QualityTest).filter(
             QualityTest.test_date >= datetime.utcnow() - timedelta(hours=12)
         ).all()
         
@@ -823,7 +824,7 @@ class SmartDashboardService:
         alerts = []
         
         # Check low stock
-        low_stock_items = ProductStock.query.filter(
+        low_stock_items = tq(ProductStock).filter(
             ProductStock.quantity < ProductStock.minimum_stock_level
         ).all()
         
@@ -960,7 +961,7 @@ class SmartDashboardService:
 
             if user.role == 'sales':
                 # Sales KPIs
-                order_count = SalesOrder.query.filter(
+                order_count = tq(SalesOrder).filter(
                     SalesOrder.order_date >= start_date
                 ).count()
 

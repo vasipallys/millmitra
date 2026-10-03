@@ -9,6 +9,7 @@ class GstFilingRecord(db.Model):
     __tablename__ = 'gst_filing_records'
 
     id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.String(36), index=True)
     form = db.Column(db.String(40), nullable=False)
     due_date = db.Column(db.String(20))
     amount = db.Column(db.Float, default=0)

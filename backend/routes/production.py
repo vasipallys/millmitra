@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from models import ProductionBatch, QualityTest, PaddyStock, ProductStock, User
 from extensions import db
+from services.tenant_scope import tq, t_get, t_get_or_404
 from datetime import datetime, timedelta
 from utils import current_user, current_user_id, parse_datetime
 import uuid
@@ -11,7 +12,7 @@ production_bp = Blueprint('production', __name__)
 
 def _generate_batch_number():
     today = datetime.utcnow().strftime('%Y%m%d')
-    count = ProductionBatch.query.filter(
+    count = tq(ProductionBatch).filter(
         ProductionBatch.batch_number.like(f'B{today}%')
     ).count() + 1
     return f'B{today}{count:03d}'
@@ -25,14 +26,14 @@ def _find_paddy_stock(data):
     stock_id = data.get('paddy_stock_id') or data.get('source_reference_id')
     if stock_id:
         try:
-            stock = PaddyStock.query.get(int(stock_id))
+            stock = t_get(PaddyStock, int(stock_id))
             if stock:
                 return stock
         except (TypeError, ValueError):
             pass
 
     variety = data.get('paddy_variety')
-    query = PaddyStock.query.filter(
+    query = tq(PaddyStock).filter(
         (PaddyStock.remaining_quantity > 0) | (PaddyStock.remaining_quantity.is_(None))
     )
     if variety:
@@ -69,7 +70,7 @@ def get_batches():
     status = request.args.get('status')
     variety = request.args.get('variety')
 
-    query = ProductionBatch.query
+    query = tq(ProductionBatch)
 
     if status:
         query = query.filter(ProductionBatch.status == status)
@@ -149,9 +150,9 @@ def create_batch():
 @production_bp.route('/batches/<int:batch_id>', methods=['GET'])
 @jwt_required()
 def get_batch_details(batch_id):
-    batch = ProductionBatch.query.get_or_404(batch_id)
+    batch = t_get_or_404(ProductionBatch, batch_id)
 
-    quality_tests = QualityTest.query.filter(
+    quality_tests = tq(QualityTest).filter(
         QualityTest.batch_id == batch_id
     ).order_by(QualityTest.test_date.desc()).all()
 
@@ -167,7 +168,7 @@ def get_batch_details(batch_id):
 @jwt_required()
 def start_batch(batch_id):
     user = current_user()
-    batch = ProductionBatch.query.get_or_404(batch_id)
+    batch = t_get_or_404(ProductionBatch, batch_id)
 
     if batch.status not in ('planned', 'paused'):
         return jsonify({
@@ -175,7 +176,7 @@ def start_batch(batch_id):
             'message': f'Batch cannot be started from status "{batch.status}"'
         }), 400
 
-    paddy_stock = PaddyStock.query.get(batch.paddy_stock_id)
+    paddy_stock = t_get(PaddyStock, batch.paddy_stock_id)
     if paddy_stock:
         available = paddy_stock.remaining_quantity if paddy_stock.remaining_quantity is not None else paddy_stock.quantity
         if batch.paddy_input_quantity > available and batch.status == 'planned':
@@ -207,7 +208,7 @@ def start_batch(batch_id):
 @jwt_required()
 def complete_batch(batch_id):
     user = current_user()
-    batch = ProductionBatch.query.get_or_404(batch_id)
+    batch = t_get_or_404(ProductionBatch, batch_id)
     data = request.get_json() or {}
 
     if batch.status not in ('in_progress', 'paused', 'started'):
@@ -233,7 +234,7 @@ def complete_batch(batch_id):
         batch.operator_id = batch.operator_id or user.id
 
     if rice_output > 0:
-        product = ProductStock.query.filter_by(
+        product = tq(ProductStock).filter_by(
             product_type='rice',
             variety=batch.paddy_variety,
             grade=batch.output_quality_grade or batch.paddy_quality_grade or 'A'
@@ -272,7 +273,7 @@ def complete_batch(batch_id):
 @production_bp.route('/batches/<int:batch_id>/steps', methods=['POST'])
 @jwt_required()
 def add_production_step(batch_id):
-    batch = ProductionBatch.query.get_or_404(batch_id)
+    batch = t_get_or_404(ProductionBatch, batch_id)
     data = request.get_json() or {}
     notes = data.get('notes') or data.get('step_name') or 'Step recorded'
     flags = batch.get_anomaly_flags() or []
@@ -309,7 +310,7 @@ def create_quality_test():
     if not batch_id:
         return jsonify({'success': False, 'message': 'batch_id is required'}), 400
 
-    batch = ProductionBatch.query.get_or_404(int(batch_id))
+    batch = t_get_or_404(ProductionBatch, int(batch_id))
 
     moisture = params.get('moisture_content')
     broken = params.get('broken_percentage')
@@ -359,7 +360,7 @@ def get_quality_tests():
     batch_id = request.args.get('batch_id', type=int)
     test_type = request.args.get('test_type')
 
-    query = QualityTest.query
+    query = tq(QualityTest)
 
     if batch_id:
         query = query.filter(QualityTest.batch_id == batch_id)
@@ -383,11 +384,11 @@ def get_quality_tests():
 @production_bp.route('/current-status', methods=['GET'])
 @jwt_required()
 def get_current_status():
-    active_batches = ProductionBatch.query.filter(
+    active_batches = tq(ProductionBatch).filter(
         ProductionBatch.status.in_(['in_progress', 'started', 'paused'])
     ).all()
-    planned_batches = ProductionBatch.query.filter(ProductionBatch.status == 'planned').all()
-    recent_batches = ProductionBatch.query.order_by(
+    planned_batches = tq(ProductionBatch).filter(ProductionBatch.status == 'planned').all()
+    recent_batches = tq(ProductionBatch).order_by(
         ProductionBatch.created_at.desc()
     ).limit(12).all()
 
@@ -418,7 +419,7 @@ def get_current_status():
 @production_bp.route('/schedules', methods=['GET'])
 @jwt_required()
 def get_production_schedules():
-    planned = ProductionBatch.query.filter(
+    planned = tq(ProductionBatch).filter(
         ProductionBatch.status == 'planned'
     ).order_by(ProductionBatch.start_time.asc()).all()
     return jsonify({
@@ -468,7 +469,7 @@ def optimize_production():
 def get_production_analytics():
     days = request.args.get('days', 30, type=int)
     start = datetime.utcnow() - timedelta(days=days)
-    batches = ProductionBatch.query.filter(ProductionBatch.start_time >= start).all()
+    batches = tq(ProductionBatch).filter(ProductionBatch.start_time >= start).all()
     completed = [b for b in batches if b.status == 'completed']
 
     total_input = sum(b.paddy_input_quantity or 0 for b in completed)
@@ -505,11 +506,11 @@ def get_production_analytics():
 @production_bp.route('/recommendations', methods=['GET'])
 @jwt_required()
 def get_ai_recommendations():
-    active_batches = ProductionBatch.query.filter(
+    active_batches = tq(ProductionBatch).filter(
         ProductionBatch.status.in_(['in_progress', 'started'])
     ).count()
 
-    recent_quality = QualityTest.query.order_by(
+    recent_quality = tq(QualityTest).order_by(
         QualityTest.test_date.desc()
     ).limit(5).all()
     avg_quality = (
@@ -588,7 +589,7 @@ def get_maintenance_predictions():
 def get_efficiency_analysis():
     days = request.args.get('days', 30, type=int)
     start = datetime.utcnow() - timedelta(days=days)
-    completed = ProductionBatch.query.filter(
+    completed = tq(ProductionBatch).filter(
         ProductionBatch.start_time >= start,
         ProductionBatch.status == 'completed'
     ).all()
@@ -606,7 +607,7 @@ def get_efficiency_analysis():
 @production_bp.route('/batches/<int:batch_id>/pause', methods=['POST'])
 @jwt_required()
 def pause_batch(batch_id):
-    batch = ProductionBatch.query.get_or_404(batch_id)
+    batch = t_get_or_404(ProductionBatch, batch_id)
     data = request.get_json() or {}
 
     if batch.status != 'in_progress':
@@ -631,7 +632,7 @@ def pause_batch(batch_id):
 @production_bp.route('/batches/<int:batch_id>/resume', methods=['POST'])
 @jwt_required()
 def resume_batch(batch_id):
-    batch = ProductionBatch.query.get_or_404(batch_id)
+    batch = t_get_or_404(ProductionBatch, batch_id)
 
     if batch.status != 'paused':
         return jsonify({
@@ -652,11 +653,11 @@ def resume_batch(batch_id):
 @production_bp.route('/dashboard', methods=['GET'])
 @jwt_required()
 def get_production_dashboard():
-    active = ProductionBatch.query.filter(
+    active = tq(ProductionBatch).filter(
         ProductionBatch.status.in_(['in_progress', 'started', 'paused', 'planned'])
     ).all()
     week_start = datetime.utcnow() - timedelta(days=7)
-    weekly = ProductionBatch.query.filter(ProductionBatch.start_time >= week_start).all()
+    weekly = tq(ProductionBatch).filter(ProductionBatch.start_time >= week_start).all()
     completed = [b for b in weekly if b.status == 'completed']
 
     daily = {}

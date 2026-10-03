@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import SecurityIcon from '@mui/icons-material/Security';
+import ListAltIcon from '@mui/icons-material/ListAlt';
 import { useI18n } from '../i18n/I18nContext';
 import { can } from '../utils/permissions';
 import {
@@ -47,6 +48,7 @@ const coreMenuItems = [
   { textKey: 'settings', descKey: 'navSettings', icon: <SettingsIcon />, path: '/settings', permission: 'settings' },
   { textKey: 'users', descKey: 'navUsers', icon: <AdminPanelSettingsIcon />, path: '/users', permission: 'users' },
   { textKey: 'access', descKey: 'navAccess', icon: <SecurityIcon />, path: '/access', permission: 'users' },
+  { textKey: 'lookupsTitle', descKey: 'navLookups', icon: <ListAltIcon />, path: '/lookups', permission: 'lookups' },
 ];
 
 const previewMenuItems = [

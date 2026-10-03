@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import User, Customer, SalesOrder
 from extensions import db
+from services.tenant_scope import tq, t_get, t_get_or_404
 from datetime import datetime, timedelta
 from utils import current_user
 from sqlalchemy import or_
@@ -34,13 +35,13 @@ ai_sales = _ServiceStub()
 
 
 def _customer_code():
-    count = Customer.query.count() + 1
+    count = tq(Customer).count() + 1
     return f'CUST{count:06d}'
 
 
 def _order_number():
     today = datetime.utcnow().strftime('%y%m%d')
-    count = SalesOrder.query.filter(
+    count = tq(SalesOrder).filter(
         SalesOrder.order_number.like(f'SO{today}%')
     ).count() + 1
     return f'SO{today}{count:03d}'
@@ -52,7 +53,7 @@ def get_sales_analytics():
     """General sales analytics endpoint for frontend compatibility"""
 
     # Get basic sales data
-    orders = SalesOrder.query.all()
+    orders = tq(SalesOrder).all()
     total_orders = len(orders)
     total_revenue = sum(order.total_amount or 0 for order in orders)
     avg_order_value = total_revenue / total_orders if total_orders > 0 else 0
@@ -83,7 +84,7 @@ def get_sales_analytics():
 def get_sales_dashboard():
     days = request.args.get('days', 30, type=int)
     start = datetime.utcnow() - timedelta(days=days)
-    orders = SalesOrder.query.filter(SalesOrder.created_at >= start).all()
+    orders = tq(SalesOrder).filter(SalesOrder.created_at >= start).all()
     total_revenue = sum(order.total_amount or 0 for order in orders)
     dashboard_data = {
         'total_orders': len(orders),
@@ -107,7 +108,7 @@ def get_customers():
     search = request.args.get('search', '')
     customer_type = request.args.get('type', '')
     
-    query = Customer.query
+    query = tq(Customer)
     
     if search:
         query = query.filter(
@@ -172,8 +173,8 @@ def create_customer():
 @sales_bp.route('/customers/<int:customer_id>', methods=['GET'])
 @jwt_required()
 def get_customer_details(customer_id):
-    customer = Customer.query.get_or_404(customer_id)
-    orders = SalesOrder.query.filter_by(customer_id=customer_id).all()
+    customer = t_get_or_404(Customer, customer_id)
+    orders = tq(SalesOrder).filter_by(customer_id=customer_id).all()
     analytics = {
         'customer': customer.to_dict(),
         'order_count': len(orders),
@@ -194,7 +195,7 @@ def get_sales_orders():
     status = request.args.get('status', '')
     customer_id = request.args.get('customer_id', type=int)
     
-    query = SalesOrder.query
+    query = tq(SalesOrder)
     
     if status:
         query = query.filter(SalesOrder.status == status)
@@ -225,7 +226,7 @@ def create_sales_order():
     if not data.get('customer_id'):
         return jsonify({'success': False, 'message': 'customer_id is required'}), 400
 
-    customer = Customer.query.get(data['customer_id'])
+    customer = t_get(Customer, data['customer_id'])
     if not customer:
         return jsonify({'success': False, 'message': 'Customer not found'}), 404
 
@@ -284,7 +285,7 @@ def create_sales_order():
 @sales_bp.route('/orders/<int:order_id>/status', methods=['PUT'])
 @jwt_required()
 def update_order_status(order_id):
-    order = SalesOrder.query.get_or_404(order_id)
+    order = t_get_or_404(SalesOrder, order_id)
     data = request.get_json() or {}
     status = data.get('status')
     if not status:

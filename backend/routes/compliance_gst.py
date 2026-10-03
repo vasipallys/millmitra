@@ -10,6 +10,7 @@ from datetime import datetime
 from models import Transaction, Invoice, Customer, User
 from services.compliance_gst_service import ComplianceGSTService
 from extensions import db
+from services.tenant_scope import tq, t_get, t_get_or_404
 
 compliance_gst_bp = Blueprint('compliance_gst', __name__)
 compliance_service = ComplianceGSTService()
@@ -343,7 +344,7 @@ def automated_compliance_check():
 def get_invoice_gst_details(invoice_id):
     """Get GST details for a specific invoice"""
     try:
-        invoice = Invoice.query.get(invoice_id)
+        invoice = t_get(Invoice, invoice_id)
         
         if not invoice:
             return jsonify({'error': 'Invoice not found'}), 404
@@ -429,7 +430,7 @@ def get_compliance_requirements():
 @jwt_required()
 def list_gst_filings():
     from models.gst_filing import GstFilingRecord
-    rows = GstFilingRecord.query.order_by(GstFilingRecord.recorded_at.desc()).all()
+    rows = tq(GstFilingRecord).order_by(GstFilingRecord.recorded_at.desc()).all()
     return jsonify({'success': True, 'filings': [row.to_dict() for row in rows]})
 
 

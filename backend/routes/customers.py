@@ -5,6 +5,7 @@ from models import Customer, SalesOrder, User
 # from services.customer_service import CustomerService
 # from services.ai_customer_service import AICustomerService
 from extensions import db
+from services.tenant_scope import tq, t_get, t_get_or_404
 from datetime import datetime, timedelta
 import json
 
@@ -53,7 +54,7 @@ customer_service = _CustomerServiceStub()
 @jwt_required()
 def get_analytics_overview():
     """Customer analytics overview for frontend compatibility"""
-    customers = Customer.query.all()
+    customers = tq(Customer).all()
 
     analytics = {
         'total_customers': len(customers),
@@ -93,7 +94,7 @@ def get_customers():
     status = request.args.get('status', 'active')
 
     # Get customers directly from database
-    query = Customer.query
+    query = tq(Customer)
 
     if search:
         query = query.filter(Customer.name.contains(search))
@@ -144,7 +145,7 @@ def create_customer():
             'errors': {'required': 'Name and phone are required'}
         }), 400
 
-    existing = Customer.query.filter_by(phone=data['phone']).first()
+    existing = tq(Customer).filter_by(phone=data['phone']).first()
     if existing:
         return jsonify({
             'success': False,
@@ -152,7 +153,7 @@ def create_customer():
             'similar_customers': [existing.to_dict()]
         }), 409
 
-    count = Customer.query.count() + 1
+    count = tq(Customer).count() + 1
     customer = Customer(
         customer_code=f'CUST{count:06d}',
         name=data['name'],
@@ -185,7 +186,7 @@ def create_customer():
 @customers_bp.route('/<int:customer_id>', methods=['GET'])
 @jwt_required()
 def get_customer(customer_id):
-    customer = Customer.query.get_or_404(customer_id)
+    customer = t_get_or_404(Customer, customer_id)
     
     # Return basic customer data without AI features for now
     return jsonify({
@@ -195,7 +196,7 @@ def get_customer(customer_id):
 @customers_bp.route('/<int:customer_id>', methods=['PUT'])
 @jwt_required()
 def update_customer(customer_id):
-    customer = Customer.query.get_or_404(customer_id)
+    customer = t_get_or_404(Customer, customer_id)
     data = request.get_json() or {}
     updatable = [
         'name', 'phone', 'email', 'contact_person', 'address', 'city', 'state',
@@ -246,7 +247,7 @@ def create_customer_interaction():
     user_id = user.id if user else None
     
     customer_id = request.view_args['customer_id']
-    customer = Customer.query.get_or_404(customer_id)
+    customer = t_get_or_404(Customer, customer_id)
     
     data = request.get_json()
     
@@ -348,7 +349,7 @@ def create_customer_contract():
     user_id = user.id if user else None
     
     customer_id = request.view_args['customer_id']
-    customer = Customer.query.get_or_404(customer_id)
+    customer = t_get_or_404(Customer, customer_id)
     
     data = request.get_json()
     
@@ -547,7 +548,7 @@ def create_loyalty_program():
 @customers_bp.route('/<int:customer_id>/recommendations', methods=['GET'])
 @jwt_required()
 def get_customer_recommendations(customer_id):
-    customer = Customer.query.get_or_404(customer_id)
+    customer = t_get_or_404(Customer, customer_id)
     
     # AI personalized recommendations
     product_recommendations = ai_customer.recommend_products(customer.to_dict())
@@ -674,7 +675,7 @@ def get_predictive_behavior():
 @customers_bp.route('/<int:customer_id>/feedback', methods=['POST'])
 @jwt_required()
 def analyze_feedback(customer_id):
-    customer = Customer.query.get_or_404(customer_id)
+    customer = t_get_or_404(Customer, customer_id)
     data = request.get_json()
     
     # AI feedback analysis

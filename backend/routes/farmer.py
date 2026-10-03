@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import User, Farmer, FarmerContract, Payment
 from models.farmer_edit_request import FarmerEditRequest
 from extensions import db
+from services.tenant_scope import tq, t_get, t_get_or_404
 from datetime import datetime, timedelta
 from utils import current_user
 import json
@@ -43,7 +44,7 @@ def register_farmer():
                 }), 400
 
         # Check for duplicate phone number
-        existing_farmer = Farmer.query.filter_by(phone=data['phone']).first()
+        existing_farmer = tq(Farmer).filter_by(phone=data['phone']).first()
         if existing_farmer:
             return jsonify({
                 'success': False,
@@ -52,7 +53,7 @@ def register_farmer():
 
         # Generate farmer code
         district_code = data['district'][:3].upper()
-        farmer_count = Farmer.query.filter_by(district=data['district']).count()
+        farmer_count = tq(Farmer).filter_by(district=data['district']).count()
         farmer_code = f"{district_code}{farmer_count + 1:04d}"
 
         # Create farmer
@@ -108,7 +109,7 @@ def register_farmer():
 @farmer_bp.route('/list', methods=['GET'])
 @jwt_required()
 def get_farmers():
-    farmers = Farmer.query.all()
+    farmers = tq(Farmer).all()
 
     return jsonify({
         'farmers': [farmer.to_dict() for farmer in farmers],
@@ -122,23 +123,23 @@ def get_farmers():
 @farmer_bp.route('/<int:farmer_id>', methods=['GET'])
 @jwt_required()
 def get_farmer_details(farmer_id):
-    farmer = Farmer.query.get_or_404(farmer_id)
+    farmer = t_get_or_404(Farmer, farmer_id)
     contracts = []
     procurements = []
     payments = []
     try:
-        contracts = FarmerContract.query.filter_by(farmer_id=farmer_id).all()
+        contracts = tq(FarmerContract).filter_by(farmer_id=farmer_id).all()
     except Exception:
         db.session.rollback()
     try:
         from models.inventory import PaddyStock
-        procurements = PaddyStock.query.filter_by(farmer_id=farmer_id).order_by(
+        procurements = tq(PaddyStock).filter_by(farmer_id=farmer_id).order_by(
             PaddyStock.purchase_date.desc()
         ).limit(10).all()
     except Exception:
         db.session.rollback()
     try:
-        payments = Payment.query.filter_by(farmer_id=farmer_id).all()
+        payments = tq(Payment).filter_by(farmer_id=farmer_id).all()
     except Exception:
         db.session.rollback()
 
@@ -174,7 +175,7 @@ def update_farmer(farmer_id):
         reason = data.pop('edit_reason', 'Information update')
 
         # Get farmer
-        farmer = Farmer.query.get_or_404(farmer_id)
+        farmer = t_get_or_404(Farmer, farmer_id)
 
         # Get current farmer data
         original_data = farmer.to_dict()
@@ -262,7 +263,7 @@ def get_edit_requests():
         if farmer_id:
             requests = FarmerEditRequest.get_requests_by_farmer(farmer_id)
         elif status == 'all':
-            requests = FarmerEditRequest.query.order_by(FarmerEditRequest.created_at.desc()).all()
+            requests = tq(FarmerEditRequest).order_by(FarmerEditRequest.created_at.desc()).all()
         else:
             requests = FarmerEditRequest.get_requests_by_status(status)
 
@@ -290,7 +291,7 @@ def approve_edit_request(request_id):
         data = request.get_json()
         comments = data.get('comments', '')
 
-        edit_request = FarmerEditRequest.query.get_or_404(request_id)
+        edit_request = t_get_or_404(FarmerEditRequest, request_id)
 
         if edit_request.status != 'pending':
             return jsonify({
@@ -299,7 +300,7 @@ def approve_edit_request(request_id):
             }), 400
 
         # Get farmer and apply changes
-        farmer = Farmer.query.get(edit_request.farmer_id)
+        farmer = t_get(Farmer, edit_request.farmer_id)
         if not farmer:
             return jsonify({
                 'success': False,
@@ -351,7 +352,7 @@ def reject_edit_request(request_id):
                 'message': 'Rejection reason is required'
             }), 400
 
-        edit_request = FarmerEditRequest.query.get_or_404(request_id)
+        edit_request = t_get_or_404(FarmerEditRequest, request_id)
 
         if edit_request.status != 'pending':
             return jsonify({
@@ -397,7 +398,7 @@ def get_contracts():
         farmer_id = request.args.get('farmer_id')
         status = request.args.get('status', 'active')
 
-        query = FarmerContract.query
+        query = tq(FarmerContract)
 
         if farmer_id:
             query = query.filter_by(farmer_id=farmer_id)
@@ -414,7 +415,7 @@ def get_contracts():
             contract_dict = contract.to_dict()
 
             # Get farmer name
-            farmer = Farmer.query.get(contract.farmer_id)
+            farmer = t_get(Farmer, contract.farmer_id)
             contract_dict['farmer_name'] = farmer.name if farmer else 'Unknown'
 
             # Map fields for frontend compatibility
@@ -463,7 +464,7 @@ def update_contract(contract_id):
         data = request.get_json()
 
         # Get contract
-        contract = FarmerContract.query.get_or_404(contract_id)
+        contract = t_get_or_404(FarmerContract, contract_id)
 
         # Update fields if provided
         if 'quantity_committed' in data:
@@ -484,7 +485,7 @@ def update_contract(contract_id):
         db.session.commit()
 
         # Get farmer name for response
-        farmer = Farmer.query.get(contract.farmer_id)
+        farmer = t_get(Farmer, contract.farmer_id)
         contract_dict = contract.to_dict()
         contract_dict['farmer_name'] = farmer.name if farmer else 'Unknown'
 
@@ -520,7 +521,7 @@ def create_contract():
                 }), 400
 
         # Verify farmer exists
-        farmer = Farmer.query.get(data['farmer_id'])
+        farmer = t_get(Farmer, data['farmer_id'])
         if not farmer:
             return jsonify({
                 'success': False,
@@ -528,7 +529,7 @@ def create_contract():
             }), 404
 
         # Generate contract number
-        contract_count = FarmerContract.query.count()
+        contract_count = tq(FarmerContract).count()
         contract_number = f"CON{contract_count + 1:06d}"
 
         # Create contract
@@ -583,7 +584,7 @@ def get_procurements():
         # Import PaddyStock model
         from models.inventory import PaddyStock
 
-        query = PaddyStock.query
+        query = tq(PaddyStock)
 
         if farmer_id:
             query = query.filter_by(farmer_id=farmer_id)
@@ -601,7 +602,7 @@ def get_procurements():
         procurement_list = []
         for procurement in procurements:
             # Get farmer name
-            farmer = Farmer.query.get(procurement.farmer_id)
+            farmer = t_get(Farmer, procurement.farmer_id)
             farmer_name = farmer.name if farmer else 'Unknown'
 
             procurement_list.append({
@@ -649,7 +650,7 @@ def record_procurement():
                 }), 400
 
         # Verify farmer exists
-        farmer = Farmer.query.get(data['farmer_id'])
+        farmer = t_get(Farmer, data['farmer_id'])
         if not farmer:
             return jsonify({
                 'success': False,
@@ -660,7 +661,7 @@ def record_procurement():
         from models.inventory import PaddyStock
 
         # Generate stock ID
-        stock_count = PaddyStock.query.count()
+        stock_count = tq(PaddyStock).count()
         stock_id = f"STOCK{stock_count + 1:06d}"
 
         # Calculate total amount
@@ -741,7 +742,7 @@ def process_payment():
         created_by=user.id if user else None
     )
     db.session.add(payment)
-    farmer = Farmer.query.get(data['farmer_id'])
+    farmer = t_get(Farmer, data['farmer_id'])
     if farmer:
         farmer.outstanding_amount = max(0, (farmer.outstanding_amount or 0) - amount)
     db.session.commit()
@@ -772,8 +773,8 @@ def get_farmer_analytics():
 
         # Get basic counts with error handling
         try:
-            total_farmers = Farmer.query.count()
-            active_farmers = Farmer.query.filter_by(is_active=True).count()
+            total_farmers = tq(Farmer).count()
+            active_farmers = tq(Farmer).filter_by(is_active=True).count()
         except Exception as e:
             print(f"[WARN] Error getting farmer counts: {e}")
             total_farmers = 0
@@ -781,8 +782,8 @@ def get_farmer_analytics():
 
         # Get contract analytics with error handling
         try:
-            active_contracts = FarmerContract.query.filter_by(status='active').count()
-            total_contracts = FarmerContract.query.count()
+            active_contracts = tq(FarmerContract).filter_by(status='active').count()
+            total_contracts = tq(FarmerContract).count()
         except Exception as e:
             print(f"[WARN] Error getting contract counts: {e}")
             active_contracts = 0
@@ -795,9 +796,9 @@ def get_farmer_analytics():
         try:
             # Try to import PaddyStock model
             from models.inventory import PaddyStock
-            total_procurement_qty = db.session.query(db.func.sum(PaddyStock.quantity)).scalar() or 0
-            total_procurement_records = PaddyStock.query.count()
-            total_procurement_value = db.session.query(
+            total_procurement_qty = tq(PaddyStock).with_entities(db.func.sum(PaddyStock.quantity)).scalar() or 0
+            total_procurement_records = tq(PaddyStock).count()
+            total_procurement_value = tq(PaddyStock).with_entities(
                 db.func.sum(PaddyStock.quantity * PaddyStock.purchase_price)
             ).scalar() or 0
         except ImportError:
@@ -813,7 +814,7 @@ def get_farmer_analytics():
                 Payment.payment_category == 'farmer_payment',
                 Payment.status == 'cleared'
             ).scalar() or 0
-            payment_records = Payment.query.filter(Payment.payment_category == 'farmer_payment').count()
+            payment_records = tq(Payment).filter(Payment.payment_category == 'farmer_payment').count()
         except Exception as e:
             print(f"[WARN] Error getting payment data: {e}")
 
@@ -836,13 +837,13 @@ def get_farmer_analytics():
         recent_procurements = 0
         try:
             thirty_days_ago = datetime.utcnow() - timedelta(days=30)
-            recent_farmers = Farmer.query.filter(Farmer.created_at >= thirty_days_ago).count()
-            recent_contracts = FarmerContract.query.filter(FarmerContract.created_at >= thirty_days_ago).count()
+            recent_farmers = tq(Farmer).filter(Farmer.created_at >= thirty_days_ago).count()
+            recent_contracts = tq(FarmerContract).filter(FarmerContract.created_at >= thirty_days_ago).count()
 
             # Only try to get recent procurements if PaddyStock is available
             try:
                 from models.inventory import PaddyStock
-                recent_procurements = PaddyStock.query.filter(PaddyStock.purchase_date >= thirty_days_ago).count()
+                recent_procurements = tq(PaddyStock).filter(PaddyStock.purchase_date >= thirty_days_ago).count()
             except ImportError:
                 recent_procurements = 0
         except Exception as e:
@@ -989,7 +990,7 @@ def verify_farmer(farmer_id):
             }), 403
         
         data = request.get_json()
-        farmer = Farmer.query.get_or_404(farmer_id)
+        farmer = t_get_or_404(Farmer, farmer_id)
         
         # Update verification status
         farmer.is_verified = data.get('is_verified', True)

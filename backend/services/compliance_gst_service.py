@@ -10,6 +10,7 @@ from decimal import Decimal, ROUND_HALF_UP
 import re
 
 from extensions import db
+from services.tenant_scope import tq, t_get, t_get_or_404
 from models import Transaction, Invoice, Customer, Farmer, ProductionBatch
 
 class ComplianceGSTService:
@@ -110,7 +111,7 @@ class ComplianceGSTService:
                     return {'success': False, 'error': f'Missing required field: {field}'}
             
             # Get customer details
-            customer = Customer.query.get(invoice_data['customer_id'])
+            customer = t_get(Customer, invoice_data['customer_id'])
             if not customer:
                 return {'success': False, 'error': 'Customer not found'}
             
@@ -232,7 +233,7 @@ class ComplianceGSTService:
                 end_date = datetime(year, month + 1, 1) - timedelta(days=1)
             
             # Get all invoices for the period
-            invoices = Invoice.query.filter(
+            invoices = tq(Invoice).filter(
                 Invoice.invoice_date >= start_date,
                 Invoice.invoice_date <= end_date
             ).all()
@@ -249,7 +250,7 @@ class ComplianceGSTService:
                 if not invoice_data:
                     continue
                 
-                customer = Customer.query.get(invoice.customer_id)
+                customer = t_get(Customer, invoice.customer_id)
                 customer_gstin = getattr(customer, 'gstin', '') if customer else ''
                 
                 invoice_summary = {
@@ -313,7 +314,7 @@ class ComplianceGSTService:
                 end_date = datetime(year, month + 1, 1) - timedelta(days=1)
             
             # Get outward supplies (sales)
-            sales_invoices = Invoice.query.filter(
+            sales_invoices = tq(Invoice).filter(
                 Invoice.invoice_date >= start_date,
                 Invoice.invoice_date <= end_date
             ).all()
@@ -875,13 +876,13 @@ class ComplianceGSTService:
             end_date = datetime.fromisoformat(period['end_date'])
 
             # Get all transactions in the period
-            transactions = Transaction.query.filter(
+            transactions = tq(Transaction).filter(
                 Transaction.transaction_date >= start_date,
                 Transaction.transaction_date <= end_date
             ).all()
 
             # Get all invoices in the period
-            invoices = Invoice.query.filter(
+            invoices = tq(Invoice).filter(
                 Invoice.invoice_date >= start_date,
                 Invoice.invoice_date <= end_date
             ).all()
@@ -1172,7 +1173,7 @@ class ComplianceGSTService:
             end_date = datetime.fromisoformat(period['end_date'])
 
             # Get all invoices in the period
-            invoices = Invoice.query.filter(
+            invoices = tq(Invoice).filter(
                 Invoice.invoice_date >= start_date,
                 Invoice.invoice_date <= end_date
             ).all()
@@ -1279,10 +1280,10 @@ class ComplianceGSTService:
 
             from models.gst_filing import GstFilingRecord
             from models.financial import Invoice
-            filings = GstFilingRecord.query.order_by(GstFilingRecord.recorded_at.desc()).limit(20).all()
+            filings = tq(GstFilingRecord).order_by(GstFilingRecord.recorded_at.desc()).limit(20).all()
             recent_activities = [row.to_dict() for row in filings]
             gst_collected = 0.0
-            for invoice in Invoice.query.all():
+            for invoice in tq(Invoice).all():
                 gst_collected += float(getattr(invoice, 'gst_amount', 0) or getattr(invoice, 'tax_amount', 0) or 0)
             metrics = {
                 'recorded_checklist_rows': len(filings),
@@ -1357,7 +1358,7 @@ class ComplianceGSTService:
             current_date = datetime.utcnow()
             start_date = current_date - timedelta(days=30)
 
-            invoices = Invoice.query.filter(
+            invoices = tq(Invoice).filter(
                 Invoice.invoice_date >= start_date
             ).all()
 
@@ -1374,7 +1375,7 @@ class ComplianceGSTService:
                     continue
 
                 # Check if customer GSTIN is present for B2B
-                customer = Customer.query.get(invoice.customer_id)
+                customer = t_get(Customer, invoice.customer_id)
                 if customer and hasattr(customer, 'gstin') and customer.gstin:
                     # B2B invoice - check compliance
                     if not invoice_data.get('customer_details', {}).get('gstin'):
@@ -1418,7 +1419,7 @@ class ComplianceGSTService:
                 issues.append(f'{len(duplicate_invoices)} duplicate invoice numbers found')
 
             # Check for missing customer details
-            customers_without_details = Customer.query.filter(
+            customers_without_details = tq(Customer).filter(
                 (Customer.phone == None) | (Customer.email == None)
             ).count()
 
@@ -1427,7 +1428,7 @@ class ComplianceGSTService:
                 issues.append(f'{customers_without_details} customers missing contact details')
 
             # Check for transactions without proper categorization
-            uncategorized_transactions = Transaction.query.filter(
+            uncategorized_transactions = tq(Transaction).filter(
                 (Transaction.category == None) | (Transaction.category == '')
             ).count()
 

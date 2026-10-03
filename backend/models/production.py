@@ -12,6 +12,7 @@ class ProductionBatch(db.Model):
     __tablename__ = 'production_batches'
     
     id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.String(36), index=True)
     batch_number = db.Column(db.String(50), unique=True, nullable=False)
     paddy_stock_id = db.Column(db.Integer, db.ForeignKey('paddy_stock.id'), nullable=False)
     
@@ -268,6 +269,7 @@ class QualityTest(db.Model):
     __tablename__ = 'quality_tests'
     
     id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.String(36), index=True)
     test_id = db.Column(db.String(50), unique=True, nullable=False)
     batch_id = db.Column(db.Integer, db.ForeignKey('production_batches.id'))
     sample_type = db.Column(db.String(20))  # input_paddy, output_rice, final_product

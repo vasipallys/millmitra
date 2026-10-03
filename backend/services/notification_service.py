@@ -39,7 +39,8 @@ def publish(payload, owner_id=None):
 
 
 def visible_query(user_id):
-    return Notification.query.filter(
+    from services.tenant_scope import tq
+    return tq(Notification).filter(
         or_(Notification.user_id.is_(None), Notification.user_id == user_id)
     )
 
@@ -191,7 +192,8 @@ def notify_low_product_stock(stock):
         'Product',
     )
     link = f'/inventory?stock={getattr(stock, "id", "")}'
-    existing = Notification.query.filter(
+    from services.tenant_scope import tq
+    existing = tq(Notification).filter(
         Notification.category == 'inventory',
         Notification.link == link,
         Notification.read_at.is_(None),

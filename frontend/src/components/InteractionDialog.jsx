@@ -6,9 +6,10 @@ import {
 } from '@mui/material';
 import { customerService } from '../services/customerService';
 import { useI18n } from '../i18n/I18nContext';
+import LookupSelect from './common/LookupSelect';
 
 const InteractionDialog = ({ open, onClose, customer, onSubmit, loading }) => {
-  const { t, statusLabel } = useI18n();
+  const { t } = useI18n();
   const [formData, setFormData] = useState({
     interaction_type: 'call',
     subject: '',
@@ -83,22 +84,13 @@ const InteractionDialog = ({ open, onClose, customer, onSubmit, loading }) => {
         <DialogContent>
           {submitError && <Alert severity="error">{submitError}</Alert>}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <FormControl fullWidth>
-              <InputLabel>{t('interactionType')}</InputLabel>
-              <Select
-                value={formData.interaction_type}
-                onChange={handleChange('interaction_type')}
-                required
-              >
-                <MenuItem value="call">{t('phoneCall')}</MenuItem>
-                <MenuItem value="email">{t('email')}</MenuItem>
-                <MenuItem value="meeting">{t('meeting')}</MenuItem>
-                <MenuItem value="complaint">{t('complaint')}</MenuItem>
-                <MenuItem value="inquiry">{t('inquiry')}</MenuItem>
-                <MenuItem value="feedback">{t('feedback')}</MenuItem>
-                <MenuItem value="support">{t('supportRequest')}</MenuItem>
-              </Select>
-            </FormControl>
+            <LookupSelect
+              group="interaction_type"
+              label={t('interactionType')}
+              value={formData.interaction_type}
+              onChange={handleChange('interaction_type')}
+              required
+            />
 
             <TextField
               fullWidth
@@ -148,31 +140,21 @@ const InteractionDialog = ({ open, onClose, customer, onSubmit, loading }) => {
             )}
 
             <Box sx={{ display: 'flex', gap: 2 }}>
-              <FormControl sx={{ minWidth: 120 }}>
-                <InputLabel>{t('priority')}</InputLabel>
-                <Select
-                  value={formData.priority}
-                  onChange={handleChange('priority')}
-                >
-                  <MenuItem value="low">{t('priorityLow')}</MenuItem>
-                  <MenuItem value="medium">{t('priorityMedium')}</MenuItem>
-                  <MenuItem value="high">{t('priorityHigh')}</MenuItem>
-                  <MenuItem value="urgent">{t('priorityUrgent')}</MenuItem>
-                </Select>
-              </FormControl>
+              <LookupSelect
+                group="priority"
+                label={t('priority')}
+                value={formData.priority}
+                onChange={handleChange('priority')}
+                sx={{ minWidth: 120 }}
+              />
 
-              <FormControl sx={{ minWidth: 120 }}>
-                <InputLabel>{t('status')}</InputLabel>
-                <Select
-                  value={formData.status}
-                  onChange={handleChange('status')}
-                >
-                  <MenuItem value="open">{statusLabel('open')}</MenuItem>
-                  <MenuItem value="in_progress">{statusLabel('in_progress')}</MenuItem>
-                  <MenuItem value="resolved">{statusLabel('resolved')}</MenuItem>
-                  <MenuItem value="closed">{statusLabel('closed')}</MenuItem>
-                </Select>
-              </FormControl>
+              <LookupSelect
+                group="interaction_status"
+                label={t('status')}
+                value={formData.status}
+                onChange={handleChange('status')}
+                sx={{ minWidth: 120 }}
+              />
             </Box>
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>

@@ -10,6 +10,7 @@ import * as Yup from 'yup';
 import { useToastNotifications } from '../../hooks/useToastNotifications';
 import ValidationErrorDisplay, { useValidation } from '../common/ValidationErrorDisplay';
 import { useI18n } from '../../i18n/I18nContext';
+import LookupSelect from '../common/LookupSelect';
 
 const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
   const { t } = useI18n();
@@ -440,27 +441,13 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
               />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>{t('primaryCrop')}</InputLabel>
-                <Select
-                  name="primary_crop"
-                  value={formik.values.primary_crop}
-                  onChange={formik.handleChange}
-                  label={t('primaryCrop')}
-                  MenuProps={{
-                    PaperProps: {
-                      style: {
-                        maxHeight: 200,
-                      },
-                    },
-                  }}
-                >
-                  <MenuItem value="paddy">{t('cropPaddy')}</MenuItem>
-                  <MenuItem value="wheat">{t('cropWheat')}</MenuItem>
-                  <MenuItem value="sugarcane">{t('cropSugarcane')}</MenuItem>
-                  <MenuItem value="cotton">{t('cropCotton')}</MenuItem>
-                </Select>
-              </FormControl>
+              <LookupSelect
+                group="crop_type"
+                name="primary_crop"
+                label={t('primaryCrop')}
+                value={formik.values.primary_crop}
+                onChange={formik.handleChange}
+              />
             </Grid>
           </Grid>
         );

@@ -7,6 +7,7 @@ import {
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { useI18n } from '../../i18n/I18nContext';
+import LookupSelect from '../common/LookupSelect';
 
 const validationSchema = Yup.object({
   name: Yup.string().required('Customer name is required'),
@@ -149,23 +150,16 @@ const CreateCustomerDialog = ({ open, onClose, onSubmit }) => {
             </Grid>
             
             <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                select
+              <LookupSelect
+                group="customer_type"
                 name="customer_type"
                 label={t('customerType')}
                 value={formik.values.customer_type}
                 onChange={formik.handleChange}
+                required
                 error={formik.touched.customer_type && Boolean(formik.errors.customer_type)}
                 helperText={formik.touched.customer_type && formik.errors.customer_type}
-                required
-              >
-                {customerTypes.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </TextField>
+              />
             </Grid>
 
             {/* Contact Information */}
@@ -284,20 +278,13 @@ const CreateCustomerDialog = ({ open, onClose, onSubmit }) => {
             </Grid>
             
             <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                select
+              <LookupSelect
+                group="payment_terms"
                 name="payment_terms"
                 label={t('paymentTerms')}
                 value={formik.values.payment_terms}
                 onChange={formik.handleChange}
-              >
-                {paymentTerms.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </TextField>
+              />
             </Grid>
           </Grid>
         </DialogContent>

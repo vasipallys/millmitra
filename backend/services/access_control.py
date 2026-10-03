@@ -17,6 +17,7 @@ PERMISSIONS = (
     'finance',
     'settings',
     'users',
+    'lookups',
     'preview',
 )
 
@@ -31,7 +32,7 @@ ROLES = (
 
 DEFAULT_MATRIX = {
     'admin': list(PERMISSIONS),
-    'manager': [p for p in PERMISSIONS if p != 'users'],
+    'manager': [p for p in PERMISSIONS if p not in ('users', 'lookups')],
     'operator': ['dashboard', 'mill_flow', 'farmers', 'inventory', 'production', 'settings'],
     'quality_control': ['dashboard', 'production', 'quality', 'settings'],
     'quality_controller': ['dashboard', 'production', 'quality', 'settings'],
@@ -70,11 +71,21 @@ def default_permissions(role):
     return list(DEFAULT_MATRIX.get(normalize_role(role), []))
 
 
+def _permission_tenant_id():
+    from services.tenant_context import current_tenant_id
+    return current_tenant_id()
+
+
 def has_permission(user, permission):
     if not user or not user.is_active:
         return False
-    role = normalize_role(user.role)
-    row = RolePermission.query.filter_by(role=role, permission=permission).first()
+    from services.tenant_context import current_tenant_role
+    role = normalize_role(current_tenant_role(user) or user.role)
+    query = RolePermission.query.filter_by(role=role, permission=permission)
+    tid = _permission_tenant_id()
+    if tid:
+        query = query.filter_by(tenant_id=tid)
+    row = query.first()
     if row is not None:
         return bool(row.allowed)
     return permission in DEFAULT_MATRIX.get(role, [])
@@ -84,16 +95,27 @@ def permissions_for(user):
     return [perm for perm in PERMISSIONS if has_permission(user, perm)]
 
 
-def ensure_role_permissions():
+def ensure_role_permissions(tenant_id=None):
+    from services.tenant_context import current_tenant_id
+    from services.tenant_migration import DEFAULT_SLUG
+    tid = tenant_id or current_tenant_id()
+    if not tid:
+        from models.tenant import Tenant
+        default = Tenant.query.filter_by(slug=DEFAULT_SLUG).first()
+        tid = default.id if default else None
     created = 0
     for role, perms in DEFAULT_MATRIX.items():
         if role == 'quality_controller':
             continue
         for perm in PERMISSIONS:
-            existing = RolePermission.query.filter_by(role=role, permission=perm).first()
+            query = RolePermission.query.filter_by(role=role, permission=perm)
+            if tid:
+                query = query.filter_by(tenant_id=tid)
+            existing = query.first()
             if existing:
                 continue
             db.session.add(RolePermission(
+                tenant_id=tid,
                 role=role,
                 permission=perm,
                 allowed=perm in perms,
@@ -105,7 +127,8 @@ def ensure_role_permissions():
 
 
 def matrix_payload():
-    rows = RolePermission.query.all()
+    from services.tenant_scope import tq
+    rows = tq(RolePermission).all()
     stored = {(row.role, row.permission): bool(row.allowed) for row in rows}
     matrix = {}
     for role in ROLES:
@@ -127,11 +150,15 @@ def set_permission(role, permission, allowed):
     role = normalize_role(role)
     if role not in ROLES or permission not in PERMISSIONS:
         return None
-    row = RolePermission.query.filter_by(role=role, permission=permission).first()
+    tid = _permission_tenant_id()
+    query = RolePermission.query.filter_by(role=role, permission=permission)
+    if tid:
+        query = query.filter_by(tenant_id=tid)
+    row = query.first()
     if row:
         row.allowed = bool(allowed)
     else:
-        row = RolePermission(role=role, permission=permission, allowed=bool(allowed))
+        row = RolePermission(tenant_id=tid, role=role, permission=permission, allowed=bool(allowed))
         db.session.add(row)
     db.session.commit()
     return row
@@ -174,6 +201,12 @@ def permission_for_path(path, method):
         return 'dashboard'
     if path.startswith('/api/analytics') or path.startswith('/api/compliance'):
         return 'preview'
+    if path.startswith('/api/lookups/admin'):
+        return 'lookups'
+    if path.startswith('/api/lookups'):
+        return 'lookups' if write else None
+    if path.startswith('/api/tenants'):
+        return None
     if path.startswith('/api/auth/me') or path.startswith('/api/auth/logout') or path.startswith('/api/notifications'):
         return None
     if write:
@@ -213,6 +246,11 @@ def register_access_guard(app):
         except Exception:
             return jsonify({'success': False, 'error': 'Unauthorized', 'message': 'Unauthorized'}), 401
         user = current_user()
+        if user:
+            from services.tenant_context import bind_tenant
+            bound = bind_tenant(user, path)
+            if bound is not None:
+                return bound
         permission = permission_for_path(path, request.method)
         if permission is None:
             return None

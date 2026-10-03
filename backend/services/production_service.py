@@ -2,6 +2,7 @@ from models.production import ProductionBatch, ProductionStep, QualityTest, Prod
 from models.inventory import PaddyStock, ProductStock
 from models.user import User
 from extensions import db
+from services.tenant_scope import tq, t_get, t_get_or_404
 from datetime import datetime, timedelta
 from sqlalchemy import func, and_, or_
 import json
@@ -11,7 +12,7 @@ class ProductionService:
     def get_batches(self, status=None, start_date=None, end_date=None, page=1, per_page=20):
         """Get production batches with filtering and pagination"""
         
-        query = ProductionBatch.query
+        query = tq(ProductionBatch)
         
         if status:
             query = query.filter(ProductionBatch.status == status)
@@ -251,13 +252,13 @@ class ProductionService:
         """Get current production status overview"""
         
         # Active batches
-        active_batches = ProductionBatch.query.filter(
+        active_batches = tq(ProductionBatch).filter(
             ProductionBatch.status == 'in_progress'
         ).all()
         
         # Today's completed batches
         today = datetime.utcnow().date()
-        completed_today = ProductionBatch.query.filter(
+        completed_today = tq(ProductionBatch).filter(
             and_(
                 ProductionBatch.status == 'completed',
                 func.date(ProductionBatch.end_time) == today
@@ -291,7 +292,7 @@ class ProductionService:
         start_date = datetime.utcnow() - timedelta(days=days)
         
         # Batch analytics
-        batches = ProductionBatch.query.filter(
+        batches = tq(ProductionBatch).filter(
             ProductionBatch.created_at >= start_date
         ).all()
         
@@ -369,7 +370,7 @@ class ProductionService:
     def _generate_batch_number(self):
         """Generate unique batch number"""
         prefix = f"B{datetime.now().strftime('%Y%m')}"
-        count = ProductionBatch.query.filter(
+        count = tq(ProductionBatch).filter(
             ProductionBatch.batch_number.like(f"{prefix}%")
         ).count() + 1
         return f"{prefix}{count:04d}"
@@ -482,7 +483,7 @@ class ProductionService:
     
     def _get_quality_statistics(self, date):
         """Get quality statistics for a specific date"""
-        tests = QualityTest.query.filter(
+        tests = tq(QualityTest).filter(
             func.date(QualityTest.test_date) == date
         ).all()
         
@@ -517,7 +518,7 @@ class ProductionService:
         for i in range(days):
             date = start_date + timedelta(days=i)
             
-            batches = ProductionBatch.query.filter(
+            batches = tq(ProductionBatch).filter(
                 and_(
                     ProductionBatch.status == 'completed',
                     func.date(ProductionBatch.end_time) == date.date()
@@ -560,7 +561,7 @@ class ProductionService:
     
     def _get_quality_trend(self, start_date):
         """Get quality trend data"""
-        tests = QualityTest.query.filter(
+        tests = tq(QualityTest).filter(
             QualityTest.test_date >= start_date
         ).all()
         

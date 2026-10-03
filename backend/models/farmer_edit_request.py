@@ -11,6 +11,7 @@ class FarmerEditRequest(db.Model):
     __tablename__ = 'farmer_edit_requests'
     
     id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.String(36), index=True)
     
     # Reference to farmer being edited
     farmer_id = db.Column(db.Integer, db.ForeignKey('farmers.id'), nullable=False)

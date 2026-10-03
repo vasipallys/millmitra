@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import PaddyStock, ProductStock, StockMovement, User
 from models.farmer import Farmer
 from extensions import db
+from services.tenant_scope import tq, t_get, t_get_or_404
 from datetime import datetime
 from utils import current_user, current_user_id
 import uuid
@@ -63,7 +64,7 @@ ai_inventory = _ServiceStub()
 
 
 def _ensure_direct_farmer(user):
-    farmer = Farmer.query.filter_by(farmer_code='DIRECT').first()
+    farmer = tq(Farmer).filter_by(farmer_code='DIRECT').first()
     if farmer:
         return farmer
     farmer = Farmer(
@@ -88,7 +89,7 @@ def _stock_id(prefix):
 @jwt_required()
 def get_paddy():
     """Paddy stock list used by the Inventory page."""
-    paddy_stocks = PaddyStock.query.order_by(PaddyStock.purchase_date.desc()).all()
+    paddy_stocks = tq(PaddyStock).order_by(PaddyStock.purchase_date.desc()).all()
     total_qty = sum((stock.remaining_quantity if stock.remaining_quantity is not None else stock.quantity) or 0 for stock in paddy_stocks)
     total_value = sum(((stock.remaining_quantity if stock.remaining_quantity is not None else stock.quantity) or 0) * (stock.purchase_price or 0) for stock in paddy_stocks)
     return jsonify({
@@ -114,7 +115,7 @@ def add_paddy():
 
         farmer = None
         if data.get('farmer_id'):
-            farmer = Farmer.query.get(data.get('farmer_id'))
+            farmer = t_get(Farmer, data.get('farmer_id'))
         if not farmer:
             farmer = _ensure_direct_farmer(user)
 
@@ -153,7 +154,7 @@ def add_paddy():
 @inventory_bp.route('/paddy/<int:paddy_id>', methods=['PUT'])
 @jwt_required()
 def update_paddy(paddy_id):
-    stock = PaddyStock.query.get_or_404(paddy_id)
+    stock = t_get_or_404(PaddyStock, paddy_id)
     data = request.get_json() or {}
     for field in ('variety', 'quality_grade', 'warehouse_id'):
         if field in data:
@@ -175,7 +176,7 @@ def update_paddy(paddy_id):
 @jwt_required()
 def get_products():
     """Product stock list used by the Inventory page."""
-    product_stocks = ProductStock.query.order_by(ProductStock.created_at.desc()).all()
+    product_stocks = tq(ProductStock).order_by(ProductStock.created_at.desc()).all()
     total_qty = sum(stock.quantity or 0 for stock in product_stocks)
     total_value = sum((stock.quantity or 0) * (stock.market_price or stock.unit_cost or 0) for stock in product_stocks)
     return jsonify({
@@ -217,7 +218,7 @@ def add_product():
 @inventory_bp.route('/products/<int:product_id>', methods=['PUT'])
 @jwt_required()
 def update_product(product_id):
-    stock = ProductStock.query.get_or_404(product_id)
+    stock = t_get_or_404(ProductStock, product_id)
     data = request.get_json() or {}
     for field in ('product_name', 'product_type', 'variety', 'grade', 'quantity', 'market_price', 'unit_cost', 'warehouse_id', 'storage_location'):
         if field in data:
@@ -227,8 +228,8 @@ def update_product(product_id):
 
 
 def _inventory_valuation():
-    paddy_stocks = PaddyStock.query.all()
-    product_stocks = ProductStock.query.all()
+    paddy_stocks = tq(PaddyStock).all()
+    product_stocks = tq(ProductStock).all()
     paddy_value = sum(((s.remaining_quantity if s.remaining_quantity is not None else s.quantity) or 0) * (s.purchase_price or 0) for s in paddy_stocks)
     product_value = sum((s.quantity or 0) * (s.market_price or s.unit_cost or 0) for s in product_stocks)
     return {
@@ -243,15 +244,15 @@ def _inventory_valuation():
 def get_inventory_analytics():
     valuation = _inventory_valuation()
     low_stock = 0
-    for stock in ProductStock.query.all():
+    for stock in tq(ProductStock).all():
         threshold = stock.minimum_stock_level or stock.reorder_point or 100
         if (stock.quantity or 0) <= threshold:
             low_stock += 1
     return jsonify({
         **valuation,
         'low_stock_items': low_stock,
-        'paddy_count': PaddyStock.query.count(),
-        'product_count': ProductStock.query.count()
+        'paddy_count': tq(PaddyStock).count(),
+        'product_count': tq(ProductStock).count()
     })
 
 
@@ -259,7 +260,7 @@ def get_inventory_analytics():
 @jwt_required()
 def get_low_stock_alerts_simple():
     alerts = []
-    for stock in ProductStock.query.all():
+    for stock in tq(ProductStock).all():
         threshold = stock.reorder_point or stock.minimum_stock_level or 100
         if (stock.quantity or 0) <= threshold:
             alerts.append({
@@ -269,7 +270,7 @@ def get_low_stock_alerts_simple():
                 'threshold': threshold,
                 'type': 'product'
             })
-    for stock in PaddyStock.query.all():
+    for stock in tq(PaddyStock).all():
         remaining = stock.remaining_quantity if stock.remaining_quantity is not None else stock.quantity
         if (remaining or 0) <= 100:
             alerts.append({
@@ -294,7 +295,7 @@ def get_movements():
     try:
         page = request.args.get('page', 1, type=int)
         per_page = min(request.args.get('per_page', 50, type=int), 200)
-        query = StockMovement.query.order_by(StockMovement.created_at.desc())
+        query = tq(StockMovement).order_by(StockMovement.created_at.desc())
         movement_type = request.args.get('type') or request.args.get('movement_type')
         if movement_type:
             query = query.filter(StockMovement.movement_type == movement_type)
@@ -471,15 +472,15 @@ def create_transaction():
     stock_kind = (data.get('stock_kind') or data.get('item_type') or '').lower()
     stock = None
     if stock_kind == 'paddy':
-        stock = PaddyStock.query.get(stock_id)
+        stock = t_get(PaddyStock, stock_id)
     elif stock_kind == 'product':
-        stock = ProductStock.query.get(stock_id)
+        stock = t_get(ProductStock, stock_id)
     else:
-        stock = ProductStock.query.get(stock_id)
+        stock = t_get(ProductStock, stock_id)
         if stock:
             stock_kind = 'product'
         else:
-            stock = PaddyStock.query.get(stock_id)
+            stock = t_get(PaddyStock, stock_id)
             stock_kind = 'paddy' if stock else stock_kind
     if not stock:
         return jsonify({'success': False, 'message': 'Stock lot not found'}), 404

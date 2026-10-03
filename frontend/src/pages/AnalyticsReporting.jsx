@@ -54,6 +54,7 @@ import DemoBanner from '../components/DemoBanner';
 import PreviewModeToggle from '../components/PreviewModeToggle';
 import { usePreviewMode } from '../hooks/usePreviewMode';
 import { useI18n } from '../i18n/I18nContext';
+import LookupSelect from '../components/common/LookupSelect';
 import { dashboardService } from '../services/dashboardService';
 import { financeService } from '../services/financeService';
 import { productionService } from '../services/productionService';
@@ -800,20 +801,13 @@ const AnalyticsReporting = () => {
       <Dialog open={showReportDialog} onClose={() => setShowReportDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{t('nlReport')}</DialogTitle>
         <DialogContent>
-          <TextField
-            fullWidth
-            select
+          <LookupSelect
+            group="report_type"
             label={t('reportType')}
             value={reportForm.report_type}
             onChange={(e) => setReportForm({ ...reportForm, report_type: e.target.value })}
-            margin="normal"
-          >
-            <MenuItem value="production_summary">{t('reportProduction')}</MenuItem>
-            <MenuItem value="financial_performance">{t('reportFinancial')}</MenuItem>
-            <MenuItem value="quality_analysis">{t('reportQuality')}</MenuItem>
-            <MenuItem value="sales_performance">{t('reportSales')}</MenuItem>
-            <MenuItem value="operational_efficiency">{t('reportOps')}</MenuItem>
-          </TextField>
+            sx={{ mt: 2 }}
+          />
           
           <TextField
             fullWidth
@@ -859,20 +853,13 @@ const AnalyticsReporting = () => {
       <Dialog open={showPredictiveDialog} onClose={() => setShowPredictiveDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{t('runPredictive')}</DialogTitle>
         <DialogContent>
-          <TextField
-            fullWidth
-            select
+          <LookupSelect
+            group="analysis_type"
             label={t('analysisType')}
             value={predictiveForm.analysis_type}
             onChange={(e) => setPredictiveForm({ ...predictiveForm, analysis_type: e.target.value })}
-            margin="normal"
-          >
-            <MenuItem value="production_forecast">{t('analysisForecast')}</MenuItem>
-            <MenuItem value="demand_prediction">{t('analysisDemand')}</MenuItem>
-            <MenuItem value="quality_prediction">{t('analysisQuality')}</MenuItem>
-            <MenuItem value="financial_forecast">{t('analysisFinancial')}</MenuItem>
-            <MenuItem value="market_analysis">{t('analysisMarket')}</MenuItem>
-          </TextField>
+            sx={{ mt: 2 }}
+          />
           
           <TextField
             fullWidth

@@ -27,6 +27,7 @@ export const ROUTE_PERMISSIONS = {
   '/settings': 'settings',
   '/users': 'users',
   '/access': 'users',
+  '/lookups': 'lookups',
   '/quality-control': 'quality',
   '/analytics': 'preview',
   '/financial-intelligence': 'preview',

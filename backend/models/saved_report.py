@@ -10,6 +10,7 @@ class SavedReport(db.Model):
     __tablename__ = 'saved_reports'
 
     id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.String(36), index=True)
     title = db.Column(db.String(200), nullable=False)
     report_type = db.Column(db.String(80))
     payload_json = db.Column(db.Text)

@@ -1,5 +1,6 @@
 from models import PaddyStock, ProductStock, User
 from extensions import db
+from services.tenant_scope import tq, t_get, t_get_or_404
 from datetime import datetime, timedelta
 from sqlalchemy import func, and_, or_
 import uuid
@@ -9,7 +10,7 @@ class InventoryService:
     def get_paddy_stock(self, variety=None, location=None, low_stock=False):
         """Get paddy stock with filtering"""
         
-        query = PaddyStock.query
+        query = tq(PaddyStock)
         
         if variety:
             query = query.filter(PaddyStock.variety == variety)
@@ -73,7 +74,7 @@ class InventoryService:
     def update_paddy_stock(self, stock_id: int, user: User, update_data: dict):
         """Update paddy stock"""
         
-        stock = PaddyStock.query.get_or_404(stock_id)
+        stock = t_get_or_404(PaddyStock, stock_id)
         
         # Track quantity changes
         old_quantity = stock.quantity
@@ -108,7 +109,7 @@ class InventoryService:
     def get_product_stock(self, product_type=None, grade=None, packaging=None):
         """Get product stock with filtering"""
         
-        query = ProductStock.query
+        query = tq(ProductStock)
         
         if product_type:
             query = query.filter(ProductStock.product_type == product_type)
@@ -160,7 +161,7 @@ class InventoryService:
     def get_stock_movements(self, start_date=None, end_date=None, movement_type=None, page=1, per_page=50):
         """Get stock movements with filtering and pagination"""
         
-        query = StockMovement.query
+        query = tq(StockMovement)
         
         if start_date:
             start_dt = datetime.fromisoformat(start_date)
@@ -203,14 +204,14 @@ class InventoryService:
         
         # Update stock quantities
         if movement_data.get('paddy_stock_id'):
-            stock = PaddyStock.query.get(movement_data['paddy_stock_id'])
+            stock = t_get(PaddyStock, movement_data['paddy_stock_id'])
             if movement_data['movement_type'] == 'in':
                 stock.quantity += movement_data['quantity']
             else:
                 stock.quantity -= movement_data['quantity']
         
         if movement_data.get('product_stock_id'):
-            stock = ProductStock.query.get(movement_data['product_stock_id'])
+            stock = t_get(ProductStock, movement_data['product_stock_id'])
             if movement_data['movement_type'] == 'in':
                 stock.quantity += movement_data['quantity']
             else:
@@ -242,7 +243,7 @@ class InventoryService:
         ).group_by(ProductStock.product_type, ProductStock.grade).all()
         
         # Recent movements
-        recent_movements = StockMovement.query.order_by(
+        recent_movements = tq(StockMovement).order_by(
             StockMovement.created_at.desc()
         ).limit(10).all()
         
@@ -505,7 +506,7 @@ class InventoryService:
         }
         
         # Check paddy stock
-        paddy_stocks = PaddyStock.query.all()
+        paddy_stocks = tq(PaddyStock).all()
         for stock in paddy_stocks:
             threshold = reorder_rules.get(f"paddy_{stock.variety}", 100)
             if stock.quantity <= threshold:
@@ -519,7 +520,7 @@ class InventoryService:
                 })
         
         # Check product stock
-        product_stocks = ProductStock.query.all()
+        product_stocks = tq(ProductStock).all()
         for stock in product_stocks:
             threshold = reorder_rules.get(f"product_{stock.product_type}", 50)
             if stock.quantity <= threshold:
@@ -539,7 +540,7 @@ class InventoryService:
     def _generate_batch_number(self):
         """Generate unique batch number"""
         today = datetime.now().strftime('%Y%m%d')
-        count = PaddyStock.query.filter(
+        count = tq(PaddyStock).filter(
             func.date(PaddyStock.created_at) == datetime.now().date()
         ).count()
         return f"PS-{today}-{count + 1:03d}"

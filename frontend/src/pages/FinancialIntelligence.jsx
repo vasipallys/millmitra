@@ -43,6 +43,7 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
 import DemoBanner from '../components/DemoBanner';
 import { useI18n } from '../i18n/I18nContext';
+import LookupSelect from '../components/common/LookupSelect';
 import PreviewModeToggle from '../components/PreviewModeToggle';
 import { usePreviewMode } from '../hooks/usePreviewMode';
 import { financeService } from '../services/financeService';
@@ -762,18 +763,13 @@ const FinancialIntelligence = () => {
             margin="normal"
             type="number"
           />
-          <TextField
-            fullWidth
-            select
+          <LookupSelect
+            group="farmer_payment_type"
             label={t('paymentType')}
             value={paymentForm.payment_type}
             onChange={(e) => setPaymentForm({ ...paymentForm, payment_type: e.target.value })}
-            margin="normal"
-          >
-            <MenuItem value="procurement">{t('payProcurement')}</MenuItem>
-            <MenuItem value="advance">{t('payAdvance')}</MenuItem>
-            <MenuItem value="bonus">{t('payBonus')}</MenuItem>
-          </TextField>
+            sx={{ mt: 2 }}
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowPaymentDialog(false)}>{t('cancel')}</Button>

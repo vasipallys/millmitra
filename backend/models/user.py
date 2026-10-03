@@ -26,6 +26,7 @@ class User(db.Model):
 
     # Account status
     is_active = db.Column(db.Boolean, default=True)
+    is_platform_admin = db.Column(db.Boolean, default=False)
     is_verified = db.Column(db.Boolean, default=False)
     last_login = db.Column(db.DateTime)
     failed_login_attempts = db.Column(db.Integer, default=0)
@@ -235,8 +236,9 @@ class RolePermission(db.Model):
     __tablename__ = 'role_permissions'
 
     id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.String(36), index=True)
     role = db.Column(db.String(50), nullable=False, index=True)
     permission = db.Column(db.String(50), nullable=False)
     allowed = db.Column(db.Boolean, default=True, nullable=False)
 
-    __table_args__ = (db.UniqueConstraint('role', 'permission', name='uq_role_permission'),)
+    __table_args__ = (db.UniqueConstraint('tenant_id', 'role', 'permission', name='uq_role_perm_tenant'),)

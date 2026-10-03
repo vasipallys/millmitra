@@ -85,7 +85,43 @@ Seeded on app startup if missing (passwords of existing users are **not** reset)
 
 Emails such as `admin@ricemill.com` also work. Change these passwords on a real mill PC.
 
+After a restart with this venv, those demo accounts still sign into mill slug **`default`**. The JWT includes that mill’s `tenant_id`.
+
 The **server** enforces the permission matrix. The sidebar hides items the role cannot use. A forbidden URL shows “You don’t have access.” Admin pages: **Users** (`/users`) and **Access** (`/access`).
+
+---
+
+## Tenants (more than one mill)
+
+A **tenant** is one mill / organization. All mills share **one** SQLite file (`backend/instance/rice_mill_erp.db`). Farmers, stock, lookups, invoices, and the Access matrix are **not** shared between mills.
+
+The first mill is created on startup as slug `default`. There is **no** “Add mill” screen. Create a mill with `POST /api/tenants`. Staff with two memberships switch from the **mill name chip** in the navbar.
+
+Operator steps (create, join, switch, backup): [USER_GUIDE — Add a mill](docs/USER_GUIDE.md#46-add-a-mill-tenant) and [Switch mill](docs/USER_GUIDE.md#47-switch-mill).  
+API tables and who can create: [TECHNICAL.md](docs/TECHNICAL.md#tenants-apitenants).  
+Architecture only: [docs/SAAS_ARCHITECTURE.md](docs/SAAS_ARCHITECTURE.md).
+
+**Create a second mill (PowerShell, mill API on port 5000)**
+
+```powershell
+# New mill + new owner account (no token required)
+Invoke-RestMethod -Method POST -Uri http://127.0.0.1:5000/api/tenants `
+  -ContentType 'application/json' `
+  -Body '{"name":"Mill B","slug":"mill-b","username":"adminb","password":"adminb123","email":"adminb@ricemill.com"}'
+
+# Or, while signed in, attach this user as admin of the new mill
+$login = Invoke-RestMethod -Method POST -Uri http://127.0.0.1:5000/api/auth/login `
+  -ContentType 'application/json' `
+  -Body '{"username":"admin","password":"admin123","method":"password"}'
+Invoke-RestMethod -Method POST -Uri http://127.0.0.1:5000/api/tenants `
+  -ContentType 'application/json' `
+  -Headers @{ Authorization = "Bearer $($login.access_token)" } `
+  -Body '{"name":"Mill B","slug":"mill-b"}'
+```
+
+Then sign in as `adminb` / `adminb123`, or click the mill name in the top bar if your account now belongs to two mills.
+
+Settings **Data & Backup** copies the **whole** database file (every mill), not one tenant.
 
 ---
 

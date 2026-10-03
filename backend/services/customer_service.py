@@ -2,6 +2,7 @@ from models.sales import Customer
 from models.sales import SalesOrder
 from models.user import User
 from extensions import db
+from services.tenant_scope import tq, t_get, t_get_or_404
 from datetime import datetime, timedelta
 from sqlalchemy import func, and_, or_
 import csv
@@ -14,7 +15,7 @@ class CustomerService:
     
     def get_customers(self, page=1, per_page=20, search='', segment='', status='active', sort_by='name'):
         """Get customers with filtering and pagination"""
-        query = Customer.query
+        query = tq(Customer)
         
         # Apply filters
         if search:
@@ -169,7 +170,7 @@ class CustomerService:
     
     def get_customer_orders(self, customer_id: int, page: int = 1, per_page: int = 10):
         """Get customer orders with pagination"""
-        orders = SalesOrder.query.filter_by(customer_id=customer_id)\
+        orders = tq(SalesOrder).filter_by(customer_id=customer_id)\
                            .order_by(SalesOrder.order_date.desc())\
                            .paginate(page=page, per_page=per_page, error_out=False)
         
@@ -194,8 +195,8 @@ class CustomerService:
         start_date = datetime.utcnow() - timedelta(days=days)
         
         # Basic metrics
-        total_customers = Customer.query.filter_by(is_active=True).count()
-        new_customers = Customer.query.filter(
+        total_customers = tq(Customer).filter_by(is_active=True).count()
+        new_customers = tq(Customer).filter(
             Customer.created_at >= start_date,
             Customer.is_active == True
         ).count()
@@ -214,13 +215,13 @@ class CustomerService:
         ).count()
         
         # Top customers by value
-        top_customers = Customer.query.filter_by(is_active=True).order_by(
+        top_customers = tq(Customer).filter_by(is_active=True).order_by(
             Customer.lifetime_value.desc()
         ).limit(10).all()
         
         # Inactive customers
         thirty_days_ago = datetime.utcnow() - timedelta(days=30)
-        inactive_customers = Customer.query.filter(
+        inactive_customers = tq(Customer).filter(
             Customer.last_order_date < thirty_days_ago,
             Customer.is_active == True
         ).count()
@@ -320,7 +321,7 @@ class CustomerService:
         ).distinct().count()
         
         # Total customers at start of period
-        total_customers = Customer.query.filter(
+        total_customers = tq(Customer).filter(
             Customer.created_at < period_start,
             Customer.is_active == True
         ).count()
@@ -420,7 +421,7 @@ class CustomerService:
             return {'success': False, 'message': 'Invalid data provided'}
         
         # Update customers
-        updated_count = Customer.query.filter(
+        updated_count = tq(Customer).filter(
             Customer.id.in_(customer_ids)
         ).update(updates, synchronize_session=False)
         
@@ -434,7 +435,7 @@ class CustomerService:
     
     def export_customers(self, format_type: str = 'csv', filters: dict = None):
         """Export customers to CSV/Excel"""
-        query = Customer.query
+        query = tq(Customer)
         
         # Apply filters if provided
         if filters:
@@ -499,7 +500,7 @@ class CustomerService:
             for index, row in df.iterrows():
                 try:
                     # Check if customer already exists
-                    existing = Customer.query.filter_by(phone=row.get('phone')).first()
+                    existing = tq(Customer).filter_by(phone=row.get('phone')).first()
                     if existing:
                         errors.append(f"Row {index + 1}: Customer with phone {row.get('phone')} already exists")
                         continue
@@ -556,14 +557,14 @@ class CustomerService:
         last_month_start = (this_month_start - timedelta(days=1)).replace(day=1)
         
         # Current month stats
-        total_customers = Customer.query.filter_by(is_active=True).count()
-        new_this_month = Customer.query.filter(
+        total_customers = tq(Customer).filter_by(is_active=True).count()
+        new_this_month = tq(Customer).filter(
             Customer.created_at >= this_month_start,
             Customer.is_active == True
         ).count()
         
         # Last month for comparison
-        new_last_month = Customer.query.filter(
+        new_last_month = tq(Customer).filter(
             Customer.created_at >= last_month_start,
             Customer.created_at < this_month_start,
             Customer.is_active == True
@@ -581,14 +582,14 @@ class CustomerService:
         ).count()
         
         # High-value customers
-        high_value_customers = Customer.query.filter(
+        high_value_customers = tq(Customer).filter(
             Customer.lifetime_value > 100000,
             Customer.is_active == True
         ).count()
         
         # Inactive customers (no orders in 60 days)
         sixty_days_ago = datetime.utcnow() - timedelta(days=60)
-        inactive_customers = Customer.query.filter(
+        inactive_customers = tq(Customer).filter(
             Customer.last_order_date < sixty_days_ago,
             Customer.is_active == True
         ).count()

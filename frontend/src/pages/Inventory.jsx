@@ -3,7 +3,7 @@ import {
   Grid, Card, CardContent, Typography, Box, Button, Chip,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField,
-  Select, MenuItem, FormControl, InputLabel, Alert, LinearProgress,
+  Alert, LinearProgress,
   Tabs, Tab, IconButton, Tooltip, Paper
 } from '@mui/material';
 import {
@@ -20,6 +20,7 @@ import ReorderAlerts from '../components/ReorderAlerts';
 import InventoryAnalytics from '../components/InventoryAnalytics';
 import StockMovementDialog from '../components/StockMovementDialog';
 import { PageHeader, PageShell, QueryErrorAlert } from '../components/common/PageChrome';
+import LookupSelect from '../components/common/LookupSelect';
 
 const normalizeStock = (stock, type) => ({
   ...stock,
@@ -525,26 +526,6 @@ const Inventory = () => {
   );
 };
 
-const PADDY_VARIETIES = [
-  { value: 'basmati', label: 'Basmati' },
-  { value: 'jasmine', label: 'Jasmine' },
-  { value: 'long_grain', label: 'Long Grain' },
-  { value: 'short_grain', label: 'Short Grain' },
-];
-
-const PRODUCT_TYPES = [
-  { value: 'basmati_rice', label: 'Basmati Rice' },
-  { value: 'jasmine_rice', label: 'Jasmine Rice' },
-  { value: 'long_grain_rice', label: 'Long Grain Rice' },
-  { value: 'short_grain_rice', label: 'Short Grain Rice' },
-];
-
-const QUALITY_GRADES = [
-  { value: 'A', label: 'Grade A' },
-  { value: 'B', label: 'Grade B' },
-  { value: 'C', label: 'Grade C' },
-];
-
 const SELECT_MENU_PROPS = {
   disablePortal: true,
   disableAutoFocusItem: true,
@@ -568,8 +549,6 @@ const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit,
   const { t } = useI18n();
   const [formData, setFormData] = useState(emptyStockForm);
   const validation = useValidation();
-  const varietyOptions = stockType === 'paddy' ? PADDY_VARIETIES : PRODUCT_TYPES;
-
   const validateField = (fieldName, value) => {
     switch (fieldName) {
       case 'variety':
@@ -685,40 +664,25 @@ const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit,
 
         <Grid container spacing={2} sx={{ mt: 1 }}>
           <Grid item xs={12}>
-            <FormControl fullWidth>
-              <InputLabel id="stock-type-label">{t('stockType')}</InputLabel>
-              <Select
-                labelId="stock-type-label"
-                label={t('stockType')}
-                value={stockType}
-                onChange={(e) => handleStockTypeChange(e.target.value)}
-                MenuProps={SELECT_MENU_PROPS}
-              >
-                <MenuItem value="paddy">{t('paddyStock')}</MenuItem>
-                <MenuItem value="product">{t('productStock')}</MenuItem>
-              </Select>
-            </FormControl>
+            <LookupSelect
+              group="stock_type"
+              label={t('stockType')}
+              value={stockType}
+              onChange={(e) => handleStockTypeChange(e.target.value)}
+              MenuProps={SELECT_MENU_PROPS}
+              includeValue={stockType}
+            />
           </Grid>
 
           <Grid item xs={12} md={6}>
-            <FormControl fullWidth required>
-              <InputLabel id="stock-variety-label">
-                {stockType === 'paddy' ? t('paddyVariety') : t('productType')}
-              </InputLabel>
-              <Select
-                labelId="stock-variety-label"
-                label={stockType === 'paddy' ? t('paddyVariety') : t('productType')}
-                value={formData.variety}
-                onChange={(e) => updateField('variety', e.target.value)}
-                MenuProps={SELECT_MENU_PROPS}
-              >
-                {varietyOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <LookupSelect
+              group={stockType === 'paddy' ? 'paddy_variety' : 'product_type'}
+              label={stockType === 'paddy' ? t('paddyVariety') : t('productType')}
+              value={formData.variety}
+              onChange={(e) => updateField('variety', e.target.value)}
+              MenuProps={SELECT_MENU_PROPS}
+              required
+            />
           </Grid>
 
           <Grid item xs={12} md={6}>
@@ -748,22 +712,13 @@ const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit,
           </Grid>
 
           <Grid item xs={12} md={6}>
-            <FormControl fullWidth>
-              <InputLabel id="quality-grade-label">{t('qualityGrade')}</InputLabel>
-              <Select
-                labelId="quality-grade-label"
-                label={t('qualityGrade')}
-                value={formData.quality_grade}
-                onChange={(e) => updateField('quality_grade', e.target.value)}
-                MenuProps={SELECT_MENU_PROPS}
-              >
-                {QUALITY_GRADES.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <LookupSelect
+              group="quality_grade"
+              label={t('qualityGrade')}
+              value={formData.quality_grade}
+              onChange={(e) => updateField('quality_grade', e.target.value)}
+              MenuProps={SELECT_MENU_PROPS}
+            />
           </Grid>
 
           <Grid item xs={12} md={6}>

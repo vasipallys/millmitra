@@ -12,6 +12,8 @@ This guide is for mill operators, managers, and office staff. It describes MillM
 2. [Who it is for](#2-who-it-is-for)
 3. [How to start and open the app](#3-how-to-start-and-open-the-app)
 4. [Login, session, and logout](#4-login-session-and-logout)
+   - [4.6 Add a mill (tenant)](#46-add-a-mill-tenant)
+   - [4.7 Switch mill](#47-switch-mill)
 5. [Finding your way around](#5-finding-your-way-around)
 6. [Roles and permissions](#6-roles-and-permissions)
 7. [Dashboard](#7-dashboard)
@@ -178,7 +180,7 @@ Each person has **one role**. The mill server checks that role on save and on fi
 3. Enter **Username / Email / Phone** and **Password**.
 4. Click **Login**. A wrong pair shows **Username or password is not recognized**.
 
-On success you land on **Smart Dashboard**. Your name and **role** appear in the top bar and in the sidebar. The language control is on the login card and in the navbar (`localStorage` key `millmitra.language`).
+On success you land on **Smart Dashboard**. Your name, **role**, and **mill name** appear in the top bar. Demo accounts (`admin` / `admin123` and the others) belong to mill slug **`default`** after you restart with the millmitra venv. The language control is on the login card and in the navbar (`localStorage` key `millmitra.language`).
 
 ### 4.2 Other login tabs (not reliable)
 
@@ -215,6 +217,51 @@ The same menu also has **Profile** and **Settings**. **Settings** opens the Sett
 
 The app clears the saved session and sends you to login when the server says you are no longer authorized.
 
+### 4.6 Add a mill (tenant)
+
+A **tenant** is one mill (one organization). Your existing mill is slug **`default`**. Farmers, godown stock, lookups, invoices, notifications, and the Access grid belong to **that mill only**. They are not copied when you add another mill.
+
+There is **no** “Add mill” button in the office app. Someone with access to the mill server creates a tenant through the API. Use the millmitra venv Flask process (`cd D:\GenAi\millmitra\backend` then `.\venv\Scripts\python.exe app.py`).
+
+**Who can create.** `POST /api/tenants` does not require a login. With **no** token, you must send a new owner **username** and **password** (that account is created as **admin** of the new mill). With a token, **any signed-in user** becomes **admin** of the new mill and keeps their existing mill. The `is_platform_admin` flag exists on users but demo accounts are **not** platform admins, and there is no screen to set it.
+
+**Create a mill + new owner (typical):**
+
+```powershell
+Invoke-RestMethod -Method POST -Uri http://127.0.0.1:5000/api/tenants `
+  -ContentType 'application/json' `
+  -Body '{"name":"Mill B","slug":"mill-b","username":"adminb","password":"adminb123","email":"adminb@ricemill.com"}'
+```
+
+**Create a mill and keep your current login as its admin** (after you already signed in as `admin`):
+
+```powershell
+$login = Invoke-RestMethod -Method POST -Uri http://127.0.0.1:5000/api/auth/login `
+  -ContentType 'application/json' `
+  -Body '{"username":"admin","password":"admin123","method":"password"}'
+Invoke-RestMethod -Method POST -Uri http://127.0.0.1:5000/api/tenants `
+  -ContentType 'application/json' `
+  -Headers @{ Authorization = "Bearer $($login.access_token)" } `
+  -Body '{"name":"Mill B","slug":"mill-b"}'
+```
+
+A successful create returns HTTP **201** and the mill (`id`, `name`, `slug`, `status` **ACTIVE**). If the slug already exists, the same mill is returned (no second copy). Slug is letters, numbers, and hyphens (for example `mill-b`).
+
+**How someone joins a mill.** Creating the mill adds one **membership** (owner = **admin**). To add other staff, sign in to **that** mill, open **Users**, and create the person (username, password, role). That person is a member of the mill you are currently on. There is no “invite to another mill” screen. Usernames are unique across the whole database — you cannot register the same username twice.
+
+**Maintain.** Status values on a mill are **ACTIVE**, **TRIAL**, and **SUSPENDED**. New mills are **ACTIVE**. There is **no** button or API in this build to suspend or reactivate a mill. If a mill were marked **SUSPENDED** in the database, members would get **403** on mill work (`/api/tenants` and `/api/auth/me` still answer). Other **403** messages mean “no membership,” “you do not have access to that mill,” or a role that cannot use that module.
+
+**Backup.** Settings → **Data & Backup** copies the **entire** SQLite file. That file holds **every** mill. A restore brings all tenants back, not one mill by itself.
+
+### 4.7 Switch mill
+
+1. Sign in. The top bar shows a chip with the **mill name** (for `default`, often **MillMitra** or the company name from Settings).
+2. If you belong to **only one** mill, the chip is not a menu — it is a label.
+3. If you belong to **more than one** mill, click the chip. Pick the other mill.
+4. The app replaces your token with one for that mill and clears the cached lists. Farmers, stock, and lookups you see now are that mill’s rows only.
+
+If switch fails, you stay on the current mill. You can also sign out and sign in as the other mill’s owner (for example `adminb`).
+
 ---
 
 ## 5. Finding your way around
@@ -222,7 +269,7 @@ The app clears the saved session and sends you to login when the server says you
 After login you have:
 
 - **Left sidebar** branded **Smart Mill** — main modules
-- **Top bar** titled **Rice Mill Management System** — menu button, **role** chip, **language**, microphone, notifications bell, avatar
+- **Top bar** titled **Rice Mill Management System** — menu button, **mill name** chip (click to switch if you have more than one mill), **role** chip, **language**, microphone, notifications bell, avatar
 - **Main area** — the page for the module you selected
 
 The sidebar **hides** items your role cannot use. Opening a hidden path shows **You don’t have access**. The mill server also rejects forbidden saves (for example an operator creating a finance invoice).
@@ -757,7 +804,9 @@ Sample GST / compliance dashboard. It does not file GST returns and is not the m
 
 Title includes mill **Business Info**, **Notifications**, **AI Features**, **Security**, **Data & Backup**.
 
-You can type company name, GST number, address, and similar fields and click **Save Settings**. Values are stored on this computer and, when you are signed in, on the mill server.
+You can type company name, GST number, address, and similar fields and click **Save Settings**. Values are stored on this computer and, when you are signed in, on the mill server (this mill’s settings, not other tenants).
+
+**Data & Backup** copies `rice_mill_erp.db`. That one file contains **all** mills. It is not a per-tenant export.
 
 ### 16.5 Notifications
 
@@ -950,6 +999,8 @@ Refresh the browser. If you still see login, sign in again.
 | **Quality test** | Lab measurements stored on a batch |
 | **Smart Dashboard** | Home overview after login |
 | **Smart Mill** | Sidebar name for this application |
+| **Tenant / mill** | One organization. First mill is slug `default`. See [Add a mill](#46-add-a-mill-tenant) |
+| **Membership** | Link between a login and a mill, with a role on that mill |
 
 ---
 

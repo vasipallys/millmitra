@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, current_app, request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required
 from werkzeug.security import check_password_hash
 from models import User, AuthLog
@@ -13,9 +13,37 @@ auth_bp = Blueprint('auth', __name__)
 ai_auth = AIAuthService()
 
 
+def _tenant_for_login(user):
+    from models.tenant import Tenant
+    from services.tenant_context import memberships_for
+    from services.tenant_migration import ensure_default_tenant, ensure_user_memberships
+
+    rows = memberships_for(user.id)
+    if not rows:
+        tenant = ensure_default_tenant()
+        ensure_user_memberships(tenant)
+        rows = memberships_for(user.id)
+    if not rows:
+        raise RuntimeError('No mill membership after default-tenant heal')
+    membership = rows[0]
+    tenant = Tenant.query.get(membership.tenant_id)
+    if tenant is None:
+        raise RuntimeError('Membership tenant is missing')
+    return tenant, membership
+
+
 def _issue_login_response(user, device_info, risk_score=0.0):
+    tenant, membership = _tenant_for_login(user)
+    if tenant is not None:
+        from flask import g
+        g.tenant_id = tenant.id
+        g.tenant = tenant
+        g.membership = membership
+        g.tenant_role = membership.role if membership else user.role
+    claims = {'tenant_id': tenant.id} if tenant else {}
     access_token = create_access_token(
         identity=str(user.id),
+        additional_claims=claims,
         expires_delta=timedelta(hours=8)
     )
     session_token = None
@@ -46,8 +74,10 @@ def _issue_login_response(user, device_info, risk_score=0.0):
             'id': user.id,
             'username': user.username,
             'email': user.email,
-            'role': user.role,
+            'role': (membership.role if membership else user.role),
             'permissions': permissions_for(user),
+            'tenant': tenant.to_public() if tenant else None,
+            'is_platform_admin': bool(getattr(user, 'is_platform_admin', False)),
             'preferences': user.get_preferences() if hasattr(user, 'get_preferences') else {}
         },
         'risk_score': risk_score
@@ -142,6 +172,7 @@ def login():
         return _issue_login_response(user, device_info, risk_score)
 
     except Exception:
+        current_app.logger.exception('login_failed path=/api/auth/login')
         try:
             db.session.rollback()
         except Exception:
@@ -159,13 +190,18 @@ def get_current_user():
         if not user or not user.is_active:
             return jsonify({'error': 'User not found or inactive'}), 404
 
+        from services.tenant_context import current_membership, current_tenant
+        tenant = current_tenant()
+        membership = current_membership()
         return jsonify({
             'user': {
                 'id': user.id,
                 'username': user.username,
                 'email': user.email,
-                'role': user.role,
+                'role': (membership.role if membership else user.role),
                 'permissions': permissions_for(user),
+                'tenant': tenant.to_public() if tenant else None,
+                'is_platform_admin': bool(getattr(user, 'is_platform_admin', False)),
                 'preferences': user.get_preferences() if hasattr(user, 'get_preferences') else {}
             }
         })

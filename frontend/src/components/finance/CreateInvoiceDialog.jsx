@@ -16,6 +16,7 @@ import {
 } from '@mui/material';
 import { Add, Remove } from '@mui/icons-material';
 import { useI18n } from '../../i18n/I18nContext';
+import LookupSelect from '../common/LookupSelect';
 
 const CreateInvoiceDialog = ({ open, onClose, onSubmit, loading = false }) => {
   const { t } = useI18n();
@@ -139,19 +140,12 @@ const CreateInvoiceDialog = ({ open, onClose, onSubmit, loading = false }) => {
             />
           </Grid>
           <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              select
+            <LookupSelect
+              group="invoice_payment_terms"
               label={t('paymentTerms')}
               value={formData.payment_terms}
               onChange={(e) => handleInputChange('payment_terms', e.target.value)}
-            >
-              <MenuItem value="Net 15">Net 15</MenuItem>
-              <MenuItem value="Net 30">Net 30</MenuItem>
-              <MenuItem value="Net 45">Net 45</MenuItem>
-              <MenuItem value="Net 60">Net 60</MenuItem>
-              <MenuItem value="Due on Receipt">Due on Receipt</MenuItem>
-            </TextField>
+            />
           </Grid>
 
           {/* Invoice Items */}
@@ -199,19 +193,12 @@ const CreateInvoiceDialog = ({ open, onClose, onSubmit, loading = false }) => {
                     />
                   </Grid>
                   <Grid item xs={8} sm={3}>
-                    <TextField
-                      fullWidth
-                      select
+                    <LookupSelect
+                      group="invoice_category"
                       label={t('category')}
                       value={item.product_category}
                       onChange={(e) => handleItemChange(index, 'product_category', e.target.value)}
-                    >
-                      <MenuItem value="raw_rice">Raw Rice</MenuItem>
-                      <MenuItem value="processed_rice">Processed Rice</MenuItem>
-                      <MenuItem value="premium_rice">Premium Rice</MenuItem>
-                      <MenuItem value="broken_rice">Broken Rice</MenuItem>
-                      <MenuItem value="rice_bran">Rice Bran</MenuItem>
-                    </TextField>
+                    />
                   </Grid>
                   <Grid item xs={4} sm={1}>
                     <IconButton

@@ -41,6 +41,7 @@ import {
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import DemoBanner from '../components/DemoBanner';
 import { useI18n } from '../i18n/I18nContext';
+import LookupSelect from '../components/common/LookupSelect';
 import PreviewModeToggle from '../components/PreviewModeToggle';
 import { usePreviewMode } from '../hooks/usePreviewMode';
 import { financeService } from '../services/financeService';
@@ -804,41 +805,28 @@ const ComplianceGST = () => {
                   helperText={amountError || t('gstAmountHelp')}
                   inputProps={{ min: 0, step: 'any' }}
                 />
-                <TextField
-                  fullWidth
-                  select
+                <LookupSelect
+                  group="gst_product_category"
                   label={t('productCategory')}
                   value={gstCalculator.product_category}
                   onChange={(e) => setGstCalculator({ ...gstCalculator, product_category: e.target.value })}
-                  margin="normal"
-                >
-                  {Object.entries(GST_CATEGORIES).map(([value, meta]) => (
-                    <MenuItem key={value} value={value}>{meta.label}</MenuItem>
-                  ))}
-                </TextField>
-                <TextField
-                  fullWidth
-                  select
+                  sx={{ mt: 2 }}
+                />
+                <LookupSelect
+                  group="gst_transaction_type"
                   label={t('transactionType')}
                   value={gstCalculator.transaction_type}
                   onChange={(e) => setGstCalculator({ ...gstCalculator, transaction_type: e.target.value })}
-                  margin="normal"
-                >
-                  <MenuItem value="sale">{t('sale')}</MenuItem>
-                  <MenuItem value="purchase">{t('purchase')}</MenuItem>
-                </TextField>
-                <TextField
-                  fullWidth
-                  select
+                  sx={{ mt: 2 }}
+                />
+                <LookupSelect
+                  group="gst_supply"
                   label={t('supply')}
                   value={gstCalculator.supply}
                   onChange={(e) => setGstCalculator({ ...gstCalculator, supply: e.target.value })}
-                  margin="normal"
                   helperText={t('supplyHelp')}
-                >
-                  <MenuItem value="intra">{t('intraState')}</MenuItem>
-                  <MenuItem value="inter">{t('interState')}</MenuItem>
-                </TextField>
+                  sx={{ mt: 2 }}
+                />
                 <Button
                   variant="contained"
                   onClick={calculateGST}
@@ -1093,18 +1081,13 @@ const ComplianceGST = () => {
                   />
                 </Grid>
                 <Grid item xs={4}>
-                  <TextField
-                    fullWidth
-                    select
+                  <LookupSelect
+                    group="gst_product_category"
                     label={t('category')}
                     value={item.product_category}
                     onChange={(e) => updateInvoiceItem(index, 'product_category', e.target.value)}
-                    margin="normal"
-                  >
-                    {Object.entries(GST_CATEGORIES).map(([value, meta]) => (
-                      <MenuItem key={value} value={value}>{meta.label}</MenuItem>
-                    ))}
-                  </TextField>
+                    sx={{ mt: 2 }}
+                  />
                 </Grid>
               </Grid>
             </Box>

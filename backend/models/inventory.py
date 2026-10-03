@@ -12,6 +12,7 @@ class PaddyStock(db.Model):
     __tablename__ = 'paddy_stock'
     
     id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.String(36), index=True)
     stock_id = db.Column(db.String(50), unique=True, nullable=False)
     farmer_id = db.Column(db.Integer, db.ForeignKey('farmers.id'), nullable=False)
     
@@ -175,6 +176,7 @@ class ProductStock(db.Model):
     __tablename__ = 'product_stock'
     
     id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.String(36), index=True)
     product_id = db.Column(db.String(50), unique=True, nullable=False)
     product_name = db.Column(db.String(100), nullable=False)
     product_type = db.Column(db.String(50), nullable=False)  # rice, broken_rice, bran, husk
@@ -345,6 +347,7 @@ class StockMovement(db.Model):
     __tablename__ = 'stock_movements'
 
     id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.String(36), index=True)
     stock_kind = db.Column(db.String(20), nullable=False)  # paddy, product
     stock_id = db.Column(db.Integer, nullable=False)
     movement_type = db.Column(db.String(20), nullable=False)  # in, out, transfer

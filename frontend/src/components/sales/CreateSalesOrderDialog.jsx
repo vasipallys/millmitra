@@ -10,6 +10,7 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { salesAPI } from '../../services/api';
 import { useI18n } from '../../i18n/I18nContext';
+import LookupSelect from '../common/LookupSelect';
 
 const validationSchema = Yup.object({
   customer_id: Yup.number().required('Customer is required'),
@@ -212,37 +213,23 @@ const CreateSalesOrderDialog = ({ open, onClose, onSubmit }) => {
             </Grid>
             
             <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                select
+              <LookupSelect
+                group="order_type"
                 name="order_type"
                 label={t('orderType')}
                 value={formik.values.order_type}
                 onChange={formik.handleChange}
-              >
-                {orderTypes.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </TextField>
+              />
             </Grid>
             
             <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                select
+              <LookupSelect
+                group="payment_terms"
                 name="payment_terms"
                 label={t('paymentTerms')}
                 value={formik.values.payment_terms}
                 onChange={formik.handleChange}
-              >
-                {paymentTerms.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </TextField>
+              />
             </Grid>
             
             <Grid item xs={12}>
@@ -305,18 +292,12 @@ const CreateSalesOrderDialog = ({ open, onClose, onSubmit }) => {
                           />
                         </TableCell>
                         <TableCell>
-                          <TextField
+                          <LookupSelect
+                            group="quality_grade"
                             size="small"
-                            select
                             value={item.product_grade}
                             onChange={(e) => updateItem(index, 'product_grade', e.target.value)}
-                          >
-                            {productGrades.map((grade) => (
-                              <MenuItem key={grade} value={grade}>
-                                {grade}
-                              </MenuItem>
-                            ))}
-                          </TextField>
+                          />
                         </TableCell>
                         <TableCell>
                           <TextField
@@ -328,18 +309,12 @@ const CreateSalesOrderDialog = ({ open, onClose, onSubmit }) => {
                           />
                         </TableCell>
                         <TableCell>
-                          <TextField
+                          <LookupSelect
+                            group="unit"
                             size="small"
-                            select
                             value={item.unit}
                             onChange={(e) => updateItem(index, 'unit', e.target.value)}
-                          >
-                            {units.map((unit) => (
-                              <MenuItem key={unit} value={unit}>
-                                {unit}
-                              </MenuItem>
-                            ))}
-                          </TextField>
+                          />
                         </TableCell>
                         <TableCell>
                           <TextField

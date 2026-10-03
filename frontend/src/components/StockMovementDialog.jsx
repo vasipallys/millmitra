@@ -19,6 +19,7 @@ import {
 } from '@mui/material';
 import { Add, Remove, SwapHoriz } from '@mui/icons-material';
 import { useI18n } from '../i18n/I18nContext';
+import LookupSelect from './common/LookupSelect';
 
 const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, movementType = 'in', loading = false }) => {
   const { t } = useI18n();
@@ -208,17 +209,13 @@ const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, moveme
           {!stockItem && (
             <>
               <Grid item xs={12} sm={6}>
-                <FormControl fullWidth required>
-                  <InputLabel>{t('stockType')}</InputLabel>
-                  <Select
-                    value={formData.stock_kind || 'product'}
-                    label={t('stockType')}
-                    onChange={(e) => handleInputChange('stock_kind', e.target.value)}
-                  >
-                    <MenuItem value="paddy">{t('paddy')}</MenuItem>
-                    <MenuItem value="product">{t('productKind')}</MenuItem>
-                  </Select>
-                </FormControl>
+                <LookupSelect
+                  group="stock_type"
+                  label={t('stockType')}
+                  value={formData.stock_kind || 'product'}
+                  onChange={(e) => handleInputChange('stock_kind', e.target.value)}
+                  required
+                />
               </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField

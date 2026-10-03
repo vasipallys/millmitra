@@ -31,6 +31,8 @@ import { getApiErrorMessage } from '../utils/apiError';
 import { can, storedUser } from '../utils/permissions';
 import { PageHeader, PageLoading, PageShell } from '../components/common/PageChrome';
 import { useI18n } from '../i18n/I18nContext';
+import LookupSelect from '../components/common/LookupSelect';
+import { useLookup } from '../hooks/useLookup';
 import {
   isOpenBatch,
   isPlannedBatch,
@@ -51,13 +53,6 @@ const SELECT_MENU_PROPS = {
   disableAutoFocusItem: true,
   PaperProps: { sx: { maxHeight: 280 } },
 };
-
-const PADDY_VARIETIES = [
-  { value: 'basmati', label: 'Basmati' },
-  { value: 'jasmine', label: 'Jasmine' },
-  { value: 'long_grain', label: 'Long Grain' },
-  { value: 'short_grain', label: 'Short Grain' },
-];
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -98,6 +93,7 @@ function receiveMissingFields({ farmerMode, newFarmer, paddyForm }) {
 
 const MillFlow = () => {
   const { t } = useI18n();
+  const varietyLookup = useLookup('paddy_variety');
   const user = storedUser();
   const canFinance = can(user, 'finance');
   const canSales = can(user, 'sales');
@@ -192,7 +188,7 @@ const MillFlow = () => {
 
   useEffect(() => {
     const variety = context.paddy?.variety || context.batch?.paddy_variety || paddyForm.variety;
-    const varietyLabel = PADDY_VARIETIES.find((item) => item.value === variety)?.label || variety || 'Basmati';
+    const varietyLabel = varietyLookup.labelOf(varietyLookup.options.find((item) => item.value === variety)) || variety || 'Basmati';
     const description = `${String(varietyLabel).replace(/ rice$/i, '')} Rice`;
     setOrderForm((prev) => {
       if (prev.description && prev.quantity) return prev;
@@ -730,20 +726,14 @@ const ReceiveStep = ({
         </>
       )}
       <Grid item xs={12} sm={6}>
-        <FormControl fullWidth required>
-          <InputLabel id="mill-flow-variety-label">{t('variety')}</InputLabel>
-          <Select
-            labelId="mill-flow-variety-label"
-            label={t('variety')}
-            value={paddyForm.variety}
-            onChange={(e) => setPaddyForm({ ...paddyForm, variety: e.target.value })}
-            MenuProps={SELECT_MENU_PROPS}
-          >
-            {PADDY_VARIETIES.map((item) => (
-              <MenuItem key={item.value} value={item.value}>{item.label}</MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <LookupSelect
+          group="paddy_variety"
+          label={t('variety')}
+          value={paddyForm.variety}
+          onChange={(e) => setPaddyForm({ ...paddyForm, variety: e.target.value })}
+          MenuProps={SELECT_MENU_PROPS}
+          required
+        />
       </Grid>
       <Grid item xs={12} sm={6}>
         <TextField
@@ -835,20 +825,13 @@ const BatchStep = ({ lots, batchForm, setBatchForm, existing, t }) => (
         />
       </Grid>
       <Grid item xs={12} sm={6}>
-        <FormControl fullWidth>
-          <InputLabel id="mill-flow-grade-label">{t('grade')}</InputLabel>
-          <Select
-            labelId="mill-flow-grade-label"
-            label={t('grade')}
-            value={batchForm.quality_grade}
-            onChange={(e) => setBatchForm({ ...batchForm, quality_grade: e.target.value })}
-            MenuProps={SELECT_MENU_PROPS}
-          >
-            <MenuItem value="A">{t('gradeA')}</MenuItem>
-            <MenuItem value="B">{t('gradeB')}</MenuItem>
-            <MenuItem value="C">{t('gradeC')}</MenuItem>
-          </Select>
-        </FormControl>
+        <LookupSelect
+          group="quality_grade"
+          label={t('grade')}
+          value={batchForm.quality_grade}
+          onChange={(e) => setBatchForm({ ...batchForm, quality_grade: e.target.value })}
+          MenuProps={SELECT_MENU_PROPS}
+        />
       </Grid>
     </Grid>
   </Box>
@@ -1016,21 +999,13 @@ const PayStep = ({
         />
       </Grid>
       <Grid item xs={12} sm={6}>
-        <FormControl fullWidth>
-          <InputLabel id="mill-flow-pay-method-label">{t('paymentMethod')}</InputLabel>
-          <Select
-            labelId="mill-flow-pay-method-label"
-            label={t('paymentMethod')}
-            value={paymentForm.payment_method}
-            onChange={(e) => setPaymentForm({ ...paymentForm, payment_method: e.target.value })}
-            MenuProps={SELECT_MENU_PROPS}
-          >
-            <MenuItem value="cash">{t('payCash')}</MenuItem>
-            <MenuItem value="upi">{t('payUpi')}</MenuItem>
-            <MenuItem value="bank_transfer">{t('payBank')}</MenuItem>
-            <MenuItem value="cheque">{t('payCheque')}</MenuItem>
-          </Select>
-        </FormControl>
+        <LookupSelect
+          group="payment_method"
+          label={t('paymentMethod')}
+          value={paymentForm.payment_method}
+          onChange={(e) => setPaymentForm({ ...paymentForm, payment_method: e.target.value })}
+          MenuProps={SELECT_MENU_PROPS}
+        />
       </Grid>
     </Grid>
   </Box>

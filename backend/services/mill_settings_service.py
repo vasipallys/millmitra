@@ -82,7 +82,8 @@ def _deep_merge(base, incoming):
 
 
 def _row():
-    row = MillConfig.query.order_by(MillConfig.id.asc()).first()
+    from services.tenant_scope import tq
+    row = tq(MillConfig).order_by(MillConfig.id.asc()).first()
     if row:
         return row
     row = MillConfig(data_json=json.dumps(DEFAULT_CONFIG), updated_at=datetime.utcnow())

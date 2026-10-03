@@ -21,6 +21,14 @@ In the product you will also see **Smart Mill** (left sidebar), **Rice Mill Mana
 
 MillMitra is **not** a GST filing portal, a mill machine controller, or audited accounts software. Staff still weigh grain, run machines, and keep statutory books. The app records those operations so stock and money stay visible.
 
+### Several mills (tenants)
+
+A **tenant** is one mill / organization. The first mill is slug **`default`**. Demo logins (`admin` / `admin123` and the others) stay on `default` after you restart Flask with the millmitra venv.
+
+You can add another mill. Farmers, stock, lookups, invoices, and the Access matrix stay on that mill — they are not a shared catalog. People (login names) are global; a **membership** says which mill they work in and which role they have there.
+
+There is no “Add mill” screen and no custom domain or separate database per mill. One SQLite file holds every tenant. Settings **Data & Backup** copies that whole file. How to create and switch: [USER_GUIDE — Add a mill](USER_GUIDE.md#46-add-a-mill-tenant).
+
 ---
 
 ## 2. The business problem

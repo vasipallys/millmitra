@@ -30,6 +30,7 @@ import AnalyticsReporting from './pages/AnalyticsReporting';
 import MillFlow from './pages/MillFlow';
 import Users from './pages/Users';
 import Access from './pages/Access';
+import Lookups from './pages/Lookups';
 import RequireAccess from './components/RequireAccess';
 import { permissionForPath } from './utils/permissions';
 
@@ -241,6 +242,7 @@ function AppContent() {
             onMenuClick={toggleSidebar}
             onLogout={handleLogout}
             user={user}
+            onUserChange={setUser}
           />
           
           {/* Page Content */}
@@ -271,6 +273,7 @@ function AppContent() {
               <Route path="/settings" element={<Guard user={user}><Settings /></Guard>} />
               <Route path="/users" element={<Guard user={user}><Users currentUser={user} /></Guard>} />
               <Route path="/access" element={<Guard user={user}><Access /></Guard>} />
+              <Route path="/lookups" element={<Guard user={user}><Lookups /></Guard>} />
             </Routes>
           </Box>
         </Box>

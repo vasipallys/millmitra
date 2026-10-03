@@ -11,11 +11,12 @@ import * as Yup from 'yup';
 import { useQuery } from 'react-query';
 import { farmerService } from '../../services/farmerService';
 import { useI18n } from '../../i18n/I18nContext';
+import LookupSelect from '../common/LookupSelect';
 
 const validationSchema = Yup.object({
   farmer_id: Yup.number().required('Farmer selection is required'),
   crop_type: Yup.string().required('Crop type is required'),
-  season: Yup.string().oneOf(['kharif', 'rabi'], 'Invalid season').required('Season is required'),
+  season: Yup.string().required('Season is required'),
   year: Yup.number()
     .min(2020, 'Year must be 2020 or later')
     .max(2030, 'Year must be 2030 or earlier')
@@ -108,10 +109,6 @@ const CreateContractDialog = ({ open, onClose, onSubmit, loading = false }) => {
     'PR106', 'PR121', 'Sharbati', 'Sugandha', 'Kranti'
   ];
 
-  const seasons = [
-    { value: 'kharif', label: t('seasonKharif') },
-    { value: 'rabi', label: t('seasonRabi') }
-  ];
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
@@ -173,22 +170,15 @@ const CreateContractDialog = ({ open, onClose, onSubmit, loading = false }) => {
 
             {/* Contract Details */}
             <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>Season *</InputLabel>
-                <Select
-                  name="season"
-                  value={formik.values.season}
-                  onChange={formik.handleChange}
-                  label={`${t('season')} *`}
-                  error={formik.touched.season && Boolean(formik.errors.season)}
-                >
-                  {seasons.map((season) => (
-                    <MenuItem key={season.value} value={season.value}>
-                      {season.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <LookupSelect
+                group="season"
+                name="season"
+                label={`${t('season')} *`}
+                value={formik.values.season}
+                onChange={formik.handleChange}
+                required
+                error={formik.touched.season && Boolean(formik.errors.season)}
+              />
             </Grid>
 
             <Grid item xs={12} sm={6}>
@@ -267,19 +257,13 @@ const CreateContractDialog = ({ open, onClose, onSubmit, loading = false }) => {
             </Grid>
 
             <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>Advance Payment Method</InputLabel>
-                <Select
-                  name="advance_payment_method"
-                  value={formik.values.advance_payment_method}
-                  onChange={formik.handleChange}
-                  label={t('advanceMethod')}
-                >
-                  <MenuItem value="bank_transfer">Bank Transfer</MenuItem>
-                  <MenuItem value="cash">Cash</MenuItem>
-                  <MenuItem value="cheque">Cheque</MenuItem>
-                </Select>
-              </FormControl>
+              <LookupSelect
+                group="payment_method"
+                name="advance_payment_method"
+                label={t('advanceMethod')}
+                value={formik.values.advance_payment_method}
+                onChange={formik.handleChange}
+              />
             </Grid>
 
             {/* Dates */}

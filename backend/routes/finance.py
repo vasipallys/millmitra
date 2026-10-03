@@ -5,6 +5,7 @@ from models.financial import Invoice, Transaction
 from models.sales import Customer, SalesOrder
 from models.inventory import ProductStock
 from extensions import db
+from services.tenant_scope import tq, t_get, t_get_or_404
 from datetime import datetime, timedelta
 from utils import current_user
 from sqlalchemy import or_, func
@@ -45,20 +46,20 @@ def _find_product_stock(item):
     stock_pk = item.get('product_stock_id') or item.get('stock_id')
     if stock_pk not in (None, ''):
         try:
-            stock = ProductStock.query.get(int(stock_pk))
+            stock = t_get(ProductStock, int(stock_pk))
             if stock:
                 return stock
         except (TypeError, ValueError):
             pass
     product_id = item.get('product_id')
     if product_id:
-        stock = ProductStock.query.filter_by(product_id=str(product_id)).first()
+        stock = tq(ProductStock).filter_by(product_id=str(product_id)).first()
         if stock:
             return stock
     name = (item.get('description') or item.get('variety') or item.get('product_name') or '').strip()
     if not name:
         return None
-    return ProductStock.query.filter(
+    return tq(ProductStock).filter(
         or_(
             ProductStock.product_name.ilike(f'%{name}%'),
             ProductStock.variety.ilike(f'%{name}%'),
@@ -124,10 +125,10 @@ def payment_status_for_amount(invoice_total, amount):
 def get_invoices():
     """Get invoices list for frontend compatibility"""
     limit = request.args.get('limit', 10, type=int)
-    invoices = Invoice.query.order_by(Invoice.created_at.desc()).limit(limit).all()
+    invoices = tq(Invoice).order_by(Invoice.created_at.desc()).limit(limit).all()
     payload = []
     for invoice in invoices:
-        customer = Customer.query.get(invoice.customer_id) if invoice.customer_id else None
+        customer = t_get(Customer, invoice.customer_id) if invoice.customer_id else None
         payload.append({
             **invoice.to_dict(),
             'customer_name': customer.name if customer else None,
@@ -137,7 +138,7 @@ def get_invoices():
         })
     return jsonify({
         'invoices': payload,
-        'total': Invoice.query.count(),
+        'total': tq(Invoice).count(),
         'message': 'Invoices loaded successfully'
     })
 
@@ -146,14 +147,14 @@ def get_invoices():
 def get_cash_flow():
     period = request.args.get('period', 'monthly')
     months = {}
-    for invoice in Invoice.query.all():
+    for invoice in tq(Invoice).all():
         key = _month_key(invoice.invoice_date)
         if not key:
             continue
         months.setdefault(key, {'date': key, 'inflow': 0, 'outflow': 0, 'netFlow': 0})
         months[key]['inflow'] += invoice.total_amount or 0
     try:
-        for expense in Expense.query.all():
+        for expense in tq(Expense).all():
             key = _month_key(getattr(expense, 'expense_date', None) or getattr(expense, 'created_at', None))
             if not key:
                 continue
@@ -182,7 +183,7 @@ def get_cash_flow():
 @jwt_required()
 def get_accounts_receivable():
     now = datetime.utcnow()
-    unpaid = Invoice.query.filter(Invoice.status.in_(['pending', 'overdue', 'partial'])).all()
+    unpaid = tq(Invoice).filter(Invoice.status.in_(['pending', 'overdue', 'partial'])).all()
     overdue = [inv for inv in unpaid if inv.due_date and inv.due_date < now]
     aging = {'0-30': 0, '31-60': 0, '61-90': 0, '90+': 0}
     for inv in unpaid:
@@ -217,15 +218,15 @@ def get_accounts_receivable():
 def get_financial_summary():
     period_days = request.args.get('period_days', 30, type=int)
     start = datetime.utcnow() - timedelta(days=period_days)
-    invoices = Invoice.query.filter(Invoice.invoice_date >= start).all()
-    payments = Payment.query.filter(Payment.payment_date >= start).all() if hasattr(Payment, 'payment_date') else Payment.query.all()
+    invoices = tq(Invoice).filter(Invoice.invoice_date >= start).all()
+    payments = tq(Payment).filter(Payment.payment_date >= start).all() if hasattr(Payment, 'payment_date') else tq(Payment).all()
     total_revenue = sum(inv.total_amount or 0 for inv in invoices if (inv.status or '') != 'cancelled')
     collected = sum(p.amount or 0 for p in payments)
-    unpaid = Invoice.query.filter(Invoice.status.in_(['pending', 'overdue', 'partial'])).all()
+    unpaid = tq(Invoice).filter(Invoice.status.in_(['pending', 'overdue', 'partial'])).all()
     outstanding = sum(inv.total_amount or 0 for inv in unpaid)
     total_expenses = 0
     try:
-        total_expenses = sum(getattr(e, 'amount', 0) or 0 for e in Expense.query.all())
+        total_expenses = sum(getattr(e, 'amount', 0) or 0 for e in tq(Expense).all())
     except Exception:
         db.session.rollback()
     net_profit = total_revenue - total_expenses
@@ -300,7 +301,7 @@ def create_invoice():
         customer_id = None
     if not customer_id:
         return jsonify({'success': False, 'message': 'customer_id is required'}), 400
-    customer = Customer.query.get(customer_id)
+    customer = t_get(Customer, customer_id)
     if not customer:
         return jsonify({'success': False, 'message': 'Customer not found'}), 404
     items = data.get('items') or data.get('invoice_items') or []
@@ -338,7 +339,7 @@ def create_invoice():
             'message': '; '.join(shortages)
         }), 400
 
-    count = Invoice.query.count() + 1
+    count = tq(Invoice).count() + 1
     invoice = Invoice(
         invoice_number=f'INV{count:06d}',
         customer_id=customer_id,
@@ -400,7 +401,7 @@ def record_payment():
 
     invoice_id = parse_invoice_id(data.get('invoice_id'))
     if invoice_id:
-        invoice = Invoice.query.get(invoice_id)
+        invoice = t_get(Invoice, invoice_id)
         if invoice:
             invoice.status = payment_status_for_amount(invoice.total_amount, amount)
 
@@ -430,7 +431,7 @@ def get_aging_report():
         '61_90': 0.0,
         'over_90': 0.0,
     }
-    unpaid = Invoice.query.filter(Invoice.status.in_(['pending', 'overdue', 'partial'])).all()
+    unpaid = tq(Invoice).filter(Invoice.status.in_(['pending', 'overdue', 'partial'])).all()
     details = []
     for inv in unpaid:
         due = inv.due_date or inv.invoice_date
@@ -467,7 +468,7 @@ def get_aging_report():
 @jwt_required()
 def list_payment_schedules():
     from models.financial import PaymentSchedule
-    rows = PaymentSchedule.query.order_by(PaymentSchedule.created_at.desc()).all()
+    rows = tq(PaymentSchedule).order_by(PaymentSchedule.created_at.desc()).all()
     return jsonify({'success': True, 'schedules': [row.to_dict() for row in rows]})
 
 
@@ -489,7 +490,7 @@ def create_payment_schedule():
         farmer_id = None
     if farmer_id:
         from models.farmer import Farmer
-        if not Farmer.query.get(farmer_id):
+        if not t_get(Farmer, farmer_id):
             return jsonify({'success': False, 'message': 'Farmer not found'}), 400
     row = PaymentSchedule(
         schedule_id=f'SCH{datetime.utcnow().strftime("%Y%m%d")}{uuid.uuid4().hex[:6].upper()}',

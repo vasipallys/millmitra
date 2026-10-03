@@ -10,6 +10,7 @@ import * as Yup from 'yup';
 import { productionAPI, inventoryAPI } from '../../services/api';
 import ValidationErrorDisplay, { useValidation } from '../common/ValidationErrorDisplay';
 import { useI18n } from '../../i18n/I18nContext';
+import LookupSelect from '../common/LookupSelect';
 
 const validationSchema = Yup.object({
   paddy_variety: Yup.string().required('Paddy variety is required'),
@@ -138,22 +139,15 @@ const CreateBatchDialog = ({ open, onClose, onSuccess }) => {
             </Grid>
 
             <Grid item xs={12} sm={6}>
-              <TextField
-                select
-                fullWidth
-                label={t('paddyVariety')}
+              <LookupSelect
+                group="paddy_variety"
                 name="paddy_variety"
+                label={t('paddyVariety')}
                 value={formik.values.paddy_variety}
                 onChange={(e) => handleVarietyChange(e.target.value)}
                 error={formik.touched.paddy_variety && Boolean(formik.errors.paddy_variety)}
                 helperText={formik.touched.paddy_variety && formik.errors.paddy_variety}
-              >
-                {paddyVarieties.map((variety) => (
-                  <MenuItem key={variety} value={variety}>
-                    {variety}
-                  </MenuItem>
-                ))}
-              </TextField>
+              />
             </Grid>
 
             <Grid item xs={12} sm={6}>
@@ -173,41 +167,27 @@ const CreateBatchDialog = ({ open, onClose, onSuccess }) => {
             </Grid>
 
             <Grid item xs={12} sm={6}>
-              <TextField
-                select
-                fullWidth
-                label={t('targetRiceVariety')}
+              <LookupSelect
+                group="target_rice_variety"
                 name="target_rice_variety"
+                label={t('targetRiceVariety')}
                 value={formik.values.target_rice_variety}
                 onChange={formik.handleChange}
                 error={formik.touched.target_rice_variety && Boolean(formik.errors.target_rice_variety)}
                 helperText={formik.touched.target_rice_variety && formik.errors.target_rice_variety}
-              >
-                {riceVarieties.map((variety) => (
-                  <MenuItem key={variety} value={variety}>
-                    {variety}
-                  </MenuItem>
-                ))}
-              </TextField>
+              />
             </Grid>
 
             <Grid item xs={12} sm={6}>
-              <TextField
-                select
-                fullWidth
-                label={t('priority')}
+              <LookupSelect
+                group="priority"
                 name="priority"
+                label={t('priority')}
                 value={formik.values.priority}
                 onChange={formik.handleChange}
                 error={formik.touched.priority && Boolean(formik.errors.priority)}
                 helperText={formik.touched.priority && formik.errors.priority}
-              >
-                {priorities.map((priority) => (
-                  <MenuItem key={priority} value={priority}>
-                    {t(`priority${priority.charAt(0).toUpperCase()}${priority.slice(1)}`)}
-                  </MenuItem>
-                ))}
-              </TextField>
+              />
             </Grid>
 
             {/* Scheduling */}
@@ -254,17 +234,13 @@ const CreateBatchDialog = ({ open, onClose, onSuccess }) => {
             </Grid>
 
             <Grid item xs={12} sm={6}>
-              <TextField
-                select
-                fullWidth
-                label={t('inputSource')}
+              <LookupSelect
+                group="input_source"
                 name="input_source"
+                label={t('inputSource')}
                 value={formik.values.input_source}
                 onChange={formik.handleChange}
-              >
-                <MenuItem value="procurement">{t('freshProcurement')}</MenuItem>
-                <MenuItem value="inventory">{t('existingStock')}</MenuItem>
-              </TextField>
+              />
             </Grid>
 
             {formik.values.input_source === 'inventory' && (

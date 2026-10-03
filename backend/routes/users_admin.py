@@ -2,6 +2,7 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from extensions import db
+from models.tenant import TenantMembership
 from models.user import User
 from services.access_control import (
     ROLES,
@@ -10,6 +11,7 @@ from services.access_control import (
     permissions_for,
     set_permission,
 )
+from services.tenant_context import current_tenant_id
 from utils import current_user
 
 users_admin_bp = Blueprint('users_admin', __name__)
@@ -22,14 +24,35 @@ def _admin_user():
     return user
 
 
+def _tenant_users():
+    tid = current_tenant_id()
+    if not tid:
+        return []
+    member_ids = [
+        row.user_id for row in TenantMembership.query.filter_by(tenant_id=tid).all()
+    ]
+    if not member_ids:
+        return []
+    return User.query.filter(User.id.in_(member_ids)).order_by(User.username.asc()).all()
+
+
+def _membership_role(user):
+    tid = current_tenant_id()
+    if not tid:
+        return user.role
+    row = TenantMembership.query.filter_by(user_id=user.id, tenant_id=tid).first()
+    return row.role if row else user.role
+
+
 def _user_row(user):
+    role = _membership_role(user)
     return {
         'id': user.id,
         'username': user.username,
         'email': user.email,
         'first_name': user.first_name,
         'last_name': user.last_name,
-        'role': user.role,
+        'role': role,
         'is_active': bool(user.is_active),
         'permissions': permissions_for(user),
     }
@@ -40,7 +63,7 @@ def _user_row(user):
 def list_users():
     if not _admin_user():
         return jsonify({'success': False, 'message': 'You do not have access'}), 403
-    users = User.query.order_by(User.username.asc()).all()
+    users = _tenant_users()
     return jsonify({'success': True, 'users': [_user_row(item) for item in users]})
 
 
@@ -70,6 +93,10 @@ def create_user():
     )
     user.set_password(password)
     db.session.add(user)
+    db.session.flush()
+    tid = current_tenant_id()
+    if tid:
+        db.session.add(TenantMembership(user_id=user.id, tenant_id=tid, role=role))
     db.session.commit()
     return jsonify({'success': True, 'user': _user_row(user)}), 201
 
@@ -80,7 +107,9 @@ def update_user(user_id):
     actor = _admin_user()
     if not actor:
         return jsonify({'success': False, 'message': 'You do not have access'}), 403
-    user = User.query.get(user_id)
+    tid = current_tenant_id()
+    membership = TenantMembership.query.filter_by(user_id=user_id, tenant_id=tid).first() if tid else None
+    user = User.query.get(user_id) if membership else None
     if not user:
         return jsonify({'success': False, 'message': 'User not found'}), 404
     data = request.get_json() or {}
@@ -89,6 +118,7 @@ def update_user(user_id):
         if role not in ROLES:
             return jsonify({'success': False, 'message': 'Unknown role'}), 400
         user.role = role
+        membership.role = role
     if 'is_active' in data:
         active = bool(data.get('is_active'))
         if not active and user.id == actor.id:
