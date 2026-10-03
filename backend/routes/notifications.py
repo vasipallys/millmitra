@@ -4,6 +4,7 @@ Handles notification-related endpoints for the Smart Rice Mill ERP
 """
 
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required
 from datetime import datetime, timedelta
 import uuid
 
@@ -86,6 +87,7 @@ mock_notifications = [
 ]
 
 @notifications_bp.route('/notifications', methods=['GET'])
+@jwt_required()
 def get_notifications():
     """Get all notifications"""
     try:
@@ -105,6 +107,7 @@ def get_notifications():
         }), 500
 
 @notifications_bp.route('/notifications/<int:notification_id>/read', methods=['POST'])
+@jwt_required()
 def mark_notification_read(notification_id):
     """Mark a notification as read"""
     try:
@@ -131,6 +134,7 @@ def mark_notification_read(notification_id):
         }), 500
 
 @notifications_bp.route('/notifications/mark-all-read', methods=['POST'])
+@jwt_required()
 def mark_all_notifications_read():
     """Mark all notifications as read"""
     try:
@@ -149,6 +153,7 @@ def mark_all_notifications_read():
         }), 500
 
 @notifications_bp.route('/notifications/<int:notification_id>', methods=['DELETE'])
+@jwt_required()
 def delete_notification(notification_id):
     """Delete a notification"""
     try:
@@ -167,6 +172,7 @@ def delete_notification(notification_id):
         }), 500
 
 @notifications_bp.route('/notifications', methods=['POST'])
+@jwt_required()
 def create_notification():
     """Create a new notification"""
     try:
@@ -201,6 +207,7 @@ def create_notification():
         }), 500
 
 @notifications_bp.route('/notifications/categories', methods=['GET'])
+@jwt_required()
 def get_notification_categories():
     """Get notification categories"""
     try:
@@ -224,6 +231,7 @@ def get_notification_categories():
         }), 500
 
 @notifications_bp.route('/notifications/stats', methods=['GET'])
+@jwt_required()
 def get_notification_stats():
     """Get notification statistics"""
     try:

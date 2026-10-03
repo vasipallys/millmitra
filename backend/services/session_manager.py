@@ -202,7 +202,11 @@ class SessionManager:
     def invalidate_user_sessions(self, user_id, except_token=None):
         """Invalidate all sessions for a user except specified token"""
         try:
-            # Get all user sessions
+            try:
+                user_id = int(user_id)
+            except (TypeError, ValueError):
+                return False
+
             user_sessions = UserSession.query.filter_by(
                 user_id=user_id,
                 is_active=True
@@ -212,11 +216,10 @@ class SessionManager:
                 if except_token and session.session_token == except_token:
                     continue
                 
-                # Remove from Redis
-                redis_key = f"{self.session_prefix}{session.session_token}"
-                self.redis_client.delete(redis_key)
+                if self.use_redis and self.redis_client:
+                    redis_key = f"{self.session_prefix}{session.session_token}"
+                    self.redis_client.delete(redis_key)
                 
-                # Mark as inactive
                 session.is_active = False
             
             db.session.commit()

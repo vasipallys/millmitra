@@ -191,22 +191,20 @@ const Login = ({ onLogin }) => {
 
   const handleOTPVerification = async () => {
     try {
-      const verified = await authService.verifyOTP({
+      const result = await authService.verifyOTP({
         username: formData.username,
-        otp: otpCode
+        otp: otpCode,
+        device_info: await getDeviceInfo(),
       });
 
-      if (verified) {
-        // Complete login process
-        const result = await authService.completeLogin();
-        localStorage.setItem('token', result.access_token);
-        localStorage.setItem('user', JSON.stringify(result.user));
-        // Call the onLogin callback to update App state immediately
+      if (result.access_token && result.user) {
         if (onLogin) {
           onLogin(result.user);
         }
         navigate('/', { replace: true });
+        return;
       }
+      setError('Invalid OTP');
     } catch (error) {
       setError('Invalid OTP');
     }

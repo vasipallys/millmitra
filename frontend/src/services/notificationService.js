@@ -34,10 +34,8 @@ class NotificationService {
         this.notifications = response.data.notifications;
         this.unreadCount = response.data.unread_count;
         this.notifyListeners();
-        console.log('Notifications loaded successfully from API');
       }
     } catch (error) {
-      console.log('API not available, using mock notifications:', error.message);
       // Fallback to mock data if API fails
       this.loadMockNotifications();
     }

@@ -1,14 +1,55 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import create_access_token, jwt_required
 from werkzeug.security import check_password_hash
 from models import User, AuthLog
 from services.ai_auth_service import AIAuthService
 from extensions import db
+from utils import current_user_id
 import re
 from datetime import datetime, timedelta
 
 auth_bp = Blueprint('auth', __name__)
 ai_auth = AIAuthService()
+
+
+def _issue_login_response(user, device_info, risk_score=0.0):
+    access_token = create_access_token(
+        identity=str(user.id),
+        expires_delta=timedelta(hours=8)
+    )
+    session_token = None
+    try:
+        from services.session_manager import session_manager
+        session_token = session_manager.create_session(
+            user_id=user.id,
+            device_info=device_info,
+            ip_address=request.remote_addr
+        )
+    except Exception:
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+
+    user.last_login = datetime.utcnow()
+    try:
+        ai_auth.log_successful_login(user, device_info, risk_score)
+    except Exception:
+        pass
+    db.session.commit()
+
+    return jsonify({
+        'access_token': access_token,
+        'session_token': session_token,
+        'user': {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'role': user.role,
+            'preferences': user.get_preferences() if hasattr(user, 'get_preferences') else {}
+        },
+        'risk_score': risk_score
+    })
 
 @auth_bp.route('/suggest-username', methods=['POST'])
 def suggest_username():
@@ -40,122 +81,61 @@ def login():
         login_method = data.get('method', 'password')  # password, voice, biometric
         device_info = data.get('device_info', {})
 
-        print(f"[DEBUG] Login attempt: {username}")
-
-        # AI-powered input validation and correction
         username = ai_auth.normalize_username(username)
-        print(f"[DEBUG] Normalized username: {username}")
 
-        # Find user by username, email, or phone
         user = User.query.filter(
             (User.username == username) |
             (User.email == username) |
             (User.phone == username)
         ).first()
 
-        print(f"[DEBUG] User found: {user.username if user else 'None'}")
-
         if not user or not user.is_active:
-            print(f"[ERROR] User not found or inactive")
             try:
                 ai_auth.log_failed_attempt(username, 'user_not_found', device_info)
-            except Exception as e:
-                print(f"[WARN] Error logging failed attempt: {e}")
+            except Exception:
+                pass
             return jsonify({'error': 'Invalid credentials'}), 401
 
-        # AI risk assessment
         try:
             risk_score = ai_auth.assess_login_risk(user, device_info)
-            print(f"[DEBUG] Risk score: {risk_score}")
-        except Exception as e:
-            print(f"[WARN] Error assessing risk: {e}")
+        except Exception:
             risk_score = 0.0
 
-        # Authenticate based on method
         if login_method == 'password':
-            password_valid = user.check_password(password)
-            print(f"[DEBUG] Password valid: {password_valid}")
-            if not password_valid:
-                print(f"[ERROR] Wrong password")
+            if not user.check_password(password):
                 try:
                     ai_auth.log_failed_attempt(username, 'wrong_password', device_info)
-                except Exception as e:
-                    print(f"[WARN] Error logging failed attempt: {e}")
+                except Exception:
+                    pass
                 return jsonify({'error': 'Invalid credentials'}), 401
         elif login_method == 'voice':
-            voice_data = data.get('voice_data')
-            if not ai_auth.verify_voice_print(user.id, voice_data):
-                return jsonify({'error': 'Voice authentication failed'}), 401
+            return jsonify({'error': 'Voice login is experimental. Use the Password tab.'}), 501
         elif login_method == 'biometric':
-            biometric_data = data.get('biometric_data')
-            if not ai_auth.verify_biometric(user.id, biometric_data):
-                return jsonify({'error': 'Biometric authentication failed'}), 401
+            return jsonify({'error': 'Biometric login is experimental. Use the Password tab.'}), 501
 
-        # Check if 2FA is required based on risk score
         requires_2fa = risk_score > 0.7 or getattr(user, 'force_2fa', False)
 
         if requires_2fa and not data.get('otp_verified'):
-            # Send OTP and require verification
             otp_method = ai_auth.select_optimal_2fa_method(user, device_info)
-            ai_auth.send_otp(user, otp_method)
-            return jsonify({
-                'requires_2fa': True,
-                'method': otp_method,
-                'message': f'OTP sent via {otp_method}'
-            }), 200
-
-        # Create access token
-        access_token = create_access_token(
-            identity=str(user.id),
-            expires_delta=timedelta(hours=8)
-        )
-
-        # Create session (non-fatal: JWT login still succeeds if session store is down)
-        session_token = None
-        try:
-            from services.session_manager import session_manager
-            session_token = session_manager.create_session(
-                user_id=user.id,
-                device_info=device_info,
-                ip_address=request.remote_addr
-            )
-        except Exception as e:
-            print(f"[WARN] Session create failed: {e}")
+            sent = False
             try:
-                db.session.rollback()
+                sent = bool(ai_auth.send_otp(user, otp_method))
             except Exception:
-                pass
+                sent = False
+            if sent:
+                return jsonify({
+                    'requires_2fa': True,
+                    'method': otp_method,
+                    'message': f'OTP sent via {otp_method}'
+                }), 200
 
-        # Update user login info
-        user.last_login = datetime.utcnow()
+        return _issue_login_response(user, device_info, risk_score)
 
-        # Log successful login
+    except Exception:
         try:
-            ai_auth.log_successful_login(user, device_info, risk_score)
-        except Exception as e:
-            print(f"[WARN] Error logging successful login: {e}")
-
-        db.session.commit()
-
-        print(f"[SUCCESS] Login successful for {username}")
-
-        return jsonify({
-            'access_token': access_token,
-            'session_token': session_token,
-            'user': {
-                'id': user.id,
-                'username': user.username,
-                'email': user.email,
-                'role': user.role,
-                'preferences': user.get_preferences() if hasattr(user, 'get_preferences') else {}
-            },
-            'risk_score': risk_score
-        })
-
-    except Exception as e:
-        print(f"[ERROR] Login error: {str(e)}")
-        import traceback
-        traceback.print_exc()
+            db.session.rollback()
+        except Exception:
+            pass
         return jsonify({'error': 'Login failed due to server error'}), 500
 
 @auth_bp.route('/me', methods=['GET'])
@@ -179,20 +159,30 @@ def get_current_user():
             }
         })
 
-    except Exception as e:
-        print(f"[ERROR] Get current user error: {str(e)}")
+    except Exception:
         return jsonify({'error': 'Failed to get user information'}), 500
 
 @auth_bp.route('/verify-otp', methods=['POST'])
 def verify_otp():
-    data = request.get_json()
+    data = request.get_json() or {}
     username = data.get('username')
     otp = data.get('otp')
-    
-    if ai_auth.verify_otp(username, otp):
-        return jsonify({'verified': True})
-    
-    return jsonify({'error': 'Invalid OTP'}), 401
+    device_info = data.get('device_info', {})
+
+    if not username or not otp:
+        return jsonify({'error': 'Username and OTP are required'}), 400
+
+    if not ai_auth.verify_otp(username, otp):
+        return jsonify({'error': 'Invalid OTP'}), 401
+
+    user = User.query.filter(
+        (User.username == username) |
+        (User.email == username) |
+        (User.phone == username)
+    ).first()
+    if not user or not user.is_active:
+        return jsonify({'error': 'User not found or inactive'}), 404
+    return _issue_login_response(user, device_info, 0.0)
 
 @auth_bp.route('/logout', methods=['POST'])
 @jwt_required()
@@ -205,12 +195,9 @@ def logout():
         session_token = request.headers.get('X-Session-Token')
 
         if session_token:
-            # Invalidate specific session
             session_manager.invalidate_session(session_token)
         else:
-            # Fallback: invalidate all user sessions
-            user_id = get_jwt_identity()
-            session_manager.invalidate_user_sessions(user_id)
+            session_manager.invalidate_user_sessions(current_user_id())
 
         return jsonify({
             'success': True,

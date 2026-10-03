@@ -14,11 +14,14 @@ class AuthService {
 
       const response = await api.post(`${API_BASE}/login`, loginData);
 
+      if (response.data.requires_2fa) {
+        return response.data;
+      }
+
       if (response.data.access_token) {
         localStorage.setItem('token', response.data.access_token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
 
-        // Store session token if provided
         if (response.data.session_token) {
           localStorage.setItem('sessionToken', response.data.session_token);
         }
@@ -51,6 +54,13 @@ class AuthService {
 
   async verifyOTP(data) {
     const response = await api.post(`${API_BASE}/verify-otp`, data);
+    if (response.data.access_token) {
+      localStorage.setItem('token', response.data.access_token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      if (response.data.session_token) {
+        localStorage.setItem('sessionToken', response.data.session_token);
+      }
+    }
     return response.data;
   }
 

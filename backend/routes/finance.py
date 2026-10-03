@@ -95,6 +95,27 @@ def _month_key(dt):
     return dt.strftime('%Y-%m') if dt else None
 
 
+def parse_invoice_id(value):
+    """Coerce invoice_id from form/JSON to int, or None."""
+    if value in (None, ''):
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def payment_status_for_amount(invoice_total, amount):
+    """pending / partial / paid from this payment only (no paid_amount column)."""
+    total = float(invoice_total or 0)
+    paid = float(amount or 0)
+    if paid <= 0 or total <= 0:
+        return 'pending'
+    if paid + 0.009 >= total:
+        return 'paid'
+    return 'partial'
+
+
 # Simple endpoints for frontend compatibility
 @finance_bp.route('/invoices', methods=['GET'])
 @jwt_required()
@@ -267,8 +288,27 @@ def create_journal_entry():
 @jwt_required()
 def create_invoice():
     user = current_user()
+    if not user:
+        return jsonify({'success': False, 'message': 'User not found'}), 401
     data = request.get_json() or {}
+    customer_id = data.get('customer_id')
+    try:
+        customer_id = int(customer_id) if customer_id not in (None, '') else None
+    except (TypeError, ValueError):
+        customer_id = None
+    if not customer_id:
+        return jsonify({'success': False, 'message': 'customer_id is required'}), 400
+    customer = Customer.query.get(customer_id)
+    if not customer:
+        return jsonify({'success': False, 'message': 'Customer not found'}), 404
     items = data.get('items') or data.get('invoice_items') or []
+    has_line = any(
+        (item.get('description') or item.get('variety') or item.get('product_name'))
+        and float(item.get('quantity', 0) or 0) > 0
+        for item in items
+    )
+    if not has_line:
+        return jsonify({'success': False, 'message': 'Add at least one line with description and quantity'}), 400
     subtotal = float(data.get('subtotal', 0) or 0)
     if not subtotal and items:
         subtotal = sum(float(item.get('quantity', 0) or 0) * float(item.get('unit_price', 0) or 0) for item in items)
@@ -299,7 +339,7 @@ def create_invoice():
     count = Invoice.query.count() + 1
     invoice = Invoice(
         invoice_number=f'INV{count:06d}',
-        customer_id=data.get('customer_id'),
+        customer_id=customer_id,
         invoice_date=invoice_date,
         due_date=due_date,
         subtotal=subtotal,
@@ -321,6 +361,8 @@ def create_invoice():
 @jwt_required()
 def record_payment():
     user = current_user()
+    if not user:
+        return jsonify({'success': False, 'message': 'User not found'}), 401
     data = request.get_json() or {}
     amount = float(data.get('amount', 0) or 0)
     if amount <= 0:
@@ -350,10 +392,11 @@ def record_payment():
     )
     db.session.add(payment)
 
-    if data.get('invoice_id'):
-        invoice = Invoice.query.get(data.get('invoice_id'))
+    invoice_id = parse_invoice_id(data.get('invoice_id'))
+    if invoice_id:
+        invoice = Invoice.query.get(invoice_id)
         if invoice:
-            invoice.status = 'paid'
+            invoice.status = payment_status_for_amount(invoice.total_amount, amount)
 
     db.session.commit()
     result = payment.to_dict()
