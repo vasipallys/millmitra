@@ -9,7 +9,7 @@ Same app you may see labeled **Smart Mill**, **Rice Mill Management System**, or
 | Audience | Document |
 | --- | --- |
 | Operators and office staff | [docs/USER_GUIDE.md](docs/USER_GUIDE.md) |
-| Owners and managers | [docs/BUSINESS.md](docs/BUSINESS.md) |
+| Owners and managers | [docs/BUSINESS.md](docs/BUSINESS.md) — mill-day scenarios and Playwright map: [docs/BUSINESS_SCENARIOS.md](docs/BUSINESS_SCENARIOS.md) |
 | Engineers | [docs/TECHNICAL.md](docs/TECHNICAL.md) |
 
 **Where to start after login:** sidebar **Mill flow** (`/mill-flow`) — guided receive → mill → sell → pay, with a suggested next step from mill records. Or open Dashboard.
@@ -189,6 +189,7 @@ More in [docs/TECHNICAL.md](docs/TECHNICAL.md#11-opentelemetry).
 cd frontend
 npm run lint
 npm run build
+npm run test:e2e
 ```
 
 ```powershell

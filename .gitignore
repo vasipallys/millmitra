@@ -182,3 +182,7 @@ cython_debug/
 /.idea
 /frontend/node_modules
 frontend/package-lock.json
+frontend/test-results/
+frontend/playwright-report/
+frontend/blob-report/
+frontend/playwright/.cache/

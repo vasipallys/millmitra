@@ -14,7 +14,7 @@ import { useI18n } from '../../i18n/I18nContext';
 
 const validationSchema = Yup.object({
   farmer_id: Yup.number().required('Farmer selection is required'),
-  contract_id: Yup.number().nullable(), // Optional field
+  contract_id: Yup.mixed().nullable(),
   procurement_date: Yup.date().required('Procurement date is required'),
   crop_type: Yup.string().required('Crop type is required'),
   paddy_variety: Yup.string().required('Paddy variety is required'),
@@ -58,7 +58,7 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
   const formik = useFormik({
     initialValues: {
       farmer_id: '',
-      contract_id: '',
+      contract_id: 'none',
       crop_type: 'Basmati Rice',
       paddy_variety: '',
       procurement_date: new Date(),
@@ -86,8 +86,10 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
           procurement_date: values.procurement_date instanceof Date
             ? values.procurement_date.toISOString().split('T')[0]
             : values.procurement_date,
-          farmer_id: parseInt(values.farmer_id),
-          contract_id: values.contract_id ? parseInt(values.contract_id) : null,
+          farmer_id: parseInt(values.farmer_id, 10),
+          contract_id: values.contract_id && values.contract_id !== 'none'
+            ? parseInt(values.contract_id, 10)
+            : null,
           quantity: parseFloat(values.quantity),
           price_per_unit: parseFloat(values.price_per_unit),
           base_price: parseFloat(values.base_price),
@@ -180,13 +182,30 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
   const estimatedScore = calculateQualityScore();
   const estimatedGrade = getQualityGrade(estimatedScore);
 
+  const SELECT_MENU_PROPS = {
+    disableAutoFocusItem: true,
+    PaperProps: { sx: { maxHeight: 240 } },
+  };
+
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth>
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      maxWidth="md"
+      fullWidth
+      scroll="paper"
+      PaperProps={{
+        sx: {
+          maxHeight: 'calc(100vh - 96px)',
+          m: { xs: 1, sm: 2 },
+        },
+      }}
+    >
       <DialogTitle>
         {t('recordProcurement')}
       </DialogTitle>
 
-      <DialogContent>
+      <DialogContent dividers sx={{ overflowY: 'auto' }}>
         {qualityAssessment && (
           <Alert severity="info" sx={{ mb: 2 }}>
             <Typography variant="subtitle2">AI Quality Assessment</Typography>
@@ -219,43 +238,65 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
         )}
 
         <form id="procurement-form" onSubmit={formik.handleSubmit}>
-          <Grid container spacing={3}>
-            {/* Farmer and Contract Selection */}
-            <Grid item xs={12} md={6}>
+          <Grid container spacing={2} alignItems="flex-start">
+            <Grid item xs={12} sm={6} sx={{ minWidth: 0 }}>
               <Autocomplete
+                fullWidth
                 options={farmersData?.farmers || []}
                 getOptionLabel={(option) => `${option.name} (${option.farmer_code})`}
-                value={farmersData?.farmers?.find(f => f.id === formik.values.farmer_id) || null}
+                value={farmersData?.farmers?.find((f) => f.id === formik.values.farmer_id) || null}
                 onChange={(event, newValue) => {
                   const farmerId = newValue?.id || '';
                   formik.setFieldValue('farmer_id', farmerId);
                   setSelectedFarmerId(farmerId);
-                  formik.setFieldValue('contract_id', ''); // Reset contract selection
+                  formik.setFieldValue('contract_id', 'none');
                 }}
                 isOptionEqualToValue={(option, value) => option?.id === value?.id}
+                sx={{
+                  width: '100%',
+                  minWidth: 0,
+                  '& .MuiOutlinedInput-root': {
+                    flexWrap: 'nowrap',
+                    overflow: 'hidden',
+                  },
+                  '& .MuiAutocomplete-input': {
+                    minWidth: '0 !important',
+                  },
+                }}
+                ListboxProps={{ sx: { maxHeight: 240 } }}
+                componentsProps={{
+                  popper: { sx: { zIndex: 1400 } },
+                }}
                 renderInput={(params) => (
                   <TextField
                     {...params}
+                    fullWidth
                     label={`${t('selectFarmer')} *`}
                     error={formik.touched.farmer_id && Boolean(formik.errors.farmer_id)}
                     helperText={formik.touched.farmer_id && formik.errors.farmer_id}
+                    inputProps={{
+                      ...params.inputProps,
+                      style: { ...params.inputProps?.style, textOverflow: 'ellipsis' },
+                    }}
                   />
                 )}
               />
             </Grid>
 
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Contract (Optional)</InputLabel>
+            <Grid item xs={12} sm={6} sx={{ minWidth: 0 }}>
+              <FormControl fullWidth sx={{ minWidth: 0 }}>
+                <InputLabel id="procurement-contract-label">{t('selectContract')}</InputLabel>
                 <Select
+                  labelId="procurement-contract-label"
                   name="contract_id"
-                  value={formik.values.contract_id}
+                  value={formik.values.contract_id || 'none'}
                   onChange={formik.handleChange}
                   label={t('selectContract')}
                   disabled={!formik.values.farmer_id}
+                  MenuProps={SELECT_MENU_PROPS}
                 >
-                  <MenuItem value="">No Contract</MenuItem>
-                  {contractsData?.contracts?.map((contract) => (
+                  <MenuItem value="none">No Contract</MenuItem>
+                  {(contractsData?.contracts || []).map((contract) => (
                     <MenuItem key={contract.id} value={contract.id}>
                       {contract.contract_number} - {contract.paddy_variety}
                     </MenuItem>

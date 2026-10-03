@@ -2,7 +2,7 @@
 
 For mill owners, managers, and operators. This describes MillMitra as it works today: the mill process it records, who uses which screens, and what is live versus preview.
 
-Related reading: [User Guide](USER_GUIDE.md) (click-by-click), [Technical document](TECHNICAL.md) (engineers).
+Related reading: [User Guide](USER_GUIDE.md) (click-by-click), [Technical document](TECHNICAL.md) (engineers), [business scenarios and Playwright coverage](BUSINESS_SCENARIOS.md).
 
 ---
 
