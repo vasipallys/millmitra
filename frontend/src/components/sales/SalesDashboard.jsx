@@ -10,8 +10,10 @@ import {
 } from '@mui/icons-material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { salesAPI } from '../../services/api';
+import { useI18n } from '../../i18n/I18nContext';
 
 const SalesDashboard = () => {
+  const { t } = useI18n();
   const [dashboardData, setDashboardData] = useState(null);
   const [aiInsights, setAiInsights] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -75,7 +77,7 @@ const SalesDashboard = () => {
   }
 
   if (!dashboardData) {
-    return <Alert severity="error">Failed to load dashboard data</Alert>;
+    return <Alert severity="error">{t('failedLoadDashboard')}</Alert>;
   }
 
   const pipelineColors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300'];

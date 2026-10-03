@@ -20,6 +20,7 @@ import CreateContractDialog from '../components/farmer/CreateContractDialog';
 import RecordProcurementDialog from '../components/farmer/RecordProcurementDialog';
 import { getApiErrorMessage } from '../utils/apiError';
 import { PageHeader, PageShell, QueryErrorAlert } from '../components/common/PageChrome';
+import { useI18n } from '../i18n/I18nContext';
 
 const Farmers = () => {
   const [tabValue, setTabValue] = useState(0);
@@ -50,6 +51,7 @@ const Farmers = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const toast = useToastNotifications();
+  const { t } = useI18n();
 
   // Check if user is authenticated
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -359,7 +361,7 @@ const Farmers = () => {
   if (!authChecked) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
-        <Typography>Loading...</Typography>
+        <Typography>{t('loading')}</Typography>
       </Box>
     );
   }
@@ -367,21 +369,21 @@ const Farmers = () => {
   return (
     <PageShell>
       <PageHeader
-        title="Farmer Management"
-        subtitle="Register suppliers, contracts, and paddy purchases"
+        title={t('farmerManagement')}
+        subtitle={t('farmerSubtitle')}
         actions={
           <>
             <Button variant="contained" startIcon={<PersonAdd />} onClick={() => setRegisterDialogOpen(true)}>
-              Register Farmer
+              {t('registerFarmer')}
             </Button>
             <Button variant="outlined" startIcon={<Assignment />} onClick={() => setContractDialogOpen(true)}>
-              Create Contract
+              {t('createContract')}
             </Button>
             <Button variant="outlined" startIcon={<Agriculture />} onClick={() => setProcurementDialogOpen(true)}>
-              Record Procurement
+              {t('recordProcurement')}
             </Button>
             <Button variant="outlined" startIcon={<PendingActions />} onClick={() => setEditRequestsDialogOpen(true)} color="warning">
-              Edit Requests
+              {t('editRequests')}
             </Button>
           </>
         }
@@ -397,7 +399,7 @@ const Farmers = () => {
                 <PersonAdd color="primary" sx={{ mr: 2 }} />
                 <Box>
                   <Typography color="textSecondary" gutterBottom>
-                    Total Farmers
+                    {t('totalFarmers')}
                   </Typography>
                   <Typography variant="h5">
                     {analyticsLoading ? '...' : (analytics?.analytics?.total_farmers || 0)}
@@ -415,7 +417,7 @@ const Farmers = () => {
                 <Assignment color="success" sx={{ mr: 2 }} />
                 <Box>
                   <Typography color="textSecondary" gutterBottom>
-                    Active Contracts
+                    {t('activeContracts')}
                   </Typography>
                   <Typography variant="h5">
                     {analyticsLoading ? '...' : (analytics?.analytics?.active_contracts || 0)}
@@ -433,7 +435,7 @@ const Farmers = () => {
                 <Agriculture color="warning" sx={{ mr: 2 }} />
                 <Box>
                   <Typography color="textSecondary" gutterBottom>
-                    Total Procurement (Qt)
+                    {t('totalProcurementQt')}
                   </Typography>
                   <Typography variant="h5">
                     {analyticsLoading ? '...' : (analytics?.analytics?.total_procurement ? `${(analytics.analytics.total_procurement / 100).toFixed(1)}` : '0')}
@@ -451,7 +453,7 @@ const Farmers = () => {
                 <AccountBalance color="info" sx={{ mr: 2 }} />
                 <Box>
                   <Typography color="textSecondary" gutterBottom>
-                    Total Payments
+                    {t('totalPayments')}
                   </Typography>
                   <Typography variant="h5">
                     {analyticsLoading ? '...' : (analytics?.analytics?.total_payments ? formatCurrency(analytics.analytics.total_payments) : '₹0')}
@@ -466,10 +468,10 @@ const Farmers = () => {
       {/* Tabs */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)}>
-          <Tab label="All Farmers" />
-          <Tab label="Recent Procurements" />
-          <Tab label="Contract Management" />
-          <Tab label="Analytics" />
+          <Tab label={t('allFarmers')} />
+          <Tab label={t('recentProcurements')} />
+          <Tab label={t('contractManagement')} />
+          <Tab label={t('analytics')} />
         </Tabs>
       </Box>
 
@@ -478,7 +480,7 @@ const Farmers = () => {
         <Box sx={{ mb: 3 }}>
           <TextField
             fullWidth
-            placeholder="Search farmers by name, code, or phone..."
+            placeholder={t('searchFarmers')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             InputProps={{
@@ -494,7 +496,7 @@ const Farmers = () => {
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              All Farmers ({farmersData?.farmers?.length || 0})
+              {t('allFarmers')} ({farmersData?.farmers?.length || 0})
             </Typography>
             {farmersLoading ? (
               <Box sx={{ textAlign: 'center', py: 4 }}>
@@ -513,15 +515,15 @@ const Farmers = () => {
                 <Table>
                   <TableHead>
                     <TableRow>
-                      <TableCell>Farmer Code</TableCell>
-                      <TableCell>Name</TableCell>
-                      <TableCell>Phone</TableCell>
-                      <TableCell>Village</TableCell>
-                      <TableCell>Land Area</TableCell>
-                      <TableCell>Quality Rating</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Verification</TableCell>
-                      <TableCell>Actions</TableCell>
+                      <TableCell>{t('farmerCode')}</TableCell>
+                      <TableCell>{t('name')}</TableCell>
+                      <TableCell>{t('phone')}</TableCell>
+                      <TableCell>{t('village')}</TableCell>
+                      <TableCell>{t('landArea')}</TableCell>
+                      <TableCell>{t('qualityRating')}</TableCell>
+                      <TableCell>{t('status')}</TableCell>
+                      <TableCell>{t('verification')}</TableCell>
+                      <TableCell>{t('actions')}</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -612,14 +614,14 @@ const Farmers = () => {
                 <Table>
                   <TableHead>
                     <TableRow>
-                      <TableCell>Date</TableCell>
-                      <TableCell>Farmer</TableCell>
-                      <TableCell>Variety</TableCell>
-                      <TableCell>Quantity (kg)</TableCell>
-                      <TableCell>Price/Unit</TableCell>
-                      <TableCell>Total Amount</TableCell>
-                      <TableCell>Quality</TableCell>
-                      <TableCell>Status</TableCell>
+                      <TableCell>{t('date')}</TableCell>
+                      <TableCell>{t('farmers')}</TableCell>
+                      <TableCell>{t('variety')}</TableCell>
+                      <TableCell>{t('quantityKg')}</TableCell>
+                      <TableCell>{t('pricePerUnit')}</TableCell>
+                      <TableCell>{t('totalAmount')}</TableCell>
+                      <TableCell>{t('quality')}</TableCell>
+                      <TableCell>{t('status')}</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -698,16 +700,16 @@ const Farmers = () => {
                 <Table>
                   <TableHead>
                     <TableRow>
-                      <TableCell>Contract ID</TableCell>
-                      <TableCell>Farmer</TableCell>
-                      <TableCell>Crop Type</TableCell>
-                      <TableCell>Season</TableCell>
-                      <TableCell>Quantity</TableCell>
-                      <TableCell>Base Price</TableCell>
-                      <TableCell>Start Date</TableCell>
-                      <TableCell>End Date</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Actions</TableCell>
+                      <TableCell>{t('contractId')}</TableCell>
+                      <TableCell>{t('farmers')}</TableCell>
+                      <TableCell>{t('cropType')}</TableCell>
+                      <TableCell>{t('season')}</TableCell>
+                      <TableCell>{t('quantity')}</TableCell>
+                      <TableCell>{t('basePrice')}</TableCell>
+                      <TableCell>{t('startDate')}</TableCell>
+                      <TableCell>{t('endDate')}</TableCell>
+                      <TableCell>{t('status')}</TableCell>
+                      <TableCell>{t('actions')}</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -826,25 +828,25 @@ const Farmers = () => {
                 </Typography>
                 <Box sx={{ mt: 2 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="body2">Active Farmers</Typography>
+                    <Typography variant="body2">{t('activeFarmers')}</Typography>
                     <Typography variant="body2" fontWeight="bold">
                       {analyticsLoading ? '...' : (analytics?.analytics?.active_farmers || analytics?.analytics?.total_farmers || 0)}
                     </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="body2">Total Procurement</Typography>
+                    <Typography variant="body2">{t('totalProcurement')}</Typography>
                     <Typography variant="body2" fontWeight="bold">
                       {analyticsLoading ? '...' : `${(analytics?.analytics?.total_procurement || 0) / 100} Qt`}
                     </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="body2">Active Contracts</Typography>
+                    <Typography variant="body2">{t('activeContracts')}</Typography>
                     <Typography variant="body2" fontWeight="bold">
                       {analyticsLoading ? '...' : (analytics?.analytics?.active_contracts || 0)}
                     </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="body2">Total Payments</Typography>
+                    <Typography variant="body2">{t('totalPayments')}</Typography>
                     <Typography variant="body2" fontWeight="bold">
                       {analyticsLoading ? '...' : (analytics?.analytics?.total_payments ? formatCurrency(analytics.analytics.total_payments) : '₹0')}
                     </Typography>
@@ -1032,7 +1034,7 @@ const Farmers = () => {
       >
         <DialogTitle>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h6">Farmer Details</Typography>
+            <Typography variant="h6">{t('farmerDetails')}</Typography>
             <IconButton onClick={() => setViewDialogOpen(false)}>
               <Search />
             </IconButton>
@@ -1091,7 +1093,7 @@ const Farmers = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setViewDialogOpen(false)}>Close</Button>
+          <Button onClick={() => setViewDialogOpen(false)}>{t('close')}</Button>
           <Button
             variant="contained"
             onClick={() => {
@@ -1111,7 +1113,7 @@ const Farmers = () => {
         maxWidth="lg"
         fullWidth
       >
-        <DialogTitle>Edit Farmer Information</DialogTitle>
+        <DialogTitle>{t('editFarmer')}</DialogTitle>
         <DialogContent>
           {selectedFarmer && (
             <Box sx={{ mt: 2 }}>
@@ -1123,14 +1125,14 @@ const Farmers = () => {
                   </Alert>
                   <TextField
                     fullWidth
-                    label="Reason for Edit"
+                    label={t('reasonForEdit')}
                     value={editFormData.edit_reason || ''}
                     onChange={(e) => handleEditFormChange('edit_reason', e.target.value)}
-                    placeholder="Please provide a reason for this edit..."
+                    placeholder={t('reasonForEditPh')}
                     multiline
                     rows={2}
                     margin="normal"
-                    helperText="This information will be reviewed by administrators"
+                    helperText={t('reasonReviewHint')}
                   />
                 </Grid>
 
@@ -1143,7 +1145,7 @@ const Farmers = () => {
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
-                    label="Full Name"
+                    label={t('fullName')}
                     value={editFormData.name || ''}
                     onChange={(e) => handleEditFormChange('name', e.target.value)}
                     margin="normal"
@@ -1152,7 +1154,7 @@ const Farmers = () => {
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
-                    label="Phone Number"
+                    label={t('phoneNumber')}
                     value={editFormData.phone || ''}
                     onChange={(e) => handleEditFormChange('phone', e.target.value)}
                     margin="normal"
@@ -1161,7 +1163,7 @@ const Farmers = () => {
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
-                    label="Email"
+                    label={t('email')}
                     type="email"
                     value={editFormData.email || ''}
                     onChange={(e) => handleEditFormChange('email', e.target.value)}
@@ -1171,11 +1173,11 @@ const Farmers = () => {
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
-                    label="Farmer Code"
+                    label={t('farmerCode')}
                     defaultValue={selectedFarmer.farmer_code}
                     margin="normal"
                     disabled
-                    helperText="Farmer code cannot be changed"
+                    helperText={t('farmerCodeReadonly')}
                   />
                 </Grid>
 
@@ -1188,7 +1190,7 @@ const Farmers = () => {
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
-                    label="Village"
+                    label={t('village')}
                     value={editFormData.village || ''}
                     onChange={(e) => handleEditFormChange('village', e.target.value)}
                     margin="normal"
@@ -1197,7 +1199,7 @@ const Farmers = () => {
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
-                    label="District"
+                    label={t('district')}
                     value={editFormData.district || ''}
                     onChange={(e) => handleEditFormChange('district', e.target.value)}
                     margin="normal"
@@ -1206,7 +1208,7 @@ const Farmers = () => {
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
-                    label="State"
+                    label={t('state')}
                     value={editFormData.state || ''}
                     onChange={(e) => handleEditFormChange('state', e.target.value)}
                     margin="normal"
@@ -1215,7 +1217,7 @@ const Farmers = () => {
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
-                    label="Pincode"
+                    label={t('pincode')}
                     defaultValue={selectedFarmer.pincode || ''}
                     margin="normal"
                   />
@@ -1223,7 +1225,7 @@ const Farmers = () => {
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
-                    label="Address"
+                    label={t('address')}
                     multiline
                     rows={2}
                     defaultValue={selectedFarmer.address || ''}
@@ -1240,7 +1242,7 @@ const Farmers = () => {
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
-                    label="Aadhar Number"
+                    label={t('aadharNumber')}
                     defaultValue={selectedFarmer.aadhar_number || ''}
                     margin="normal"
                     inputProps={{ maxLength: 12 }}
@@ -1249,7 +1251,7 @@ const Farmers = () => {
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
-                    label="PAN Number"
+                    label={t('panNumber')}
                     defaultValue={selectedFarmer.pan_number || ''}
                     margin="normal"
                     inputProps={{ maxLength: 10 }}
@@ -1265,7 +1267,7 @@ const Farmers = () => {
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
-                    label="Land Area (acres)"
+                    label={t('totalLandAcres')}
                     type="number"
                     defaultValue={selectedFarmer.land_area || ''}
                     margin="normal"
@@ -1275,7 +1277,7 @@ const Farmers = () => {
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
-                    label="Farming Experience (years)"
+                    label={t('farmingYears')}
                     type="number"
                     defaultValue={selectedFarmer.farming_experience || ''}
                     margin="normal"
@@ -1286,27 +1288,27 @@ const Farmers = () => {
                   <TextField
                     fullWidth
                     select
-                    label="Farming Type"
+                    label={t('farmingType')}
                     defaultValue={selectedFarmer.farming_type || 'conventional'}
                     margin="normal"
                   >
-                    <MenuItem value="organic">Organic</MenuItem>
-                    <MenuItem value="conventional">Conventional</MenuItem>
-                    <MenuItem value="mixed">Mixed</MenuItem>
+                    <MenuItem value="organic">{t('organic')}</MenuItem>
+                    <MenuItem value="conventional">{t('conventional')}</MenuItem>
+                    <MenuItem value="mixed">{t('mixed')}</MenuItem>
                   </TextField>
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
                     select
-                    label="Irrigation Type"
+                    label={t('irrigationType')}
                     defaultValue={selectedFarmer.irrigation_type || 'bore_well'}
                     margin="normal"
                   >
-                    <MenuItem value="bore_well">Bore Well</MenuItem>
-                    <MenuItem value="canal">Canal</MenuItem>
-                    <MenuItem value="rain_fed">Rain Fed</MenuItem>
-                    <MenuItem value="mixed">Mixed</MenuItem>
+                    <MenuItem value="bore_well">{t('boreWell')}</MenuItem>
+                    <MenuItem value="canal">{t('canal')}</MenuItem>
+                    <MenuItem value="rain_fed">{t('rainFed')}</MenuItem>
+                    <MenuItem value="mixed">{t('mixed')}</MenuItem>
                   </TextField>
                 </Grid>
 
@@ -1319,7 +1321,7 @@ const Farmers = () => {
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
-                    label="Bank Account Number"
+                    label={t('bankAccount')}
                     defaultValue={selectedFarmer.bank_account || ''}
                     margin="normal"
                   />
@@ -1327,7 +1329,7 @@ const Farmers = () => {
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
-                    label="IFSC Code"
+                    label={t('ifscCode')}
                     defaultValue={selectedFarmer.ifsc_code || ''}
                     margin="normal"
                   />
@@ -1335,7 +1337,7 @@ const Farmers = () => {
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
-                    label="Bank Name"
+                    label={t('bankName')}
                     defaultValue={selectedFarmer.bank_name || ''}
                     margin="normal"
                   />
@@ -1343,7 +1345,7 @@ const Farmers = () => {
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
-                    label="Branch Name"
+                    label={t('branchName')}
                     defaultValue={selectedFarmer.branch_name || ''}
                     margin="normal"
                   />
@@ -1359,7 +1361,7 @@ const Farmers = () => {
                   <TextField
                     fullWidth
                     select
-                    label="Payment Terms"
+                    label={t('paymentTerms')}
                     defaultValue={selectedFarmer.payment_terms || 'immediate'}
                     margin="normal"
                   >
@@ -1372,7 +1374,7 @@ const Farmers = () => {
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
-                    label="Credit Limit (₹)"
+                    label={t('creditLimit')}
                     type="number"
                     defaultValue={selectedFarmer.credit_limit || ''}
                     margin="normal"
@@ -1384,7 +1386,7 @@ const Farmers = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => setEditDialogOpen(false)}>{t('cancel')}</Button>
           <Button
             variant="contained"
             onClick={handleSaveEditFarmer}
@@ -1402,36 +1404,36 @@ const Farmers = () => {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Farmer Approval</DialogTitle>
+        <DialogTitle>{t('farmerApproval')}</DialogTitle>
         <DialogContent>
           {selectedFarmer && (
             <Box sx={{ mt: 2 }}>
               <Typography variant="h6" gutterBottom>
-                Approve Farmer: {selectedFarmer.name}
+                {t('farmerApproval')}: {selectedFarmer.name}
               </Typography>
               <Typography variant="body2" color="text.secondary" gutterBottom>
-                Farmer Code: {selectedFarmer.farmer_code}
+                {t('farmerCode')}: {selectedFarmer.farmer_code}
               </Typography>
               <Typography variant="body2" color="text.secondary" gutterBottom>
-                Phone: {selectedFarmer.phone}
+                {t('phone')}: {selectedFarmer.phone}
               </Typography>
               <Typography variant="body2" color="text.secondary" gutterBottom>
-                Village: {selectedFarmer.village}
+                {t('village')}: {selectedFarmer.village}
               </Typography>
 
               <Alert severity="info" sx={{ mt: 2 }}>
-                Approving this farmer will:
+                {t('approveWill')}
                 <ul>
-                  <li>Mark them as verified</li>
-                  <li>Enable them for contracts and procurements</li>
-                  <li>Send confirmation notification</li>
+                  <li>{t('approveVerified')}</li>
+                  <li>{t('approveContracts')}</li>
+                  <li>{t('approveNotify')}</li>
                 </ul>
               </Alert>
             </Box>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setApprovalDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => setApprovalDialogOpen(false)}>{t('cancel')}</Button>
           <Button
             variant="contained"
             color="success"
@@ -1519,7 +1521,7 @@ const Farmers = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setContractViewDialogOpen(false)}>Close</Button>
+          <Button onClick={() => setContractViewDialogOpen(false)}>{t('close')}</Button>
           <Button
             variant="contained"
             onClick={() => {
@@ -1539,7 +1541,7 @@ const Farmers = () => {
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle>Edit Contract</DialogTitle>
+        <DialogTitle>{t('editContract')}</DialogTitle>
         <DialogContent>
           {contractEditError && <Alert severity="error" sx={{ mt: 1 }}>{contractEditError}</Alert>}
           {selectedContract && (
@@ -1548,7 +1550,7 @@ const Farmers = () => {
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
-                    label="Quantity Committed (kg)"
+                    label={t('qtyCommittedKg')}
                     type="number"
                     value={contractEditForm.quantity_committed}
                     onChange={(e) => setContractEditForm({ ...contractEditForm, quantity_committed: e.target.value })}
@@ -1558,7 +1560,7 @@ const Farmers = () => {
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
-                    label="Base Price (₹/kg)"
+                    label={t('basePriceKg')}
                     type="number"
                     value={contractEditForm.base_price}
                     onChange={(e) => setContractEditForm({ ...contractEditForm, base_price: e.target.value })}
@@ -1568,7 +1570,7 @@ const Farmers = () => {
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
-                    label="Quality Bonus (₹)"
+                    label={t('qualityBonusRs')}
                     type="number"
                     value={contractEditForm.quality_bonus}
                     onChange={(e) => setContractEditForm({ ...contractEditForm, quality_bonus: e.target.value })}
@@ -1578,7 +1580,7 @@ const Farmers = () => {
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
-                    label="Advance Amount (₹)"
+                    label={t('advanceAmount')}
                     type="number"
                     value={contractEditForm.advance_amount}
                     onChange={(e) => setContractEditForm({ ...contractEditForm, advance_amount: e.target.value })}
@@ -1588,7 +1590,7 @@ const Farmers = () => {
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
-                    label="Terms & Conditions"
+                    label={t('termsConditions')}
                     multiline
                     rows={3}
                     value={contractEditForm.terms_conditions}
@@ -1599,7 +1601,7 @@ const Farmers = () => {
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
-                    label="Special Instructions"
+                    label={t('specialInstructions')}
                     multiline
                     rows={2}
                     value={contractEditForm.special_instructions}
@@ -1612,7 +1614,7 @@ const Farmers = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setContractEditDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => setContractEditDialogOpen(false)}>{t('cancel')}</Button>
           <Button
             variant="contained"
             onClick={() => {
@@ -1649,7 +1651,7 @@ const Farmers = () => {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Update Contract Status</DialogTitle>
+        <DialogTitle>{t('updateContractStatus')}</DialogTitle>
         <DialogContent>
           {selectedContract && (
             <Box sx={{ mt: 2 }}>
@@ -1706,7 +1708,7 @@ const Farmers = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setContractStatusDialogOpen(false)}>Close</Button>
+          <Button onClick={() => setContractStatusDialogOpen(false)}>{t('close')}</Button>
         </DialogActions>
       </Dialog>
 

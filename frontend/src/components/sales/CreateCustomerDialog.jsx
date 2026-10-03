@@ -6,6 +6,7 @@ import {
 } from '@mui/material';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
+import { useI18n } from '../../i18n/I18nContext';
 
 const validationSchema = Yup.object({
   name: Yup.string().required('Customer name is required'),
@@ -16,6 +17,7 @@ const validationSchema = Yup.object({
 });
 
 const CreateCustomerDialog = ({ open, onClose, onSubmit }) => {
+  const { t } = useI18n();
   const [aiAnalysis, setAiAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -59,17 +61,17 @@ const CreateCustomerDialog = ({ open, onClose, onSubmit }) => {
   };
 
   const customerTypes = [
-    { value: 'retail', label: 'Retail' },
-    { value: 'wholesale', label: 'Wholesale' },
-    { value: 'distributor', label: 'Distributor' },
-    { value: 'export', label: 'Export' }
+    { value: 'retail', label: t('typeRetail') },
+    { value: 'wholesale', label: t('typeWholesale') },
+    { value: 'distributor', label: t('typeDistributor') },
+    { value: 'export', label: t('typeExport') }
   ];
 
   const paymentTerms = [
-    { value: 'cash', label: 'Cash' },
-    { value: 'credit_15', label: 'Credit 15 days' },
-    { value: 'credit_30', label: 'Credit 30 days' },
-    { value: 'credit_60', label: 'Credit 60 days' }
+    { value: 'cash', label: t('payCash') },
+    { value: 'credit_15', label: t('credit15') },
+    { value: 'credit_30', label: t('credit30') },
+    { value: 'credit_60', label: t('credit60') }
   ];
 
   const getRiskColor = (rating) => {
@@ -83,7 +85,7 @@ const CreateCustomerDialog = ({ open, onClose, onSubmit }) => {
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>Create New Customer</DialogTitle>
+      <DialogTitle>{t('createCustomer')}</DialogTitle>
       
       <form onSubmit={formik.handleSubmit}>
         <DialogContent>
@@ -119,7 +121,7 @@ const CreateCustomerDialog = ({ open, onClose, onSubmit }) => {
             {/* Basic Information */}
             <Grid item xs={12}>
               <Typography variant="h6" gutterBottom>
-                Basic Information
+                {t('basicInfo')}
               </Typography>
             </Grid>
             
@@ -127,7 +129,7 @@ const CreateCustomerDialog = ({ open, onClose, onSubmit }) => {
               <TextField
                 fullWidth
                 name="name"
-                label="Customer Name"
+                label={t('customerName')}
                 value={formik.values.name}
                 onChange={formik.handleChange}
                 error={formik.touched.name && Boolean(formik.errors.name)}
@@ -140,7 +142,7 @@ const CreateCustomerDialog = ({ open, onClose, onSubmit }) => {
               <TextField
                 fullWidth
                 name="company_name"
-                label="Company Name"
+                label={t('companyName')}
                 value={formik.values.company_name}
                 onChange={formik.handleChange}
               />
@@ -151,7 +153,7 @@ const CreateCustomerDialog = ({ open, onClose, onSubmit }) => {
                 fullWidth
                 select
                 name="customer_type"
-                label="Customer Type"
+                label={t('customerType')}
                 value={formik.values.customer_type}
                 onChange={formik.handleChange}
                 error={formik.touched.customer_type && Boolean(formik.errors.customer_type)}
@@ -169,7 +171,7 @@ const CreateCustomerDialog = ({ open, onClose, onSubmit }) => {
             {/* Contact Information */}
             <Grid item xs={12}>
               <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
-                Contact Information
+                {t('contactInfo')}
               </Typography>
             </Grid>
             
@@ -177,7 +179,7 @@ const CreateCustomerDialog = ({ open, onClose, onSubmit }) => {
               <TextField
                 fullWidth
                 name="email"
-                label="Email"
+                label={t('email')}
                 type="email"
                 value={formik.values.email}
                 onChange={formik.handleChange}
@@ -190,7 +192,7 @@ const CreateCustomerDialog = ({ open, onClose, onSubmit }) => {
               <TextField
                 fullWidth
                 name="phone"
-                label="Phone Number"
+                label={t('phoneNumber')}
                 value={formik.values.phone}
                 onChange={formik.handleChange}
                 error={formik.touched.phone && Boolean(formik.errors.phone)}
@@ -203,7 +205,7 @@ const CreateCustomerDialog = ({ open, onClose, onSubmit }) => {
               <TextField
                 fullWidth
                 name="address"
-                label="Address"
+                label={t('address')}
                 multiline
                 rows={2}
                 value={formik.values.address}
@@ -215,7 +217,7 @@ const CreateCustomerDialog = ({ open, onClose, onSubmit }) => {
               <TextField
                 fullWidth
                 name="city"
-                label="City"
+                label={t('city')}
                 value={formik.values.city}
                 onChange={formik.handleChange}
               />
@@ -225,7 +227,7 @@ const CreateCustomerDialog = ({ open, onClose, onSubmit }) => {
               <TextField
                 fullWidth
                 name="state"
-                label="State"
+                label={t('state')}
                 value={formik.values.state}
                 onChange={formik.handleChange}
               />
@@ -235,7 +237,7 @@ const CreateCustomerDialog = ({ open, onClose, onSubmit }) => {
               <TextField
                 fullWidth
                 name="pincode"
-                label="Pincode"
+                label={t('pincode')}
                 value={formik.values.pincode}
                 onChange={formik.handleChange}
               />
@@ -244,7 +246,7 @@ const CreateCustomerDialog = ({ open, onClose, onSubmit }) => {
             {/* Business Information */}
             <Grid item xs={12}>
               <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
-                Business Information
+                {t('businessInfo')}
               </Typography>
             </Grid>
             
@@ -252,7 +254,7 @@ const CreateCustomerDialog = ({ open, onClose, onSubmit }) => {
               <TextField
                 fullWidth
                 name="gst_number"
-                label="GST Number"
+                label={t('gstNumber')}
                 value={formik.values.gst_number}
                 onChange={formik.handleChange}
               />
@@ -262,7 +264,7 @@ const CreateCustomerDialog = ({ open, onClose, onSubmit }) => {
               <TextField
                 fullWidth
                 name="pan_number"
-                label="PAN Number"
+                label={t('panNumber')}
                 value={formik.values.pan_number}
                 onChange={formik.handleChange}
               />
@@ -272,7 +274,7 @@ const CreateCustomerDialog = ({ open, onClose, onSubmit }) => {
               <TextField
                 fullWidth
                 name="credit_limit"
-                label="Credit Limit (₹)"
+                label={t('creditLimit')}
                 type="number"
                 value={formik.values.credit_limit}
                 onChange={formik.handleChange}
@@ -286,7 +288,7 @@ const CreateCustomerDialog = ({ open, onClose, onSubmit }) => {
                 fullWidth
                 select
                 name="payment_terms"
-                label="Payment Terms"
+                label={t('paymentTerms')}
                 value={formik.values.payment_terms}
                 onChange={formik.handleChange}
               >
@@ -301,13 +303,13 @@ const CreateCustomerDialog = ({ open, onClose, onSubmit }) => {
         </DialogContent>
         
         <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
+          <Button onClick={handleClose}>{t('cancel')}</Button>
           <Button 
             type="submit" 
             variant="contained"
             disabled={loading}
           >
-            Create Customer
+            {t('createCustomer')}
           </Button>
         </DialogActions>
       </form>

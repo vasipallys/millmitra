@@ -17,6 +17,7 @@ import {
 } from '@mui/icons-material';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import authService from '../services/authService';
+import { useI18n } from '../i18n/I18nContext';
 
 const DEFAULT_PREFERENCES = {
   theme: 'light',
@@ -96,6 +97,7 @@ const accountDisplayName = (account) => {
 };
 
 const ProfilePanel = ({ open, onClose, user }) => {
+  const { t, roleLabel } = useI18n();
   const [activeTab, setActiveTab] = useState(0);
   const [editMode, setEditMode] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -235,22 +237,22 @@ const ProfilePanel = ({ open, onClose, user }) => {
           variant="fullWidth"
           sx={{ borderBottom: 1, borderColor: 'divider' }}
         >
-          <Tab label="Profile" icon={<Person />} />
-          <Tab label="Security" icon={<Security />} />
-          <Tab label="Preferences" icon={<Settings />} />
-          <Tab label="Activity" icon={<History />} />
+          <Tab label={t('profile')} icon={<Person />} />
+          <Tab label={t('security')} icon={<Security />} />
+          <Tab label={t('preferences')} icon={<Settings />} />
+          <Tab label={t('activity')} icon={<History />} />
         </Tabs>
 
         {/* Profile Tab */}
         <TabPanel value={activeTab} index={0}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6">Personal Information</Typography>
+            <Typography variant="h6">{t('personalInfo')}</Typography>
             <Button
               startIcon={editMode ? <Cancel /> : <Edit />}
               onClick={() => setEditMode(!editMode)}
               variant={editMode ? "outlined" : "contained"}
             >
-              {editMode ? 'Cancel' : 'Edit'}
+              {editMode ? t('cancel') : t('edit')}
             </Button>
           </Box>
 
@@ -258,7 +260,7 @@ const ProfilePanel = ({ open, onClose, user }) => {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="First Name"
+                label={t('firstName')}
                 value={profileData.first_name}
                 onChange={(e) => handleProfileChange('first_name', e.target.value)}
                 disabled={!editMode}
@@ -270,7 +272,7 @@ const ProfilePanel = ({ open, onClose, user }) => {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Last Name"
+                label={t('lastName')}
                 value={profileData.last_name}
                 onChange={(e) => handleProfileChange('last_name', e.target.value)}
                 disabled={!editMode}
@@ -279,7 +281,7 @@ const ProfilePanel = ({ open, onClose, user }) => {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Email"
+                label={t('email')}
                 type="email"
                 value={profileData.email}
                 onChange={(e) => handleProfileChange('email', e.target.value)}
@@ -292,7 +294,7 @@ const ProfilePanel = ({ open, onClose, user }) => {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Phone"
+                label={t('phone')}
                 value={profileData.phone}
                 onChange={(e) => handleProfileChange('phone', e.target.value)}
                 disabled={!editMode}
@@ -304,7 +306,7 @@ const ProfilePanel = ({ open, onClose, user }) => {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Department"
+                label={t('department')}
                 value={profileData.department}
                 onChange={(e) => handleProfileChange('department', e.target.value)}
                 disabled={!editMode}
@@ -316,13 +318,13 @@ const ProfilePanel = ({ open, onClose, user }) => {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Role"
-                value={profileData.role}
+                label={t('role')}
+                value={roleLabel(profileData.role)}
                 disabled
                 InputProps={{
                   startAdornment: <Shield sx={{ mr: 1, color: 'text.secondary' }} />
                 }}
-                helperText="Role can only be changed by administrators"
+                helperText={t('roleReadonly')}
               />
             </Grid>
           </Grid>
@@ -335,7 +337,7 @@ const ProfilePanel = ({ open, onClose, user }) => {
                 onClick={handleSaveProfile}
                 disabled={updateProfileMutation.isLoading}
               >
-                {updateProfileMutation.isLoading ? 'Saving...' : 'Save Changes'}
+                {updateProfileMutation.isLoading ? t('saving') : t('saveChanges')}
               </Button>
             </Box>
           )}
@@ -343,14 +345,14 @@ const ProfilePanel = ({ open, onClose, user }) => {
 
         {/* Security Tab */}
         <TabPanel value={activeTab} index={1}>
-          <Typography variant="h6" gutterBottom>Change Password</Typography>
+          <Typography variant="h6" gutterBottom>{t('changePassword')}</Typography>
           {passwordError && <Alert severity="error" sx={{ mb: 2 }}>{passwordError}</Alert>}
           
           <Grid container spacing={3}>
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Current Password"
+                label={t('currentPassword')}
                 type={showPassword ? 'text' : 'password'}
                 value={passwordData.current_password}
                 onChange={(e) => setPasswordData(prev => ({ ...prev, current_password: e.target.value }))}
@@ -358,7 +360,7 @@ const ProfilePanel = ({ open, onClose, user }) => {
                   startAdornment: <Key sx={{ mr: 1, color: 'text.secondary' }} />,
                   endAdornment: (
                     <IconButton
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      aria-label={showPassword ? t('hidePassword') : t('showPassword')}
                       onClick={() => setShowPassword(!showPassword)}
                     >
                       {showPassword ? <VisibilityOff /> : <Visibility />}
@@ -370,7 +372,7 @@ const ProfilePanel = ({ open, onClose, user }) => {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="New Password"
+                label={t('newPassword')}
                 type={showPassword ? 'text' : 'password'}
                 value={passwordData.new_password}
                 onChange={(e) => setPasswordData(prev => ({ ...prev, new_password: e.target.value }))}
@@ -379,7 +381,7 @@ const ProfilePanel = ({ open, onClose, user }) => {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Confirm New Password"
+                label={t('confirmPassword')}
                 type={showPassword ? 'text' : 'password'}
                 value={passwordData.confirm_password}
                 onChange={(e) => setPasswordData(prev => ({ ...prev, confirm_password: e.target.value }))}
@@ -394,26 +396,26 @@ const ProfilePanel = ({ open, onClose, user }) => {
             disabled={changePasswordMutation.isLoading}
             sx={{ mt: 2 }}
           >
-            {changePasswordMutation.isLoading ? 'Changing...' : 'Change Password'}
+            {changePasswordMutation.isLoading ? t('changing') : t('changePassword')}
           </Button>
 
           <Divider sx={{ my: 3 }} />
 
-          <Typography variant="h6" gutterBottom>Security Settings</Typography>
+          <Typography variant="h6" gutterBottom>{t('securitySettings')}</Typography>
           <List>
             <ListItem>
               <ListItemIcon><Shield /></ListItemIcon>
               <ListItemText 
-                primary="Two-Factor Authentication" 
-                secondary="Add an extra layer of security to your account"
+                primary={t('twoFactor')} 
+                secondary={t('twoFactorHelp')}
               />
               <Switch />
             </ListItem>
             <ListItem>
               <ListItemIcon><AccessTime /></ListItemIcon>
               <ListItemText 
-                primary="Session Timeout" 
-                secondary="Automatically log out after 30 minutes of inactivity"
+                primary={t('sessionTimeout')} 
+                secondary={t('sessionTimeoutDesc')}
               />
               <Switch defaultChecked />
             </ListItem>
@@ -422,44 +424,44 @@ const ProfilePanel = ({ open, onClose, user }) => {
 
         {/* Preferences Tab */}
         <TabPanel value={activeTab} index={2}>
-          <Typography variant="h6" gutterBottom>Application Preferences</Typography>
+          <Typography variant="h6" gutterBottom>{t('appPreferences')}</Typography>
           
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
               <FormControl fullWidth>
-                <InputLabel>Theme</InputLabel>
+                <InputLabel>{t('theme')}</InputLabel>
                 <Select
                   value={profileData.preferences?.theme || 'light'}
                   onChange={(e) => handlePreferenceChange('theme', null, e.target.value)}
-                  label="Theme"
+                  label={t('theme')}
                 >
-                  <MenuItem value="light">Light</MenuItem>
-                  <MenuItem value="dark">Dark</MenuItem>
-                  <MenuItem value="auto">Auto</MenuItem>
+                  <MenuItem value="light">{t('themeLight')}</MenuItem>
+                  <MenuItem value="dark">{t('themeDark')}</MenuItem>
+                  <MenuItem value="auto">{t('themeAuto')}</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
             <Grid item xs={12} md={6}>
               <FormControl fullWidth>
-                <InputLabel>Language</InputLabel>
+                <InputLabel>{t('language')}</InputLabel>
                 <Select
                   value={profileData.preferences?.language || 'en'}
                   onChange={(e) => handlePreferenceChange('language', null, e.target.value)}
-                  label="Language"
+                  label={t('language')}
                 >
-                  <MenuItem value="en">English</MenuItem>
-                  <MenuItem value="hi">Hindi</MenuItem>
-                  <MenuItem value="te">Telugu</MenuItem>
+                  <MenuItem value="en">{t('langEnglish')}</MenuItem>
+                  <MenuItem value="hi">{t('langHindi')}</MenuItem>
+                  <MenuItem value="te">{t('langTelugu')}</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
             <Grid item xs={12}>
               <FormControl fullWidth>
-                <InputLabel>Timezone</InputLabel>
+                <InputLabel>{t('timezone')}</InputLabel>
                 <Select
                   value={profileData.preferences?.timezone || 'Asia/Kolkata'}
                   onChange={(e) => handlePreferenceChange('timezone', null, e.target.value)}
-                  label="Timezone"
+                  label={t('timezone')}
                 >
                   <MenuItem value="Asia/Kolkata">Asia/Kolkata (IST)</MenuItem>
                   <MenuItem value="UTC">UTC</MenuItem>
@@ -471,11 +473,11 @@ const ProfilePanel = ({ open, onClose, user }) => {
 
           <Divider sx={{ my: 3 }} />
 
-          <Typography variant="h6" gutterBottom>Notification Preferences</Typography>
+          <Typography variant="h6" gutterBottom>{t('notifPreferences')}</Typography>
           <List>
             <ListItem>
               <ListItemIcon><Email /></ListItemIcon>
-              <ListItemText primary="Email Notifications" secondary="Receive notifications via email" />
+              <ListItemText primary={t('emailNotif')} secondary={t('emailNotifHelp')} />
               <Switch
                 checked={Boolean(profileData.preferences?.notifications?.email)}
                 onChange={(e) => handlePreferenceChange('notifications', 'email', e.target.checked)}
@@ -483,7 +485,7 @@ const ProfilePanel = ({ open, onClose, user }) => {
             </ListItem>
             <ListItem>
               <ListItemIcon><Notifications /></ListItemIcon>
-              <ListItemText primary="Push Notifications" secondary="Receive browser push notifications" />
+              <ListItemText primary={t('pushNotif')} secondary={t('pushNotifHelp')} />
               <Switch
                 checked={Boolean(profileData.preferences?.notifications?.push)}
                 onChange={(e) => handlePreferenceChange('notifications', 'push', e.target.checked)}
@@ -491,7 +493,7 @@ const ProfilePanel = ({ open, onClose, user }) => {
             </ListItem>
             <ListItem>
               <ListItemIcon><Phone /></ListItemIcon>
-              <ListItemText primary="SMS Notifications" secondary="Receive notifications via SMS" />
+              <ListItemText primary={t('smsNotif')} secondary={t('smsNotifHelp')} />
               <Switch
                 checked={Boolean(profileData.preferences?.notifications?.sms)}
                 onChange={(e) => handlePreferenceChange('notifications', 'sms', e.target.checked)}
@@ -502,7 +504,7 @@ const ProfilePanel = ({ open, onClose, user }) => {
 
         {/* Activity Tab */}
         <TabPanel value={activeTab} index={3}>
-          <Typography variant="h6" gutterBottom>Recent Activity</Typography>
+          <Typography variant="h6" gutterBottom>{t('recentActivity')}</Typography>
           
           <Card>
             <CardContent>
@@ -510,22 +512,22 @@ const ProfilePanel = ({ open, onClose, user }) => {
                 <ListItem>
                   <ListItemIcon><AccessTime /></ListItemIcon>
                   <ListItemText 
-                    primary="Last Login" 
-                    secondary={user?.last_login ? new Date(user.last_login).toLocaleString() : 'Never'}
+                    primary={t('lastLogin')} 
+                    secondary={user?.last_login ? new Date(user.last_login).toLocaleString() : t('never')}
                   />
                 </ListItem>
                 <ListItem>
                   <ListItemIcon><DeviceHub /></ListItemIcon>
                   <ListItemText 
-                    primary="Active Sessions" 
-                    secondary="2 active sessions"
+                    primary={t('activeSessions')} 
+                    secondary={t('activeSessionsCount', { count: 2 })}
                   />
                 </ListItem>
                 <ListItem>
                   <ListItemIcon><History /></ListItemIcon>
                   <ListItemText 
-                    primary="Profile Updated" 
-                    secondary="2 days ago"
+                    primary={t('toastProfileUpdated')} 
+                    secondary={t('profileUpdatedAgo')}
                   />
                 </ListItem>
               </List>
@@ -535,7 +537,7 @@ const ProfilePanel = ({ open, onClose, user }) => {
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={onClose}>Close</Button>
+        <Button onClick={onClose}>{t('close')}</Button>
       </DialogActions>
     </Dialog>
   );

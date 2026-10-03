@@ -42,6 +42,7 @@ import {
 } from '@mui/icons-material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
 import DemoBanner from '../components/DemoBanner';
+import { useI18n } from '../i18n/I18nContext';
 import PreviewModeToggle from '../components/PreviewModeToggle';
 import { usePreviewMode } from '../hooks/usePreviewMode';
 import { financeService } from '../services/financeService';
@@ -54,6 +55,7 @@ import {
 } from '../utils/previewLiveData';
 
 const FinancialIntelligence = () => {
+  const { t } = useI18n();
   const { mode, setMode, isSample } = usePreviewMode('financial-intelligence');
   const [activeTab, setActiveTab] = useState(0);
   const [dashboardData, setDashboardData] = useState(null);
@@ -303,7 +305,7 @@ const FinancialIntelligence = () => {
 
   return (
     <Box>
-      <DemoBanner title="Financial Intelligence" mode={mode} />
+      <DemoBanner title={t('financialIntelligence')} mode={mode} />
       {pageMessage && (
         <Alert severity={pageMessage.severity} sx={{ mb: 2 }} onClose={() => setPageMessage(null)}>
           {pageMessage.text}
@@ -351,11 +353,11 @@ const FinancialIntelligence = () => {
           onChange={(e, newValue) => setActiveTab(newValue)}
           variant="fullWidth"
         >
-          <Tab icon={<Analytics />} label="Dashboard" />
-          <Tab icon={<TrendingUp />} label="Cash Flow" />
-          <Tab icon={<Assessment />} label="Health Score" />
-          <Tab icon={<Psychology />} label="AI Insights" />
-          <Tab icon={<Payment />} label="Smart Payments" />
+          <Tab icon={<Analytics />} label={t('dashboard')} />
+          <Tab icon={<TrendingUp />} label={t('cashFlow')} />
+          <Tab icon={<Assessment />} label={t('healthScore')} />
+          <Tab icon={<Psychology />} label={t('aiInsights')} />
+          <Tab icon={<Payment />} label={t('smartPayments')} />
         </Tabs>
       </Paper>
 
@@ -741,12 +743,12 @@ const FinancialIntelligence = () => {
 
       {/* Smart Payment Dialog */}
       <Dialog open={showPaymentDialog} onClose={() => setShowPaymentDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Schedule Smart Payment</DialogTitle>
+        <DialogTitle>{t('schedulePayment')}</DialogTitle>
         <DialogContent>
           {paymentError && <Alert severity="error" sx={{ mt: 1 }}>{paymentError}</Alert>}
           <TextField
             fullWidth
-            label="Farmer ID"
+            label={t('farmerId')}
             value={paymentForm.farmer_id}
             onChange={(e) => setPaymentForm({ ...paymentForm, farmer_id: e.target.value })}
             margin="normal"
@@ -754,7 +756,7 @@ const FinancialIntelligence = () => {
           />
           <TextField
             fullWidth
-            label="Amount (₹)"
+            label={t('amountRs')}
             value={paymentForm.amount}
             onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
             margin="normal"
@@ -763,20 +765,20 @@ const FinancialIntelligence = () => {
           <TextField
             fullWidth
             select
-            label="Payment Type"
+            label={t('paymentType')}
             value={paymentForm.payment_type}
             onChange={(e) => setPaymentForm({ ...paymentForm, payment_type: e.target.value })}
             margin="normal"
           >
-            <MenuItem value="procurement">Procurement</MenuItem>
-            <MenuItem value="advance">Advance</MenuItem>
-            <MenuItem value="bonus">Bonus</MenuItem>
+            <MenuItem value="procurement">{t('payProcurement')}</MenuItem>
+            <MenuItem value="advance">{t('payAdvance')}</MenuItem>
+            <MenuItem value="bonus">{t('payBonus')}</MenuItem>
           </TextField>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setShowPaymentDialog(false)}>Cancel</Button>
+          <Button onClick={() => setShowPaymentDialog(false)}>{t('cancel')}</Button>
           <Button onClick={handleSmartPaymentScheduling} variant="contained">
-            Schedule Payment
+            {t('schedulePaymentBtn')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -786,11 +788,11 @@ const FinancialIntelligence = () => {
         <DialogContent>
           <Typography sx={{ mt: 1 }}>{alertItem?.message}</Typography>
           <Alert severity="info" sx={{ mt: 2 }}>
-            Preview reminder. Record real collections on Finance → Record Payment.
+            {t('previewReminder')}
           </Alert>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setAlertItem(null)}>Close</Button>
+          <Button onClick={() => setAlertItem(null)}>{t('close')}</Button>
           <Button
             variant="contained"
             onClick={() => {
@@ -798,7 +800,7 @@ const FinancialIntelligence = () => {
               setActiveTab(4);
             }}
           >
-            Open Smart Payments
+            {t('openSmartPayments')}
           </Button>
         </DialogActions>
       </Dialog>

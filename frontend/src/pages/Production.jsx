@@ -18,8 +18,10 @@ import ProductionAnalytics from '../components/ProductionAnalytics';
 import AIRecommendations from '../components/AIRecommendations';
 import { getApiErrorMessage } from '../utils/apiError';
 import { PageEmpty, PageHeader, PageShell, QueryErrorAlert } from '../components/common/PageChrome';
+import { useI18n } from '../i18n/I18nContext';
 
 const Production = () => {
+  const { t, statusLabel } = useI18n();
   const [activeTab, setActiveTab] = useState(0);
   const [createBatchOpen, setCreateBatchOpen] = useState(false);
   const [selectedBatch, setSelectedBatch] = useState(null);
@@ -177,11 +179,11 @@ const Production = () => {
   return (
     <PageShell>
       <PageHeader
-        title="Production Management"
-        subtitle="Create a planned batch, then Start Batch. Pause does not return paddy."
+        title={t('productionTitle')}
+        subtitle={t('productionSubtitle')}
         actions={
           <Button variant="contained" startIcon={<Add />} onClick={() => setCreateBatchOpen(true)}>
-            New Batch
+            {t('newBatch')}
           </Button>
         }
       />
@@ -213,7 +215,7 @@ const Production = () => {
             <Card>
               <CardContent>
                 <Typography color="textSecondary" gutterBottom>
-                  In Progress
+                  {t('inProgress')}
                 </Typography>
                 <Typography variant="h4" color="success.main">
                   {currentStatus.in_progress}
@@ -225,7 +227,7 @@ const Production = () => {
             <Card>
               <CardContent>
                 <Typography color="textSecondary" gutterBottom>
-                  Planned
+                  {t('status_planned')}
                 </Typography>
                 <Typography variant="h4" color="warning.main">
                   {currentStatus.planned}
@@ -237,7 +239,7 @@ const Production = () => {
             <Card>
               <CardContent>
                 <Typography color="textSecondary" gutterBottom>
-                  Machines in Use
+                  {t('machinesInUse')}
                 </Typography>
                 <Typography variant="h4" color="info.main">
                   {currentStatus.machines_in_use}
@@ -251,9 +253,9 @@ const Production = () => {
       {/* Tabs */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
-          <Tab label="Active Batches" />
-          <Tab label="All Batches" />
-          <Tab label="Analytics" />
+          <Tab label={t('activeBatches')} />
+          <Tab label={t('allBatches')} />
+          <Tab label={t('analytics')} />
         </Tabs>
       </Box>
 
@@ -263,11 +265,11 @@ const Production = () => {
           {!currentStatus?.batches?.length && (
             <Grid item xs={12}>
               <PageEmpty
-                title="No active batches"
-                description="Create a New Batch, then Start Batch on All Batches when paddy is ready."
+                title={t('noActiveBatches')}
+                description={t('noActiveBatchesHint')}
                 action={
                   <Button variant="contained" startIcon={<Add />} onClick={() => setCreateBatchOpen(true)}>
-                    New Batch
+                    {t('newBatch')}
                   </Button>
                 }
               />
@@ -315,11 +317,11 @@ const Production = () => {
                     <TableRow>
                       <TableCell colSpan={8}>
                         <PageEmpty
-                          title="No batches yet"
-                          description="Create a planned batch after paddy is in stock."
+                          title={t('noBatchesYet')}
+                          description={t('noBatchesHint')}
                           action={
                             <Button variant="contained" startIcon={<Add />} onClick={() => setCreateBatchOpen(true)} sx={{ minHeight: 40 }}>
-                              New Batch
+                              {t('newBatch')}
                             </Button>
                           }
                         />
@@ -333,7 +335,7 @@ const Production = () => {
                       <TableCell>
                         <Chip
                           icon={getStatusIcon(batch.status)}
-                          label={batch.status}
+                          label={statusLabel(batch.status)}
                           color={getStatusColor(batch.status)}
                           size="small"
                         />
@@ -443,20 +445,22 @@ const Production = () => {
   );
 };
 
-const CompleteBatchDialog = ({ open, onClose, onSubmit, batch, form, onChange, loading }) => (
+const CompleteBatchDialog = ({ open, onClose, onSubmit, batch, form, onChange, loading }) => {
+  const { t } = useI18n();
+  return (
   <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
     <DialogTitle>
-      Mark Complete — {batch?.batch_number || batch?.batch_id || ''}
+      {t('markCompleteNamed', { batch: batch?.batch_number || batch?.batch_id || '' })}
     </DialogTitle>
     <DialogContent>
       <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 2 }}>
-        Enter milled output in kg. Rice output is added to product stock.
+        {t('completeBatchHelp')}
       </Typography>
       <Grid container spacing={2}>
         <Grid item xs={12} sm={6}>
           <TextField
             fullWidth
-            label="Rice output (kg)"
+            label={t('riceOutputKg')}
             type="number"
             value={form.rice_output}
             onChange={(e) => onChange({ ...form, rice_output: e.target.value })}
@@ -465,7 +469,7 @@ const CompleteBatchDialog = ({ open, onClose, onSubmit, batch, form, onChange, l
         <Grid item xs={12} sm={6}>
           <TextField
             fullWidth
-            label="Broken rice (kg)"
+            label={t('brokenRiceKg')}
             type="number"
             value={form.broken_rice_output}
             onChange={(e) => onChange({ ...form, broken_rice_output: e.target.value })}
@@ -474,7 +478,7 @@ const CompleteBatchDialog = ({ open, onClose, onSubmit, batch, form, onChange, l
         <Grid item xs={12} sm={6}>
           <TextField
             fullWidth
-            label="Bran (kg)"
+            label={t('branKg')}
             type="number"
             value={form.bran_output}
             onChange={(e) => onChange({ ...form, bran_output: e.target.value })}
@@ -483,7 +487,7 @@ const CompleteBatchDialog = ({ open, onClose, onSubmit, batch, form, onChange, l
         <Grid item xs={12} sm={6}>
           <TextField
             fullWidth
-            label="Husk (kg)"
+            label={t('huskKg')}
             type="number"
             value={form.husk_output}
             onChange={(e) => onChange({ ...form, husk_output: e.target.value })}
@@ -492,15 +496,17 @@ const CompleteBatchDialog = ({ open, onClose, onSubmit, batch, form, onChange, l
       </Grid>
     </DialogContent>
     <DialogActions>
-      <Button onClick={onClose}>Cancel</Button>
+      <Button onClick={onClose}>{t('cancel')}</Button>
       <Button onClick={onSubmit} variant="contained" disabled={loading}>
-        {loading ? 'Saving...' : 'Mark Complete'}
+        {loading ? t('saving') : t('markComplete')}
       </Button>
     </DialogActions>
   </Dialog>
-);
+  );
+};
 
 const CreateBatchDialog = ({ open, onClose, onSubmit, loading }) => {
+  const { t } = useI18n();
   const [formData, setFormData] = useState({
     paddy_variety: '',
     input_quantity: '',
@@ -516,12 +522,12 @@ const CreateBatchDialog = ({ open, onClose, onSubmit, loading }) => {
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>Create New Production Batch</DialogTitle>
+      <DialogTitle>{t('createNewBatch')}</DialogTitle>
       <DialogContent>
         <Grid container spacing={2} sx={{ mt: 1 }}>
           <Grid item xs={12} md={6}>
             <FormControl fullWidth>
-              <InputLabel>Paddy Variety</InputLabel>
+              <InputLabel>{t('paddyVariety')}</InputLabel>
               <Select
                 value={formData.paddy_variety}
                 onChange={(e) => setFormData({...formData, paddy_variety: e.target.value})}
@@ -536,7 +542,7 @@ const CreateBatchDialog = ({ open, onClose, onSubmit, loading }) => {
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
-              label="Input Quantity (kg)"
+              label={t('inputQtyKg')}
               type="number"
               value={formData.input_quantity}
               onChange={(e) => setFormData({...formData, input_quantity: e.target.value})}
@@ -544,21 +550,21 @@ const CreateBatchDialog = ({ open, onClose, onSubmit, loading }) => {
           </Grid>
           <Grid item xs={12} md={6}>
             <FormControl fullWidth>
-              <InputLabel>Quality Grade</InputLabel>
+              <InputLabel>{t('qualityGrade')}</InputLabel>
               <Select
                 value={formData.quality_grade}
                 onChange={(e) => setFormData({...formData, quality_grade: e.target.value})}
               >
-                <MenuItem value="A">Grade A</MenuItem>
-                <MenuItem value="B">Grade B</MenuItem>
-                <MenuItem value="C">Grade C</MenuItem>
+                <MenuItem value="A">{t('gradeA')}</MenuItem>
+                <MenuItem value="B">{t('gradeB')}</MenuItem>
+                <MenuItem value="C">{t('gradeC')}</MenuItem>
               </Select>
             </FormControl>
           </Grid>
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
-              label="Planned Start Time"
+              label={t('plannedStart')}
               type="datetime-local"
               value={formData.planned_start_time}
               onChange={(e) => setFormData({...formData, planned_start_time: e.target.value})}
@@ -568,7 +574,7 @@ const CreateBatchDialog = ({ open, onClose, onSubmit, loading }) => {
           <Grid item xs={12}>
             <TextField
               fullWidth
-              label="Special Instructions"
+              label={t('specialInstructions')}
               multiline
               rows={3}
               value={formData.special_instructions}
@@ -578,9 +584,9 @@ const CreateBatchDialog = ({ open, onClose, onSubmit, loading }) => {
         </Grid>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose}>{t('cancel')}</Button>
         <Button onClick={handleSubmit} variant="contained" disabled={loading}>
-          {loading ? 'Creating...' : 'Create Batch'}
+          {loading ? t('creating') : t('createBatch')}
         </Button>
       </DialogActions>
     </Dialog>
@@ -588,31 +594,32 @@ const CreateBatchDialog = ({ open, onClose, onSubmit, loading }) => {
 };
 
 const BatchDetailsDialog = ({ open, onClose, batch }) => {
+  const { t, statusLabel } = useI18n();
   if (!batch) return null;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
-      <DialogTitle>Batch Details - {batch.batch_number}</DialogTitle>
+      <DialogTitle>{t('batchDetailsNamed', { batch: batch.batch_number })}</DialogTitle>
       <DialogContent>
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
-            <Typography variant="h6" gutterBottom>Basic Information</Typography>
-            <Typography><strong>Variety:</strong> {batch.paddy_variety}</Typography>
-            <Typography><strong>Status:</strong> {batch.status}</Typography>
-            <Typography><strong>Input Quantity:</strong> {batch.input_quantity} kg</Typography>
-            <Typography><strong>Output Quantity:</strong> {batch.output_quantity || 'N/A'} kg</Typography>
-            <Typography><strong>Efficiency:</strong> {batch.efficiency_score ? `${batch.efficiency_score.toFixed(1)}%` : 'N/A'}</Typography>
+            <Typography variant="h6" gutterBottom>{t('basicInfo')}</Typography>
+            <Typography><strong>{t('variety')}:</strong> {batch.paddy_variety}</Typography>
+            <Typography><strong>{t('status')}:</strong> {statusLabel(batch.status)}</Typography>
+            <Typography><strong>{t('inputQuantityLabel')}:</strong> {batch.input_quantity} kg</Typography>
+            <Typography><strong>{t('outputQty')}:</strong> {batch.output_quantity || t('na')} kg</Typography>
+            <Typography><strong>{t('efficiency')}:</strong> {batch.efficiency_score ? `${batch.efficiency_score.toFixed(1)}%` : t('na')}</Typography>
           </Grid>
           <Grid item xs={12} md={6}>
-            <Typography variant="h6" gutterBottom>Timeline</Typography>
-            <Typography><strong>Planned Start:</strong> {new Date(batch.planned_start_time).toLocaleString()}</Typography>
-            <Typography><strong>Actual Start:</strong> {batch.start_time ? new Date(batch.start_time).toLocaleString() : 'N/A'}</Typography>
-            <Typography><strong>Completion:</strong> {batch.end_time ? new Date(batch.end_time).toLocaleString() : 'N/A'}</Typography>
+            <Typography variant="h6" gutterBottom>{t('timeline')}</Typography>
+            <Typography><strong>{t('plannedStart')}:</strong> {new Date(batch.planned_start_time).toLocaleString()}</Typography>
+            <Typography><strong>{t('actualStart')}:</strong> {batch.start_time ? new Date(batch.start_time).toLocaleString() : t('na')}</Typography>
+            <Typography><strong>{t('completion')}:</strong> {batch.end_time ? new Date(batch.end_time).toLocaleString() : t('na')}</Typography>
           </Grid>
         </Grid>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Close</Button>
+        <Button onClick={onClose}>{t('close')}</Button>
       </DialogActions>
     </Dialog>
   );

@@ -13,6 +13,7 @@ import {
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { customerService } from '../services/customerService';
+import { useI18n } from '../i18n/I18nContext';
 import CustomerCard from '../components/CustomerCard';
 import CustomerDetails from '../components/CustomerDetails';
 import OrderHistory from '../components/OrderHistory';
@@ -22,6 +23,7 @@ import { getApiErrorMessage } from '../utils/apiError';
 import { PageHeader, PageShell, QueryErrorAlert } from '../components/common/PageChrome';
 
 const Customers = () => {
+  const { t } = useI18n();
   const [activeTab, setActiveTab] = useState(0);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [addCustomerOpen, setAddCustomerOpen] = useState(false);
@@ -102,15 +104,15 @@ const Customers = () => {
   return (
     <PageShell>
       <PageHeader
-        title="Customer Management"
-        subtitle="Buyers used on Sales orders and Finance invoices"
+        title={t('customersTitle')}
+        subtitle={t('customersSubtitle')}
         actions={
           <>
             <Button variant="outlined" startIcon={<Analytics />} onClick={() => setActiveTab(3)}>
               Analytics
             </Button>
             <Button variant="contained" startIcon={<Add />} onClick={() => setAddCustomerOpen(true)}>
-              Add Customer
+              {t('addCustomer')}
             </Button>
           </>
         }
@@ -255,10 +257,10 @@ const Customers = () => {
       {/* Tabs */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
-          <Tab label="Customer List" />
-          <Tab label="Customer Details" disabled={!selectedCustomer} />
-          <Tab label="Orders" />
-          <Tab label="Analytics" />
+          <Tab label={t('customerList')} />
+          <Tab label={t('customerDetails')} disabled={!selectedCustomer} />
+          <Tab label={t('orders')} />
+          <Tab label={t('analytics')} />
         </Tabs>
       </Box>
 
@@ -289,10 +291,10 @@ const Customers = () => {
               <Paper sx={{ p: 4, textAlign: 'center' }}>
                 <Person sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
                 <Typography variant="h6" color="text.secondary">
-                  No customers yet
+                  {t('noCustomersYet')}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Add a buyer before you create an order or invoice.
+                  {t('noCustomersHint')}
                 </Typography>
                 <Button
                   variant="contained"
@@ -300,7 +302,7 @@ const Customers = () => {
                   onClick={() => setAddCustomerOpen(true)}
                   sx={{ mt: 2 }}
                 >
-                  Add First Customer
+                  {t('addFirstCustomer')}
                 </Button>
               </Paper>
             </Grid>
@@ -333,7 +335,7 @@ const Customers = () => {
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle>Add New Customer</DialogTitle>
+        <DialogTitle>{t('addNewCustomer')}</DialogTitle>
         <DialogContent>
           {actionError && <Alert severity="error" sx={{ mt: 1 }}>{actionError}</Alert>}
           <AddCustomerForm
@@ -394,6 +396,7 @@ const emptyCustomerForm = () => ({
 });
 
 const AddCustomerForm = ({ onSubmit, loading, onCancel }) => {
+  const { t } = useI18n();
   const [formData, setFormData] = useState(emptyCustomerForm);
 
   const handleSubmit = (e) => {
@@ -414,7 +417,7 @@ const AddCustomerForm = ({ onSubmit, loading, onCancel }) => {
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
-            label="Customer Name"
+            label={t('customerName')}
             value={formData.name}
             onChange={handleChange('name')}
             required
@@ -423,28 +426,28 @@ const AddCustomerForm = ({ onSubmit, loading, onCancel }) => {
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
-            label="Company Name"
+            label={t('companyName')}
             value={formData.company_name}
             onChange={handleChange('company_name')}
           />
         </Grid>
         <Grid item xs={12} md={6}>
           <FormControl fullWidth>
-            <InputLabel>Customer Type</InputLabel>
+            <InputLabel>{t('customerType')}</InputLabel>
             <Select
               value={formData.customer_type}
               onChange={handleChange('customer_type')}
             >
-              <MenuItem value="individual">Individual</MenuItem>
-              <MenuItem value="business">Business</MenuItem>
-              <MenuItem value="distributor">Distributor</MenuItem>
+              <MenuItem value="individual">{t('typeIndividual')}</MenuItem>
+              <MenuItem value="business">{t('typeBusiness')}</MenuItem>
+              <MenuItem value="distributor">{t('typeDistributor')}</MenuItem>
             </Select>
           </FormControl>
         </Grid>
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
-            label="Phone"
+            label={t('phone')}
             value={formData.phone}
             onChange={handleChange('phone')}
           />
@@ -452,7 +455,7 @@ const AddCustomerForm = ({ onSubmit, loading, onCancel }) => {
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
-            label="Email"
+            label={t('email')}
             type="email"
             value={formData.email}
             onChange={handleChange('email')}
@@ -461,7 +464,7 @@ const AddCustomerForm = ({ onSubmit, loading, onCancel }) => {
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
-            label="GST Number"
+            label={t('gstNumber')}
             value={formData.gst_number}
             onChange={handleChange('gst_number')}
           />
@@ -469,7 +472,7 @@ const AddCustomerForm = ({ onSubmit, loading, onCancel }) => {
         <Grid item xs={12}>
           <TextField
             fullWidth
-            label="Address"
+            label={t('address')}
             multiline
             rows={2}
             value={formData.address}
@@ -479,7 +482,7 @@ const AddCustomerForm = ({ onSubmit, loading, onCancel }) => {
         <Grid item xs={12} md={4}>
           <TextField
             fullWidth
-            label="City"
+            label={t('city')}
             value={formData.city}
             onChange={handleChange('city')}
           />
@@ -487,7 +490,7 @@ const AddCustomerForm = ({ onSubmit, loading, onCancel }) => {
         <Grid item xs={12} md={4}>
           <TextField
             fullWidth
-            label="State"
+            label={t('state')}
             value={formData.state}
             onChange={handleChange('state')}
           />
@@ -495,7 +498,7 @@ const AddCustomerForm = ({ onSubmit, loading, onCancel }) => {
         <Grid item xs={12} md={4}>
           <TextField
             fullWidth
-            label="Pincode"
+            label={t('pincode')}
             value={formData.pincode}
             onChange={handleChange('pincode')}
           />
@@ -503,7 +506,7 @@ const AddCustomerForm = ({ onSubmit, loading, onCancel }) => {
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
-            label="Credit Limit"
+            label={t('creditLimitPlain')}
             type="number"
             value={formData.credit_limit}
             onChange={handleChange('credit_limit')}
@@ -511,32 +514,32 @@ const AddCustomerForm = ({ onSubmit, loading, onCancel }) => {
         </Grid>
         <Grid item xs={12} md={6}>
           <FormControl fullWidth>
-            <InputLabel>Payment Terms</InputLabel>
+            <InputLabel>{t('paymentTerms')}</InputLabel>
             <Select
               value={formData.payment_terms}
               onChange={handleChange('payment_terms')}
             >
-              <MenuItem value="cash">Cash</MenuItem>
-              <MenuItem value="credit_7">7 Days Credit</MenuItem>
-              <MenuItem value="credit_15">15 Days Credit</MenuItem>
-              <MenuItem value="credit_30">30 Days Credit</MenuItem>
+              <MenuItem value="cash">{t('payCash')}</MenuItem>
+              <MenuItem value="credit_7">{t('credit7')}</MenuItem>
+              <MenuItem value="credit_15">{t('credit15')}</MenuItem>
+              <MenuItem value="credit_30">{t('credit30')}</MenuItem>
             </Select>
           </FormControl>
         </Grid>
       </Grid>
       <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
         <Button type="button" onClick={onCancel} disabled={loading}>
-          Cancel
+          {t('cancel')}
         </Button>
         <Button type="button" onClick={() => setFormData(emptyCustomerForm())} disabled={loading}>
-          Reset
+          {t('reset')}
         </Button>
         <Button
           type="submit"
           variant="contained"
           disabled={loading || !formData.name}
         >
-          {loading ? 'Creating...' : 'Create Customer'}
+          {loading ? t('creating') : t('createCustomer')}
         </Button>
       </Box>
     </form>

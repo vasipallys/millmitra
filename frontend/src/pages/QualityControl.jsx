@@ -39,6 +39,7 @@ import {
 } from '@mui/icons-material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import DemoBanner from '../components/DemoBanner';
+import { useI18n } from '../i18n/I18nContext';
 import PreviewModeToggle from '../components/PreviewModeToggle';
 import { usePreviewMode } from '../hooks/usePreviewMode';
 import { productionAPI } from '../services/api';
@@ -50,6 +51,7 @@ import {
 } from '../utils/previewLiveData';
 
 const QualityControl = () => {
+  const { t } = useI18n();
   const { mode, setMode, isSample, isActual } = usePreviewMode('quality-control');
   const [activeTab, setActiveTab] = useState(0);
   const [showCameraDialog, setShowCameraDialog] = useState(false);
@@ -281,7 +283,7 @@ const QualityControl = () => {
 
   return (
     <Box>
-      <DemoBanner title="Quality Control" mode={mode} />
+      <DemoBanner title={t('qualityControl')} mode={mode} />
       {pageMessage && (
         <Alert severity={pageMessage.severity} sx={{ mb: 2 }} onClose={() => setPageMessage(null)}>
           {pageMessage.text}
@@ -307,9 +309,9 @@ const QualityControl = () => {
           onChange={(e, newValue) => setActiveTab(newValue)}
           variant="fullWidth"
         >
-          <Tab icon={<CameraAlt />} label="Live Analysis" />
-          <Tab icon={<Analytics />} label="Dashboard" />
-          <Tab icon={<Assessment />} label="Test Results" />
+          <Tab icon={<CameraAlt />} label={t('liveAnalysis')} />
+          <Tab icon={<Analytics />} label={t('dashboard')} />
+          <Tab icon={<Assessment />} label={t('testResults')} />
         </Tabs>
       </Paper>
 
@@ -327,7 +329,7 @@ const QualityControl = () => {
                   <TextField
                     fullWidth
                     select
-                    label="Rice Variety"
+                    label={t('variety')}
                     value={selectedVariety}
                     onChange={(e) => setSelectedVariety(e.target.value)}
                     sx={{ mb: 2 }}
@@ -339,7 +341,7 @@ const QualityControl = () => {
                   
                   <TextField
                     fullWidth
-                    label="Batch ID (Optional)"
+                    label={t('batch')}
                     value={batchId}
                     onChange={(e) => setBatchId(e.target.value)}
                     sx={{ mb: 2 }}
@@ -700,7 +702,7 @@ const QualityControl = () => {
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle>Capture Rice Sample</DialogTitle>
+        <DialogTitle>{t('captureSample')}</DialogTitle>
         <DialogContent>
           <Box sx={{ textAlign: 'center' }}>
             <video
@@ -717,7 +719,7 @@ const QualityControl = () => {
             />
             <canvas ref={canvasRef} style={{ display: 'none' }} />
             <Typography variant="body2" sx={{ mt: 2 }}>
-              Position rice sample in the camera frame and click capture
+              {t('cameraHelp')}
             </Typography>
           </Box>
         </DialogContent>
@@ -726,14 +728,14 @@ const QualityControl = () => {
             setShowCameraDialog(false);
             stopCamera();
           }}>
-            Cancel
+            {t('cancel')}
           </Button>
           <Button
             variant="contained"
             onClick={handleCameraCapture}
             disabled={isAnalyzing}
           >
-            {isAnalyzing ? <CircularProgress size={24} /> : 'Capture & Analyze'}
+            {isAnalyzing ? <CircularProgress size={24} /> : t('captureAnalyze')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -743,20 +745,20 @@ const QualityControl = () => {
         <DialogContent>
           {viewTest && (
             <Box sx={{ pt: 1 }}>
-              <Typography>Batch: {viewTest.batch_id}</Typography>
-              <Typography>Variety: {viewTest.variety}</Typography>
-              <Typography>Grade: {viewTest.grade}</Typography>
-              <Typography>Score: {viewTest.score}</Typography>
-              <Typography>Date: {viewTest.date}</Typography>
-              <Typography>Status: {viewTest.status}</Typography>
+              <Typography>{t('batch')}: {viewTest.batch_id}</Typography>
+              <Typography>{t('variety')}: {viewTest.variety}</Typography>
+              <Typography>{t('grade')}: {viewTest.grade}</Typography>
+              <Typography>{t('score')}: {viewTest.score}</Typography>
+              <Typography>{t('date')}: {viewTest.date}</Typography>
+              <Typography>{t('status')}: {viewTest.status}</Typography>
               <Alert severity="info" sx={{ mt: 2 }}>
-                Preview sample. Official tests belong on Production → Quality Test.
+                {t('cameraPreviewHelp')}
               </Alert>
             </Box>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setViewTest(null)}>Close</Button>
+          <Button onClick={() => setViewTest(null)}>{t('close')}</Button>
         </DialogActions>
       </Dialog>
     </Box>

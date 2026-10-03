@@ -10,6 +10,7 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { useQuery } from 'react-query';
 import { farmerService } from '../../services/farmerService';
+import { useI18n } from '../../i18n/I18nContext';
 
 const validationSchema = Yup.object({
   farmer_id: Yup.number().required('Farmer selection is required'),
@@ -30,6 +31,7 @@ const validationSchema = Yup.object({
 });
 
 const CreateContractDialog = ({ open, onClose, onSubmit, loading = false }) => {
+  const { t } = useI18n();
   const [aiOptimization, setAiOptimization] = useState(null);
   const [riskAssessment, setRiskAssessment] = useState(null);
 
@@ -107,14 +109,14 @@ const CreateContractDialog = ({ open, onClose, onSubmit, loading = false }) => {
   ];
 
   const seasons = [
-    { value: 'kharif', label: 'Kharif (Jun-Nov)' },
-    { value: 'rabi', label: 'Rabi (Nov-Apr)' }
+    { value: 'kharif', label: t('seasonKharif') },
+    { value: 'rabi', label: t('seasonRabi') }
   ];
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
       <DialogTitle>
-        Create Farmer Contract
+        {t('createContract')}
       </DialogTitle>
 
       <DialogContent>
@@ -161,7 +163,7 @@ const CreateContractDialog = ({ open, onClose, onSubmit, loading = false }) => {
                 renderInput={(params) => (
                   <TextField
                     {...params}
-                    label="Select Farmer *"
+                    label={`${t('selectFarmer')} *`}
                     error={formik.touched.farmer_id && Boolean(formik.errors.farmer_id)}
                     helperText={formik.touched.farmer_id && formik.errors.farmer_id}
                   />
@@ -177,7 +179,7 @@ const CreateContractDialog = ({ open, onClose, onSubmit, loading = false }) => {
                   name="season"
                   value={formik.values.season}
                   onChange={formik.handleChange}
-                  label="Season *"
+                  label={`${t('season')} *`}
                   error={formik.touched.season && Boolean(formik.errors.season)}
                 >
                   {seasons.map((season) => (
@@ -193,7 +195,7 @@ const CreateContractDialog = ({ open, onClose, onSubmit, loading = false }) => {
               <TextField
                 fullWidth
                 name="year"
-                label="Year *"
+                label={`${t('year')} *`}
                 type="number"
                 value={formik.values.year}
                 onChange={formik.handleChange}
@@ -206,7 +208,7 @@ const CreateContractDialog = ({ open, onClose, onSubmit, loading = false }) => {
               <TextField
                 fullWidth
                 name="crop_type"
-                label="Crop Type *"
+                label={`${t('cropType')} *`}
                 value={formik.values.crop_type}
                 onChange={formik.handleChange}
                 error={formik.touched.crop_type && Boolean(formik.errors.crop_type)}
@@ -218,7 +220,7 @@ const CreateContractDialog = ({ open, onClose, onSubmit, loading = false }) => {
               <TextField
                 fullWidth
                 name="quantity_committed"
-                label="Quantity Committed (quintals) *"
+                label={`${t('qtyQuintals')} *`}
                 type="number"
                 value={formik.values.quantity_committed}
                 onChange={formik.handleChange}
@@ -232,7 +234,7 @@ const CreateContractDialog = ({ open, onClose, onSubmit, loading = false }) => {
               <TextField
                 fullWidth
                 name="base_price"
-                label="Base Price (₹/quintal) *"
+                label={`${t('basePriceQt')} *`}
                 type="number"
                 value={formik.values.base_price}
                 onChange={formik.handleChange}
@@ -245,7 +247,7 @@ const CreateContractDialog = ({ open, onClose, onSubmit, loading = false }) => {
               <TextField
                 fullWidth
                 name="quality_bonus"
-                label="Quality Bonus (₹/quintal)"
+                label={t('qualityBonus')}
                 type="number"
                 value={formik.values.quality_bonus}
                 onChange={formik.handleChange}
@@ -257,7 +259,7 @@ const CreateContractDialog = ({ open, onClose, onSubmit, loading = false }) => {
               <TextField
                 fullWidth
                 name="advance_amount"
-                label="Advance Amount (₹)"
+                label={t('advanceAmount')}
                 type="number"
                 value={formik.values.advance_amount}
                 onChange={formik.handleChange}
@@ -271,7 +273,7 @@ const CreateContractDialog = ({ open, onClose, onSubmit, loading = false }) => {
                   name="advance_payment_method"
                   value={formik.values.advance_payment_method}
                   onChange={formik.handleChange}
-                  label="Advance Payment Method"
+                  label={t('advanceMethod')}
                 >
                   <MenuItem value="bank_transfer">Bank Transfer</MenuItem>
                   <MenuItem value="cash">Cash</MenuItem>
@@ -284,7 +286,7 @@ const CreateContractDialog = ({ open, onClose, onSubmit, loading = false }) => {
             <Grid item xs={12} sm={4}>
               <TextField
                 fullWidth
-                label="Contract Start Date"
+                label={t('contractStart')}
                 name="contract_start_date"
                 type="date"
                 value={formik.values.contract_start_date ? formik.values.contract_start_date.toISOString().split('T')[0] : ''}
@@ -299,7 +301,7 @@ const CreateContractDialog = ({ open, onClose, onSubmit, loading = false }) => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Contract End Date"
+                label={t('contractEnd')}
                 name="contract_end_date"
                 type="date"
                 value={formik.values.contract_end_date ? formik.values.contract_end_date.toISOString().split('T')[0] : ''}
@@ -314,7 +316,7 @@ const CreateContractDialog = ({ open, onClose, onSubmit, loading = false }) => {
               <TextField
                 fullWidth
                 name="terms_conditions"
-                label="Terms & Conditions"
+                label={t('termsConditions')}
                 multiline
                 rows={3}
                 value={formik.values.terms_conditions}
@@ -326,7 +328,7 @@ const CreateContractDialog = ({ open, onClose, onSubmit, loading = false }) => {
               <TextField
                 fullWidth
                 name="special_instructions"
-                label="Special Instructions"
+                label={t('specialInstructions')}
                 multiline
                 rows={2}
                 value={formik.values.special_instructions}
@@ -338,14 +340,14 @@ const CreateContractDialog = ({ open, onClose, onSubmit, loading = false }) => {
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={handleClose}>Cancel</Button>
+        <Button onClick={handleClose}>{t('cancel')}</Button>
         <Button
           onClick={formik.handleSubmit}
           disabled={loading}
           variant="contained"
           startIcon={loading && <CircularProgress size={20} />}
         >
-          Create Contract
+          {t('createContract')}
         </Button>
       </DialogActions>
     </Dialog>

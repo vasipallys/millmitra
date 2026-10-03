@@ -105,8 +105,8 @@ const Dashboard = () => {
     const suggested = suggestMillStep({ paddyLots, batches, products: [], invoices: [] });
     if (canMillFlow) {
       return {
-        title: suggested.title || t('millFlow'),
-        reason: suggested.reason || t('millFlowSubtitle'),
+        title: t(suggested.title) || t('millFlow'),
+        reason: t(suggested.reason, suggested.reasonVars) || t('millFlowSubtitle'),
         path: '/mill-flow',
         label: t('nextActionGoMillFlow'),
       };
@@ -156,7 +156,7 @@ const Dashboard = () => {
   if (overviewLoading || widgetsLoading) {
     return (
       <PageShell>
-        <PageLoading label="Loading dashboard…" />
+        <PageLoading label={t('loadingDashboard')} />
       </PageShell>
     );
   }
@@ -217,7 +217,7 @@ const Dashboard = () => {
       <Grid container spacing={3} mb={3}>
         <Grid item xs={12} sm={6} md={4} lg={2.4}>
           <MetricCard
-            title="Production"
+            title={t('dashProduction')}
             value={`${overview?.summary?.total_production?.toFixed(0) || 0} kg`}
             trend={overview?.trends?.production}
             icon={<TrendingUp />}
@@ -226,7 +226,7 @@ const Dashboard = () => {
         </Grid>
         <Grid item xs={12} sm={6} md={4} lg={2.4}>
           <MetricCard
-            title="Quality Score"
+            title={t('dashQualityScore')}
             value={`${overview?.summary?.quality_score?.toFixed(1) || 0}%`}
             trend={overview?.trends?.quality}
             icon={<Insights />}
@@ -235,7 +235,7 @@ const Dashboard = () => {
         </Grid>
         <Grid item xs={12} sm={6} md={4} lg={2.4}>
           <MetricCard
-            title="Inventory Value"
+            title={t('dashInventoryValue')}
             value={`₹${(overview?.summary?.inventory_value || 0).toLocaleString()}`}
             trend={overview?.trends?.inventory}
             icon={<TrendingUp />}
@@ -245,7 +245,7 @@ const Dashboard = () => {
         {(canSales || canFinance) && (
         <Grid item xs={12} sm={6} md={4} lg={2.4}>
           <MetricCard
-            title="Pending Orders"
+            title={t('dashPendingOrders')}
             value={overview?.summary?.pending_orders || 0}
             trend={overview?.trends?.orders}
             icon={<Warning />}
@@ -255,7 +255,7 @@ const Dashboard = () => {
         )}
         <Grid item xs={12} sm={6} md={4} lg={2.4}>
           <MetricCard
-            title="Active Farmers"
+            title={t('dashActiveFarmers')}
             value={overview?.summary?.active_farmers || 0}
             trend={overview?.trends?.farmers}
             icon={<TrendingUp />}
@@ -282,7 +282,7 @@ const Dashboard = () => {
 
       {/* Customization Dialog */}
       <Dialog open={customizeOpen} onClose={() => setCustomizeOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Customize Dashboard</DialogTitle>
+        <DialogTitle>{t('customizeDashboard')}</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="textSecondary" mb={2}>
             Choose which metric cards to keep in view. The mill still shows live numbers from farmers, stock, batches, and invoices.
@@ -309,7 +309,7 @@ const Dashboard = () => {
           </FormGroup>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCustomizeOpen(false)} disabled={customizeSaving}>Cancel</Button>
+          <Button onClick={() => setCustomizeOpen(false)} disabled={customizeSaving}>{t('cancel')}</Button>
           <Button onClick={saveCustomization} variant="contained" disabled={customizeSaving}>
             {customizeSaving ? 'Saving...' : 'Save'}
           </Button>

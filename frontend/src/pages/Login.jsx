@@ -105,7 +105,7 @@ const Login = ({ onLogin }) => {
       const status = error.response?.status;
       setError(getApiErrorMessage(
         error,
-        status === 401 ? 'Username or password is not recognized' : 'Login failed'
+        status === 401 ? t('badCredentials') : t('loginFailed')
       ));
     } finally {
       setLoading(false);
@@ -356,10 +356,10 @@ const Login = ({ onLogin }) => {
           {activeTab === 1 && (
             <Box textAlign="center">
               <Alert severity="info" sx={{ mb: 2, textAlign: 'left' }}>
-                Experimental. Use Password for mill sign-in.
+                {t('loginExperimental')}
               </Alert>
               <Typography variant="body2" color="textSecondary" mb={2}>
-                Say "Login as [your username]" or "I am [your username]"
+                {t('voicePrompt')}
               </Typography>
               
               <IconButton
@@ -379,12 +379,12 @@ const Login = ({ onLogin }) => {
               </IconButton>
               
               <Typography variant="body2">
-                {isListening ? 'Listening...' : 'Click to speak'}
+                {isListening ? t('listening') : t('clickToSpeak')}
               </Typography>
               
               {transcript && (
                 <Alert severity="info" sx={{ mt: 2 }}>
-                  You said: "{transcript}"
+                  {t('youSaid', { text: transcript })}
                 </Alert>
               )}
             </Box>
@@ -394,11 +394,11 @@ const Login = ({ onLogin }) => {
           {activeTab === 2 && (
             <Box>
               <Alert severity="info" sx={{ mb: 2 }}>
-                Experimental. Use Password for mill sign-in.
+                {t('loginExperimental')}
               </Alert>
               <TextField
                 fullWidth
-                label="Username"
+                label={t('username')}
                 value={formData.username}
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                 margin="normal"
@@ -413,7 +413,7 @@ const Login = ({ onLogin }) => {
                   onClick={() => setShowBiometricLogin(true)}
                   disabled={loading}
                 >
-                  Biometric Login
+                  {t('biometricLogin')}
                 </Button>
               </Box>
             </Box>
@@ -423,23 +423,23 @@ const Login = ({ onLogin }) => {
 
       {/* 2FA Dialog */}
       <Dialog open={requires2FA} onClose={() => setRequires2FA(false)}>
-        <DialogTitle>Two-Factor Authentication</DialogTitle>
+        <DialogTitle>{t('twoFactor')}</DialogTitle>
         <DialogContent>
           <Typography variant="body2" mb={2}>
-            Enter the OTP sent to your {otpMethod}
+            {t('otpSent', { method: otpMethod })}
           </Typography>
           <TextField
             fullWidth
-            label="OTP Code"
+            label={t('otpCode')}
             value={otpCode}
             onChange={(e) => setOtpCode(e.target.value)}
             inputProps={{ maxLength: 6 }}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setRequires2FA(false)}>Cancel</Button>
+          <Button onClick={() => setRequires2FA(false)}>{t('cancel')}</Button>
           <Button onClick={handleOTPVerification} variant="contained">
-            Verify
+            {t('verify')}
           </Button>
         </DialogActions>
       </Dialog>

@@ -7,6 +7,7 @@ import {
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { productionAPI } from '../../services/api';
+import { useI18n } from '../../i18n/I18nContext';
 
 const validationSchema = Yup.object({
   test_type: Yup.string().required('Test type is required'),
@@ -16,6 +17,7 @@ const validationSchema = Yup.object({
 });
 
 const QualityTestDialog = ({ open, onClose, batch, onSuccess }) => {
+  const { t } = useI18n();
   const [loading, setLoading] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState(null);
   const [estimatedGrade, setEstimatedGrade] = useState(null);
@@ -100,20 +102,29 @@ const QualityTestDialog = ({ open, onClose, batch, onSuccess }) => {
   const estimatedScore = calculateEstimatedScore();
   const currentGrade = getEstimatedGrade(estimatedScore);
 
+  const testTypeLabels = { input: t('testInput'), intermediate: t('testIntermediate'), final: t('testFinal') };
+  const testStageLabels = {
+    cleaning: t('stageCleaning'),
+    dehusking: t('stageDehusking'),
+    polishing: t('stagePolishing'),
+    sorting: t('stageSorting'),
+    packaging: t('stagePackaging'),
+  };
+  const testMethodLabels = { manual: t('methodManual'), automated: t('methodAutomated'), ai: t('methodAi') };
   const testTypes = ['input', 'intermediate', 'final'];
   const testStages = ['cleaning', 'dehusking', 'polishing', 'sorting', 'packaging'];
   const testMethods = ['manual', 'automated', 'ai'];
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>Create Quality Test - {batch?.batch_number}</DialogTitle>
+      <DialogTitle>{t('createQualityTest')} — {batch?.batch_number}</DialogTitle>
       <form onSubmit={formik.handleSubmit}>
         <DialogContent>
           <Grid container spacing={3}>
             {/* Test Information */}
             <Grid item xs={12}>
               <Typography variant="h6" gutterBottom>
-                Test Information
+                {t('testDetails')}
               </Typography>
             </Grid>
 
@@ -121,7 +132,7 @@ const QualityTestDialog = ({ open, onClose, batch, onSuccess }) => {
               <TextField
                 select
                 fullWidth
-                label="Test Type"
+                label={t('testType')}
                 name="test_type"
                 value={formik.values.test_type}
                 onChange={formik.handleChange}
@@ -130,7 +141,7 @@ const QualityTestDialog = ({ open, onClose, batch, onSuccess }) => {
               >
                 {testTypes.map((type) => (
                   <MenuItem key={type} value={type}>
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                    {testTypeLabels[type] || type}
                   </MenuItem>
                 ))}
               </TextField>
@@ -140,14 +151,14 @@ const QualityTestDialog = ({ open, onClose, batch, onSuccess }) => {
               <TextField
                 select
                 fullWidth
-                label="Test Stage"
+                label={t('testStage')}
                 name="test_stage"
                 value={formik.values.test_stage}
                 onChange={formik.handleChange}
               >
                 {testStages.map((stage) => (
                   <MenuItem key={stage} value={stage}>
-                    {stage.charAt(0).toUpperCase() + stage.slice(1)}
+                    {testStageLabels[stage] || stage}
                   </MenuItem>
                 ))}
               </TextField>
@@ -156,7 +167,7 @@ const QualityTestDialog = ({ open, onClose, batch, onSuccess }) => {
             <Grid item xs={12} sm={4}>
               <TextField
                 fullWidth
-                label="Sample Size (kg)"
+                label={t('sampleSizeKg')}
                 name="sample_size"
                 type="number"
                 value={formik.values.sample_size}
@@ -169,14 +180,14 @@ const QualityTestDialog = ({ open, onClose, batch, onSuccess }) => {
             <Grid item xs={12}>
               <Divider sx={{ my: 2 }} />
               <Typography variant="h6" gutterBottom>
-                Quality Parameters
+                {t('qualityParams')}
               </Typography>
             </Grid>
 
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Moisture Content (%)"
+                label={t('moisture')}
                 name="moisture_content"
                 type="number"
                 value={formik.values.moisture_content}
@@ -190,7 +201,7 @@ const QualityTestDialog = ({ open, onClose, batch, onSuccess }) => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Broken Grains (%)"
+                label={t('brokenGrains')}
                 name="broken_grains"
                 type="number"
                 value={formik.values.broken_grains}
@@ -204,7 +215,7 @@ const QualityTestDialog = ({ open, onClose, batch, onSuccess }) => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Foreign Matter (%)"
+                label={t('foreignMatter')}
                 name="foreign_matter"
                 type="number"
                 value={formik.values.foreign_matter}
@@ -218,7 +229,7 @@ const QualityTestDialog = ({ open, onClose, batch, onSuccess }) => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Chalky Grains (%)"
+                label={t('chalkyGrains')}
                 name="chalky_grains"
                 type="number"
                 value={formik.values.chalky_grains}
@@ -230,7 +241,7 @@ const QualityTestDialog = ({ open, onClose, batch, onSuccess }) => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Head Rice Recovery (%)"
+                label={t('headRiceRecovery')}
                 name="head_rice_recovery"
                 type="number"
                 value={formik.values.head_rice_recovery}
@@ -242,7 +253,7 @@ const QualityTestDialog = ({ open, onClose, batch, onSuccess }) => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Milling Degree"
+                label={t('millingDegree')}
                 name="milling_degree"
                 type="number"
                 value={formik.values.milling_degree}
@@ -262,7 +273,7 @@ const QualityTestDialog = ({ open, onClose, batch, onSuccess }) => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Whiteness Index"
+                label={t('whitenessIndex')}
                 name="whiteness_index"
                 type="number"
                 value={formik.values.whiteness_index}
@@ -274,7 +285,7 @@ const QualityTestDialog = ({ open, onClose, batch, onSuccess }) => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Transparency"
+                label={t('transparency')}
                 name="transparency"
                 type="number"
                 value={formik.values.transparency}
@@ -286,7 +297,7 @@ const QualityTestDialog = ({ open, onClose, batch, onSuccess }) => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Grain Length (mm)"
+                label={t('grainLength')}
                 name="grain_length"
                 type="number"
                 value={formik.values.grain_length}
@@ -298,7 +309,7 @@ const QualityTestDialog = ({ open, onClose, batch, onSuccess }) => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Grain Width (mm)"
+                label={t('grainWidth')}
                 name="grain_width"
                 type="number"
                 value={formik.values.grain_width}
@@ -311,7 +322,7 @@ const QualityTestDialog = ({ open, onClose, batch, onSuccess }) => {
             <Grid item xs={12}>
               <Divider sx={{ my: 2 }} />
               <Typography variant="h6" gutterBottom>
-                Test Details
+                {t('testDetails')}
               </Typography>
             </Grid>
 
@@ -319,14 +330,14 @@ const QualityTestDialog = ({ open, onClose, batch, onSuccess }) => {
               <TextField
                 select
                 fullWidth
-                label="Test Method"
+                label={t('testMethod')}
                 name="test_method"
                 value={formik.values.test_method}
                 onChange={formik.handleChange}
               >
                 {testMethods.map((method) => (
                   <MenuItem key={method} value={method}>
-                    {method.charAt(0).toUpperCase() + method.slice(1)}
+                    {testMethodLabels[method] || method}
                   </MenuItem>
                 ))}
               </TextField>
@@ -337,7 +348,7 @@ const QualityTestDialog = ({ open, onClose, batch, onSuccess }) => {
                 fullWidth
                 multiline
                 rows={3}
-                label="Test Notes"
+                label={t('testNotes')}
                 name="notes"
                 value={formik.values.notes}
                 onChange={formik.handleChange}
@@ -350,7 +361,7 @@ const QualityTestDialog = ({ open, onClose, batch, onSuccess }) => {
                 <Card>
                   <CardContent>
                     <Typography variant="h6" gutterBottom>
-                      Estimated Quality Assessment
+                      {t('estimatedQuality')}
                     </Typography>
                     <Box display="flex" alignItems="center" gap={2} mb={2}>
                       <Typography variant="h4">
@@ -367,8 +378,7 @@ const QualityTestDialog = ({ open, onClose, batch, onSuccess }) => {
                       />
                     </Box>
                     <Typography variant="body2" color="textSecondary">
-                      This is a preliminary estimate based on entered parameters.
-                      Final grade will be calculated after AI analysis.
+                      {t('prelimEstimate')}
                     </Typography>
                   </CardContent>
                 </Card>
@@ -403,13 +413,13 @@ const QualityTestDialog = ({ open, onClose, batch, onSuccess }) => {
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
+          <Button onClick={handleClose}>{t('cancel')}</Button>
           <Button
             type="submit"
             variant="contained"
             disabled={loading}
           >
-            {loading ? 'Creating Test...' : 'Create Test'}
+            {loading ? t('creatingTest') : t('createTest')}
           </Button>
         </DialogActions>
       </form>

@@ -13,8 +13,10 @@ import {
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { farmerService } from '../../services/farmerService';
+import { useI18n } from '../../i18n/I18nContext';
 
 const FarmerEditRequestsDialog = ({ open, onClose, farmerId = null }) => {
+  const { t } = useI18n();
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [reviewComments, setReviewComments] = useState('');
   const [reviewError, setReviewError] = useState('');
@@ -169,10 +171,10 @@ const FarmerEditRequestsDialog = ({ open, onClose, farmerId = null }) => {
       <DialogTitle>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Typography variant="h6">
-            {farmerId ? 'Farmer Edit History' : 'Pending Edit Requests'}
+            {farmerId ? t('farmerEditHistory') : t('pendingEditRequests')}
           </Typography>
           <Chip
-            label={`${editRequests.length} requests`}
+            label={t('requestsCount', { count: editRequests.length })}
             color="primary"
             variant="outlined"
           />
@@ -181,10 +183,10 @@ const FarmerEditRequestsDialog = ({ open, onClose, farmerId = null }) => {
 
       <DialogContent dividers>
         {isLoading ? (
-          <Typography>Loading edit requests...</Typography>
+          <Typography>{t('loadingEditRequests')}</Typography>
         ) : editRequests.length === 0 ? (
           <Alert severity="info">
-            {farmerId ? 'No edit requests found for this farmer.' : 'No pending edit requests.'}
+            {farmerId ? t('noEditRequestsFarmer') : t('noPendingEdits')}
           </Alert>
         ) : (
           <Grid container spacing={2}>
@@ -283,7 +285,7 @@ const FarmerEditRequestsDialog = ({ open, onClose, farmerId = null }) => {
                           fullWidth
                           multiline
                           rows={3}
-                          label="Review Comments"
+                          label={t('reviewComments')}
                           value={reviewComments}
                           onChange={(e) => {
                             setReviewComments(e.target.value);
@@ -332,7 +334,7 @@ const FarmerEditRequestsDialog = ({ open, onClose, farmerId = null }) => {
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={onClose}>Close</Button>
+        <Button onClick={onClose}>{t('close')}</Button>
       </DialogActions>
     </Dialog>
   );

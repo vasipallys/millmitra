@@ -18,6 +18,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import notificationService from '../services/notificationService';
+import { useI18n } from '../i18n/I18nContext';
 
 const focusFirstIn = (node, selector) => {
   const target = node?.querySelector?.(selector);
@@ -27,6 +28,7 @@ const focusFirstIn = (node, selector) => {
 };
 
 const NotificationsPanel = ({ anchorEl, open, onClose }) => {
+  const { t } = useI18n();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [activeTab, setActiveTab] = useState(0);
@@ -167,10 +169,10 @@ const NotificationsPanel = ({ anchorEl, open, onClose }) => {
         <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
             <Typography variant="h6">
-              Notifications
+              {t('notifications')}
             </Typography>
             <Box>
-              <Tooltip title="Notification Settings">
+              <Tooltip title={t('notificationSettings')}>
                 <IconButton
                   size="small"
                   aria-label="Notification settings"
@@ -182,7 +184,7 @@ const NotificationsPanel = ({ anchorEl, open, onClose }) => {
                   <SettingsIcon />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="Mark All Read">
+              <Tooltip title={t('markAllRead')}>
                 <IconButton size="small" aria-label="Mark all notifications read" onClick={handleMarkAllRead}>
                   <MarkEmailRead />
                 </IconButton>
@@ -194,7 +196,7 @@ const NotificationsPanel = ({ anchorEl, open, onClose }) => {
           <TextField
             fullWidth
             size="small"
-            placeholder="Search notifications..."
+            placeholder={t('searchNotifications')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             InputProps={{
@@ -210,29 +212,29 @@ const NotificationsPanel = ({ anchorEl, open, onClose }) => {
             variant="fullWidth"
             size="small"
           >
-            <Tab label={`All (${notifications.length})`} />
-            <Tab label={`Unread (${unreadCount})`} />
-            <Tab label="Read" />
+            <Tab label={t('allWithCount', { count: notifications.length })} />
+            <Tab label={t('unreadWithCount', { count: unreadCount })} />
+            <Tab label={t('read')} />
           </Tabs>
         </Box>
 
         {/* Filter */}
         <Box sx={{ px: 2, py: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
           <FormControl size="small" fullWidth>
-            <InputLabel>Category</InputLabel>
+            <InputLabel>{t('category')}</InputLabel>
             <Select
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
-              label="Category"
+              label={t('category')}
             >
-              <MenuItem value="all">All Categories</MenuItem>
-              <MenuItem value="farmer_management">Farmer Management</MenuItem>
-              <MenuItem value="production">Production</MenuItem>
-              <MenuItem value="inventory">Inventory</MenuItem>
-              <MenuItem value="quality">Quality Control</MenuItem>
-              <MenuItem value="sales">Sales</MenuItem>
-              <MenuItem value="finance">Finance</MenuItem>
-              <MenuItem value="system">System</MenuItem>
+              <MenuItem value="all">{t('allCategories')}</MenuItem>
+              <MenuItem value="farmer_management">{t('farmerManagement')}</MenuItem>
+              <MenuItem value="production">{t('production')}</MenuItem>
+              <MenuItem value="inventory">{t('inventory')}</MenuItem>
+              <MenuItem value="quality">{t('qualityControl')}</MenuItem>
+              <MenuItem value="sales">{t('sales')}</MenuItem>
+              <MenuItem value="finance">{t('finance')}</MenuItem>
+              <MenuItem value="system">{t('system')}</MenuItem>
             </Select>
           </FormControl>
         </Box>
@@ -243,8 +245,8 @@ const NotificationsPanel = ({ anchorEl, open, onClose }) => {
             <Box sx={{ p: 3, textAlign: 'center' }}>
               <Typography variant="body2" color="text.secondary">
                 {notifications.length === 0
-                  ? 'No notifications yet'
-                  : 'No notifications found'}
+                  ? t('noNotifications')
+                  : t('noNotificationsFound')}
               </Typography>
             </Box>
           ) : (
@@ -322,18 +324,17 @@ const NotificationsPanel = ({ anchorEl, open, onClose }) => {
 
       {/* Notification Settings Dialog */}
       <Dialog open={settingsOpen} onClose={() => setSettingsOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Notification Settings</DialogTitle>
+        <DialogTitle>{t('notifSettingsTitle')}</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Configure your notification preferences
+            {t('notifSettingsHelp')}
           </Typography>
-          {/* Settings content would go here */}
           <Typography variant="body2">
-            Settings panel coming soon...
+            {t('notifSettingsSoon')}
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setSettingsOpen(false)}>Close</Button>
+          <Button onClick={() => setSettingsOpen(false)}>{t('close')}</Button>
         </DialogActions>
       </Dialog>
     </>

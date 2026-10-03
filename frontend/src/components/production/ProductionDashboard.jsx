@@ -11,10 +11,12 @@ import {
 } from '@mui/icons-material';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import { productionAPI } from '../../services/api';
+import { useI18n } from '../../i18n/I18nContext';
 import CreateBatchDialog from './CreateBatchDialog';
 import BatchDetailsDialog from './BatchDetailsDialog';
 
 const ProductionDashboard = () => {
+  const { statusLabel } = useI18n();
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [createBatchOpen, setCreateBatchOpen] = useState(false);
@@ -313,7 +315,7 @@ const ProductionDashboard = () => {
                     <TableCell>{batch.input_quantity} Q</TableCell>
                     <TableCell>
                       <Chip
-                        label={batch.status}
+                        label={statusLabel(batch.status)}
                         color={getStatusColor(batch.status)}
                         size="small"
                       />

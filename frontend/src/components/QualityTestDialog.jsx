@@ -22,8 +22,10 @@ import {
   CardContent
 } from '@mui/material';
 import { Assignment, Science, CheckCircle } from '@mui/icons-material';
+import { useI18n } from '../i18n/I18nContext';
 
 const QualityTestDialog = ({ open, onClose, onSubmit, batch = null }) => {
+  const { t } = useI18n();
   const [activeStep, setActiveStep] = useState(0);
   const [formData, setFormData] = useState({
     batch_id: batch?.id || batch?.batch_id || '',
@@ -46,22 +48,22 @@ const QualityTestDialog = ({ open, onClose, onSubmit, batch = null }) => {
     tester_name: ''
   });
 
-  const steps = ['Test Setup', 'Measurements', 'Review & Submit'];
+  const steps = [t('stepTestSetup'), t('stepMeasurements'), t('stepReviewSubmit')];
 
   const testTypes = [
-    { value: 'comprehensive', label: 'Comprehensive Test' },
-    { value: 'moisture_only', label: 'Moisture Content Only' },
-    { value: 'physical_properties', label: 'Physical Properties' },
-    { value: 'visual_inspection', label: 'Visual Inspection' },
-    { value: 'custom', label: 'Custom Test' }
+    { value: 'comprehensive', label: t('testComprehensive') },
+    { value: 'moisture_only', label: t('testMoistureOnly') },
+    { value: 'physical_properties', label: t('testPhysical') },
+    { value: 'visual_inspection', label: t('testVisual') },
+    { value: 'custom', label: t('testCustom') }
   ];
 
   const equipmentOptions = [
-    { value: 'moisture_meter_1', label: 'Moisture Meter #1' },
-    { value: 'moisture_meter_2', label: 'Moisture Meter #2' },
-    { value: 'grain_analyzer', label: 'Grain Analyzer' },
-    { value: 'color_sorter', label: 'Color Sorter' },
-    { value: 'manual_inspection', label: 'Manual Inspection' }
+    { value: 'moisture_meter_1', label: t('equipMoisture1') },
+    { value: 'moisture_meter_2', label: t('equipMoisture2') },
+    { value: 'grain_analyzer', label: t('equipGrainAnalyzer') },
+    { value: 'color_sorter', label: t('equipColorSorter') },
+    { value: 'manual_inspection', label: t('equipManual') }
   ];
 
   const handleInputChange = (field, value) => {
@@ -139,14 +141,14 @@ const QualityTestDialog = ({ open, onClose, onSubmit, batch = null }) => {
           <Grid container spacing={2}>
             <Grid item xs={12}>
               <Alert severity="info" sx={{ mb: 2 }}>
-                Configure the quality test parameters and conditions
+                {t('testSetupHelp')}
               </Alert>
             </Grid>
             
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Batch ID"
+                label={t('batch')}
                 value={formData.batch_id}
                 onChange={(e) => handleInputChange('batch_id', e.target.value)}
                 required
@@ -156,11 +158,11 @@ const QualityTestDialog = ({ open, onClose, onSubmit, batch = null }) => {
             
             <Grid item xs={12} sm={6}>
               <FormControl fullWidth>
-                <InputLabel>Test Type</InputLabel>
+                <InputLabel>{t('testType')}</InputLabel>
                 <Select
                   value={formData.test_type}
                   onChange={(e) => handleInputChange('test_type', e.target.value)}
-                  label="Test Type"
+                  label={t('testType')}
                 >
                   {testTypes.map((type) => (
                     <MenuItem key={type.value} value={type.value}>
@@ -174,7 +176,7 @@ const QualityTestDialog = ({ open, onClose, onSubmit, batch = null }) => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Tester Name"
+                label={t('testerName')}
                 value={formData.tester_name}
                 onChange={(e) => handleInputChange('tester_name', e.target.value)}
                 required
@@ -183,11 +185,11 @@ const QualityTestDialog = ({ open, onClose, onSubmit, batch = null }) => {
             
             <Grid item xs={12} sm={6}>
               <FormControl fullWidth>
-                <InputLabel>Equipment Used</InputLabel>
+                <InputLabel>{t('equipmentUsed')}</InputLabel>
                 <Select
                   value={formData.test_conditions.equipment_used}
                   onChange={(e) => handleInputChange('test_conditions.equipment_used', e.target.value)}
-                  label="Equipment Used"
+                  label={t('equipmentUsed')}
                 >
                   {equipmentOptions.map((equipment) => (
                     <MenuItem key={equipment.value} value={equipment.value}>
@@ -201,7 +203,7 @@ const QualityTestDialog = ({ open, onClose, onSubmit, batch = null }) => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Temperature (°C)"
+                label={t('temperatureC')}
                 type="number"
                 value={formData.test_conditions.temperature}
                 onChange={(e) => handleInputChange('test_conditions.temperature', e.target.value)}
@@ -212,7 +214,7 @@ const QualityTestDialog = ({ open, onClose, onSubmit, batch = null }) => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Humidity (%)"
+                label={t('humidityPct')}
                 type="number"
                 value={formData.test_conditions.humidity}
                 onChange={(e) => handleInputChange('test_conditions.humidity', e.target.value)}
@@ -234,7 +236,7 @@ const QualityTestDialog = ({ open, onClose, onSubmit, batch = null }) => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Moisture Content (%)"
+                label={t('moisture')}
                 type="number"
                 value={formData.test_parameters.moisture_content}
                 onChange={(e) => handleInputChange('test_parameters.moisture_content', e.target.value)}
@@ -247,7 +249,7 @@ const QualityTestDialog = ({ open, onClose, onSubmit, batch = null }) => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Broken Percentage (%)"
+                label={t('brokenGrains')}
                 type="number"
                 value={formData.test_parameters.broken_percentage}
                 onChange={(e) => handleInputChange('test_parameters.broken_percentage', e.target.value)}
@@ -260,7 +262,7 @@ const QualityTestDialog = ({ open, onClose, onSubmit, batch = null }) => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Foreign Matter (%)"
+                label={t('foreignMatter')}
                 type="number"
                 value={formData.test_parameters.foreign_matter}
                 onChange={(e) => handleInputChange('test_parameters.foreign_matter', e.target.value)}
@@ -273,7 +275,7 @@ const QualityTestDialog = ({ open, onClose, onSubmit, batch = null }) => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Chalky Kernels (%)"
+                label={t('chalkyGrains')}
                 type="number"
                 value={formData.test_parameters.chalky_kernels}
                 onChange={(e) => handleInputChange('test_parameters.chalky_kernels', e.target.value)}
@@ -285,7 +287,7 @@ const QualityTestDialog = ({ open, onClose, onSubmit, batch = null }) => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Grain Length (mm)"
+                label={t('grainLength')}
                 type="number"
                 value={formData.test_parameters.grain_length}
                 onChange={(e) => handleInputChange('test_parameters.grain_length', e.target.value)}
@@ -297,7 +299,7 @@ const QualityTestDialog = ({ open, onClose, onSubmit, batch = null }) => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Grain Width (mm)"
+                label={t('grainWidth')}
                 type="number"
                 value={formData.test_parameters.grain_width}
                 onChange={(e) => handleInputChange('test_parameters.grain_width', e.target.value)}
@@ -309,7 +311,7 @@ const QualityTestDialog = ({ open, onClose, onSubmit, batch = null }) => {
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Color Uniformity Score"
+                label={t('colorUniformity')}
                 type="number"
                 value={formData.test_parameters.color_uniformity}
                 onChange={(e) => handleInputChange('test_parameters.color_uniformity', e.target.value)}
@@ -420,7 +422,7 @@ const QualityTestDialog = ({ open, onClose, onSubmit, batch = null }) => {
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Additional Notes"
+                label={t('additionalNotes')}
                 multiline
                 rows={3}
                 value={formData.notes}
@@ -441,9 +443,9 @@ const QualityTestDialog = ({ open, onClose, onSubmit, batch = null }) => {
       <DialogTitle>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Science color="primary" />
-          Quality Test
+          {t('qualityTest')}
           {batch && (
-            <Chip label={`Batch: ${batch.batch_id}`} color="primary" variant="outlined" />
+            <Chip label={`${t('batch')}: ${batch.batch_id}`} color="primary" variant="outlined" />
           )}
         </Box>
       </DialogTitle>
@@ -463,11 +465,11 @@ const QualityTestDialog = ({ open, onClose, onSubmit, batch = null }) => {
       </DialogContent>
       
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose}>{t('cancel')}</Button>
         <Box sx={{ flex: '1 1 auto' }} />
         {activeStep > 0 && (
           <Button onClick={handleBack}>
-            Back
+            {t('back')}
           </Button>
         )}
         {activeStep < steps.length - 1 ? (
@@ -481,11 +483,11 @@ const QualityTestDialog = ({ open, onClose, onSubmit, batch = null }) => {
                                    !formData.test_parameters.foreign_matter))
             }
           >
-            Next
+            {t('next')}
           </Button>
         ) : (
           <Button onClick={handleSubmit} variant="contained">
-            Submit Test
+            {t('submitTest')}
           </Button>
         )}
       </DialogActions>

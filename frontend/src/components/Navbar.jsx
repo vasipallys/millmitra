@@ -60,7 +60,7 @@ const Navbar = ({ onMenuClick, onLogout, user }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [aiFlags, setAiFlags] = useState({ showChip: false, voiceCommands: false });
   const navigate = useNavigate();
-  const { t } = useI18n();
+  const { t, roleLabel } = useI18n();
 
   useEffect(() => {
     if (!user) {
@@ -157,7 +157,7 @@ const Navbar = ({ onMenuClick, onLogout, user }) => {
         </Typography>
 
         <Chip
-          label={user?.role || t('role')}
+          label={roleLabel(user?.role)}
           size="small"
           color="primary"
           variant="outlined"
@@ -167,7 +167,7 @@ const Navbar = ({ onMenuClick, onLogout, user }) => {
 
         {aiFlags.showChip && (
           <Chip
-            label="AI Active"
+            label={t('aiActive')}
             color="success"
             size="small"
             sx={{ mr: 2, cursor: 'pointer' }}
@@ -189,12 +189,12 @@ const Navbar = ({ onMenuClick, onLogout, user }) => {
         )}
 
         {/* Notifications */}
-        <Tooltip title="Notifications">
+        <Tooltip title={t('notifications')}>
           <IconButton
             color="inherit"
             onClick={handleNotificationMenuOpen}
             sx={{ mr: 1 }}
-            aria-label="Notifications"
+            aria-label={t('notifications')}
           >
             <Badge badgeContent={unreadCount} color="error">
               <NotificationsIcon />
@@ -203,7 +203,7 @@ const Navbar = ({ onMenuClick, onLogout, user }) => {
         </Tooltip>
 
         {/* User Profile */}
-        <Tooltip title="Account">
+        <Tooltip title={t('account')}>
           <IconButton
             edge="end"
             color="inherit"
@@ -242,7 +242,7 @@ const Navbar = ({ onMenuClick, onLogout, user }) => {
           <Box sx={{ px: 2, py: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
             <Typography variant="subtitle2">{accountLabel(user)}</Typography>
             <Typography variant="body2" color="text.secondary">
-              {user?.role || 'Operator'}
+              {roleLabel(user?.role)}
             </Typography>
           </Box>
           <MenuItem autoFocus onClick={handleProfileClick}>
@@ -281,7 +281,7 @@ const Navbar = ({ onMenuClick, onLogout, user }) => {
             </Typography>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setInfoOpen(false)}>Close</Button>
+            <Button onClick={() => setInfoOpen(false)}>{t('close')}</Button>
           </DialogActions>
         </Dialog>
 
@@ -293,7 +293,7 @@ const Navbar = ({ onMenuClick, onLogout, user }) => {
             </Typography>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setVoiceNoteOpen(false)}>Close</Button>
+            <Button onClick={() => setVoiceNoteOpen(false)}>{t('close')}</Button>
           </DialogActions>
         </Dialog>
       </Toolbar>

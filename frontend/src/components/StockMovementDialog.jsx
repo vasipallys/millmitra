@@ -18,8 +18,10 @@ import {
   Divider
 } from '@mui/material';
 import { Add, Remove, SwapHoriz } from '@mui/icons-material';
+import { useI18n } from '../i18n/I18nContext';
 
 const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, movementType = 'in', loading = false }) => {
+  const { t } = useI18n();
   const [formData, setFormData] = useState({
     stock_id: stockItem?.id || '',
     stock_kind: stockItem?.type || 'product',
@@ -51,10 +53,29 @@ const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, moveme
   }, [open, stockItem, movementType]);
 
   const movementTypes = [
-    { value: 'in', label: 'Stock In', icon: <Add />, color: 'success' },
-    { value: 'out', label: 'Stock Out', icon: <Remove />, color: 'error' },
-    { value: 'transfer', label: 'Transfer', icon: <SwapHoriz />, color: 'info' }
+    { value: 'in', label: t('stockIn'), icon: <Add />, color: 'success' },
+    { value: 'out', label: t('stockOut'), icon: <Remove />, color: 'error' },
+    { value: 'transfer', label: t('transfer'), icon: <SwapHoriz />, color: 'info' }
   ];
+
+  const reasonLabels = {
+    Purchase: t('reasonPurchase'),
+    Production: t('reasonProduction'),
+    'Return from Customer': t('reasonReturnCustomer'),
+    'Adjustment - Increase': t('reasonAdjIncrease'),
+    'Transfer In': t('reasonTransferIn'),
+    Other: t('reasonOther'),
+    Sale: t('reasonSale'),
+    'Production Consumption': t('reasonProdConsume'),
+    Wastage: t('reasonWastage'),
+    Damage: t('reasonDamage'),
+    'Adjustment - Decrease': t('reasonAdjDecrease'),
+    'Transfer Out': t('reasonTransferOut'),
+    'Warehouse Transfer': t('reasonWarehouseTransfer'),
+    'Location Change': t('reasonLocationChange'),
+    Reorganization: t('reasonReorg'),
+    'Quality Segregation': t('reasonQualitySeg'),
+  };
 
   const reasonOptions = {
     in: [
@@ -109,11 +130,11 @@ const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, moveme
   const handleSubmit = () => {
     const quantity = parseFloat(formData.quantity);
     if (!formData.stock_id) {
-      setSubmitError('Enter the lot ID from the stock card');
+      setSubmitError(t('enterLotId'));
       return;
     }
     if (!Number.isFinite(quantity) || quantity <= 0) {
-      setSubmitError('Quantity must be greater than 0');
+      setSubmitError(t('qtyMustBePositive'));
       return;
     }
     setSubmitError('');
@@ -138,7 +159,7 @@ const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, moveme
       <DialogTitle>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           {currentMovementType?.icon}
-          Record Stock Movement
+          {t('recordStockMovement')}
           {stockItem && (
             <Chip 
               label={stockItem.product_name} 
@@ -155,7 +176,7 @@ const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, moveme
           {/* Movement Type Selection */}
           <Grid item xs={12}>
             <Typography variant="subtitle2" gutterBottom>
-              Movement Type
+              {t('movementType')}
             </Typography>
             <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
               {movementTypes.map((type) => (
@@ -177,8 +198,8 @@ const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, moveme
             <Grid item xs={12}>
               <Alert severity="info" sx={{ mb: 2 }}>
                 <Typography variant="body2">
-                  <strong>Current Stock:</strong> {stockItem.current_stock} {stockItem.unit} | 
-                  <strong> Location:</strong> {stockItem.storage_location || 'N/A'}
+                  <strong>{t('currentStock')}:</strong> {stockItem.current_stock} {stockItem.unit} | 
+                  <strong> {t('location')}:</strong> {stockItem.storage_location || t('na')}
                 </Typography>
               </Alert>
             </Grid>
@@ -188,14 +209,14 @@ const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, moveme
             <>
               <Grid item xs={12} sm={6}>
                 <FormControl fullWidth required>
-                  <InputLabel>Stock Type</InputLabel>
+                  <InputLabel>{t('stockType')}</InputLabel>
                   <Select
                     value={formData.stock_kind || 'product'}
-                    label="Stock Type"
+                    label={t('stockType')}
                     onChange={(e) => handleInputChange('stock_kind', e.target.value)}
                   >
-                    <MenuItem value="paddy">Paddy</MenuItem>
-                    <MenuItem value="product">Product</MenuItem>
+                    <MenuItem value="paddy">{t('paddy')}</MenuItem>
+                    <MenuItem value="product">{t('productKind')}</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
@@ -203,11 +224,11 @@ const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, moveme
                 <TextField
                   fullWidth
                   required
-                  label="Lot ID"
+                  label={t('lotId')}
                   type="number"
                   value={formData.stock_id}
                   onChange={(e) => handleInputChange('stock_id', e.target.value)}
-                  helperText="Numeric id shown on the stock card"
+                  helperText={t('lotIdHelp')}
                 />
               </Grid>
             </>
@@ -217,40 +238,40 @@ const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, moveme
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
-              label="Quantity"
+              label={t('quantity')}
               type="number"
               value={formData.quantity}
               onChange={(e) => handleInputChange('quantity', e.target.value)}
               inputProps={{ min: 0, step: 0.01 }}
               required
-              helperText={stockItem ? `Unit: ${stockItem.unit}` : 'Enter quantity'}
+              helperText={stockItem ? `${t('unit')}: ${stockItem.unit}` : t('enterQty')}
             />
           </Grid>
 
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
-              label="Unit Price"
+              label={t('unitPrice')}
               type="number"
               value={formData.unit_price}
               onChange={(e) => handleInputChange('unit_price', e.target.value)}
               inputProps={{ min: 0, step: 0.01 }}
-              helperText="Price per unit"
+              helperText={t('pricePerUnit')}
             />
           </Grid>
 
           {/* Reason for Movement */}
           <Grid item xs={12} sm={6}>
             <FormControl fullWidth required>
-              <InputLabel>Reason</InputLabel>
+              <InputLabel>{t('reason')}</InputLabel>
               <Select
                 value={formData.reason}
                 onChange={(e) => handleInputChange('reason', e.target.value)}
-                label="Reason"
+                label={t('reason')}
               >
                 {reasonOptions[formData.movement_type]?.map((reason) => (
                   <MenuItem key={reason} value={reason}>
-                    {reason}
+                    {reasonLabels[reason] || reason}
                   </MenuItem>
                 ))}
               </Select>
@@ -261,11 +282,11 @@ const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, moveme
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
-              label="Reference Number"
+              label={t('referenceNumber')}
               value={formData.reference_number}
               onChange={(e) => handleInputChange('reference_number', e.target.value)}
               placeholder="PO#, Invoice#, etc."
-              helperText="Optional reference for tracking"
+              helperText={t('referenceHelp')}
             />
           </Grid>
 
@@ -274,10 +295,10 @@ const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, moveme
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label={formData.movement_type === 'in' ? 'Supplier' : 'Customer'}
+                label={formData.movement_type === 'in' ? t('supplier') : t('customer')}
                 value={formData.supplier_customer}
                 onChange={(e) => handleInputChange('supplier_customer', e.target.value)}
-                placeholder={formData.movement_type === 'in' ? 'Supplier name' : 'Customer name'}
+                placeholder={formData.movement_type === 'in' ? t('supplier') : t('customerName')}
               />
             </Grid>
           )}
@@ -286,7 +307,7 @@ const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, moveme
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
-              label="From Location"
+              label={t('fromLocation')}
               value={formData.location_from}
               onChange={(e) => handleInputChange('location_from', e.target.value)}
               disabled={formData.movement_type === 'in'}
@@ -298,7 +319,7 @@ const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, moveme
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="To Location"
+                label={t('toLocation')}
                 value={formData.location_to}
                 onChange={(e) => handleInputChange('location_to', e.target.value)}
                 required
@@ -311,7 +332,7 @@ const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, moveme
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
-              label="Batch Number"
+              label={t('batchNumber')}
               value={formData.batch_number}
               onChange={(e) => handleInputChange('batch_number', e.target.value)}
               placeholder="Batch/Lot number"
@@ -322,7 +343,7 @@ const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, moveme
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Expiry Date"
+                label={t('expiryDate')}
                 type="date"
                 value={formData.expiry_date}
                 onChange={(e) => handleInputChange('expiry_date', e.target.value)}
@@ -336,7 +357,7 @@ const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, moveme
           <Grid item xs={12}>
             <TextField
               fullWidth
-              label="Notes"
+              label={t('notes')}
               multiline
               rows={3}
               value={formData.notes}
@@ -349,13 +370,13 @@ const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, moveme
           <Grid item xs={12}>
             <Divider sx={{ my: 2 }} />
             <Typography variant="subtitle2" gutterBottom>
-              Movement Summary
+              {t('movementSummary')}
             </Typography>
             <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
               <Grid container spacing={2}>
                 <Grid item xs={6} sm={3}>
                   <Typography variant="body2" color="text.secondary">
-                    Type
+                    {t('type')}
                   </Typography>
                   <Chip 
                     label={currentMovementType?.label} 
@@ -365,7 +386,7 @@ const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, moveme
                 </Grid>
                 <Grid item xs={6} sm={3}>
                   <Typography variant="body2" color="text.secondary">
-                    Quantity
+                    {t('quantity')}
                   </Typography>
                   <Typography variant="body1" fontWeight="medium">
                     {formData.quantity || '0'} {stockItem?.unit || 'units'}
@@ -373,7 +394,7 @@ const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, moveme
                 </Grid>
                 <Grid item xs={6} sm={3}>
                   <Typography variant="body2" color="text.secondary">
-                    Unit Price
+                    {t('unitPrice')}
                   </Typography>
                   <Typography variant="body1" fontWeight="medium">
                     ₹{formData.unit_price || '0'}
@@ -381,7 +402,7 @@ const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, moveme
                 </Grid>
                 <Grid item xs={6} sm={3}>
                   <Typography variant="body2" color="text.secondary">
-                    Total Value
+                    {t('totalValue')}
                   </Typography>
                   <Typography variant="body1" fontWeight="medium" color="primary.main">
                     ₹{calculateTotalValue().toFixed(2)}
@@ -401,7 +422,7 @@ const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, moveme
                 }
               >
                 <Typography variant="body2">
-                  <strong>Stock Impact:</strong> Current stock will change from {stockItem.current_stock} to{' '}
+                  <strong>{t('stockImpact')}:</strong> Current stock will change from {stockItem.current_stock} to{' '}
                   {formData.movement_type === 'in' 
                     ? stockItem.current_stock + parseFloat(formData.quantity || 0)
                     : formData.movement_type === 'out'
@@ -416,7 +437,7 @@ const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, moveme
       </DialogContent>
       
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose}>{t('cancel')}</Button>
         <Button
           onClick={handleSubmit}
           variant="contained"
@@ -428,7 +449,7 @@ const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, moveme
             (formData.movement_type === 'transfer' && !formData.location_to)
           }
         >
-          {loading ? 'Saving...' : 'Record Movement'}
+          {loading ? t('saving') : t('recordMovement')}
         </Button>
       </DialogActions>
     </Dialog>

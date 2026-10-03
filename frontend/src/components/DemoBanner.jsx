@@ -1,11 +1,16 @@
 import { Alert } from '@mui/material';
+import { useI18n } from '../i18n/I18nContext';
 
-const DemoBanner = ({ title = 'Preview', mode = 'actual' }) => (
-  <Alert severity={mode === 'sample' ? 'warning' : 'info'} sx={{ mb: 3 }}>
-    {mode === 'sample'
-      ? `${title} is showing sample data for demonstration. Switch to View actual for mill records.`
-      : `${title} figures come from mill records on Dashboard, Farmers, Inventory, Production, Sales, and Finance. Use View sample only when you need a demonstration.`}
-  </Alert>
-);
+const DemoBanner = ({ title, mode = 'actual' }) => {
+  const { t } = useI18n();
+  const heading = title || t('previewGroup');
+  return (
+    <Alert severity={mode === 'sample' ? 'warning' : 'info'} sx={{ mb: 3 }}>
+      {mode === 'sample'
+        ? t('previewSampleBanner', { title: heading })
+        : t('previewActualBanner', { title: heading })}
+    </Alert>
+  );
+};
 
 export default DemoBanner;

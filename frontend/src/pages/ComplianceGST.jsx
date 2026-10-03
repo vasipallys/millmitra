@@ -40,6 +40,7 @@ import {
 } from '@mui/icons-material';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import DemoBanner from '../components/DemoBanner';
+import { useI18n } from '../i18n/I18nContext';
 import PreviewModeToggle from '../components/PreviewModeToggle';
 import { usePreviewMode } from '../hooks/usePreviewMode';
 import { financeService } from '../services/financeService';
@@ -131,6 +132,7 @@ const TabPanel = ({ children, value, index }) => (
 );
 
 const ComplianceGST = () => {
+  const { t } = useI18n();
   const { mode, setMode, isSample } = usePreviewMode('compliance-gst');
   const [activeTab, setActiveTab] = useState(0);
   const [invoiceRows, setInvoiceRows] = useState([]);
@@ -203,7 +205,7 @@ const ComplianceGST = () => {
           setComplianceStatus(actualComplianceStatus([]));
           setActivityRows([]);
           setCalendarRows(statutoryGstCalendar());
-          setPageMessage({ severity: 'warning', text: getApiErrorMessage(error, 'Could not load Finance invoices') });
+          setPageMessage({ severity: 'warning', text: getApiErrorMessage(error, t('couldNotLoadInvoices')) });
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -234,7 +236,10 @@ const ComplianceGST = () => {
       return;
     }
     setGstResult(result);
-    showMessage('success', `GST calculated in the browser at ${result.gst_rate}% (${result.supply}). This is a preview, not a filing.`);
+    showMessage('success', t('gstCalcToast', {
+      rate: result.gst_rate,
+      supply: result.igst > 0 ? t('interState') : t('intraState'),
+    }));
   };
 
   const loadInvoiceRows = async () => {
@@ -265,7 +270,7 @@ const ComplianceGST = () => {
         if (isSample) {
           const rows = sampleGstr2bRows();
           downloadText(`gstr-2b-preview-${stamp}.csv`, toCsv(rows), 'text/csv;charset=utf-8');
-          showMessage('success', 'Downloaded GSTR-2B preview CSV (sample inward supplies). MillMitra does not file GST.');
+          showMessage('success', t('gstr2bSampleDl'));
           return;
         }
         try {
@@ -273,26 +278,26 @@ const ComplianceGST = () => {
           const rows = procurementsToGstr2bRows(unwrapList(data, ['procurements', 'items']));
           if (!rows.length) {
             downloadText(`gstr-2b-preview-${stamp}.csv`, 'sr,invoice_number,invoice_date,supplier,taxable_value,gst_amount,total,status\n', 'text/csv;charset=utf-8');
-            showMessage('info', 'No procurement records for GSTR-2B. Downloaded an empty preview. MillMitra does not file GST.');
+            showMessage('info', t('gstr2bEmptyDl'));
             return;
           }
           downloadText(`gstr-2b-preview-${stamp}.csv`, toCsv(rows), 'text/csv;charset=utf-8');
-          showMessage('success', 'Downloaded GSTR-2B preview CSV from farmer procurements. Not a statutory filing.');
+          showMessage('success', t('gstr2bLiveDl'));
         } catch (error) {
-          showMessage('error', getApiErrorMessage(error, 'Could not load procurements for GSTR-2B'));
+          showMessage('error', getApiErrorMessage(error, t('couldNotLoadProcurements')));
         }
         return;
       }
       const { rows, source } = await loadInvoiceRows();
       if (kind === 'GSTR-3B') {
         downloadText(`gstr-3b-preview-${stamp}.csv`, toCsv(sampleGstr3bSummary(rows)), 'text/csv;charset=utf-8');
-        showMessage('success', `Downloaded GSTR-3B preview CSV from ${source}. Not a statutory filing.`);
+        showMessage('success', t('gstr3bDl', { source }));
         return;
       }
       downloadText(`gstr-1-preview-${stamp}.csv`, toCsv(rows), 'text/csv;charset=utf-8');
-      showMessage('success', `Downloaded GSTR-1 preview CSV from ${source}. Not a statutory filing.`);
+      showMessage('success', t('gstr1Dl', { source }));
     } catch (error) {
-      showMessage('error', getApiErrorMessage(error, 'Could not generate that preview download'));
+      showMessage('error', getApiErrorMessage(error, t('couldNotGeneratePreview')));
     } finally {
       setBusyAction('');
     }
@@ -312,7 +317,7 @@ const ComplianceGST = () => {
       JSON.stringify(payload, null, 2),
       'application/json;charset=utf-8'
     );
-    showMessage('success', `Downloaded ${row.activity} summary.`);
+    showMessage('success', t('downloadedActivity', { activity: row.activity }));
   };
 
   const generateGSTInvoice = () => {
@@ -347,7 +352,7 @@ const ComplianceGST = () => {
     downloadText(`gst-invoice-preview-${stamp}.txt`, buildInvoiceText(invoiceForm, lines));
     setShowInvoiceDialog(false);
     setInvoiceForm(emptyInvoiceForm);
-    showMessage('success', 'Downloaded a preview GST invoice. This is not a statutory tax invoice and does not file GST.');
+    showMessage('success', t('gstInvoiceDl'));
   };
 
   const addInvoiceItem = () => {
@@ -392,7 +397,7 @@ const ComplianceGST = () => {
 
   return (
     <Box>
-      <DemoBanner title="Compliance & GST" mode={mode} />
+      <DemoBanner title={t('complianceGst')} mode={mode} />
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
         <Box>
           <Typography variant="h4" component="h1" fontWeight="bold">
@@ -436,11 +441,11 @@ const ComplianceGST = () => {
           onChange={(e, newValue) => setActiveTab(newValue)}
           variant="fullWidth"
         >
-          <Tab icon={<Assessment />} label="Dashboard" />
-          <Tab icon={<Receipt />} label="GST Management" />
-          <Tab icon={<Security />} label="Compliance Status" />
-          <Tab icon={<Schedule />} label="Calendar" />
-          <Tab icon={<Calculate />} label="GST Calculator" />
+          <Tab icon={<Assessment />} label={t('dashboard')} />
+          <Tab icon={<Receipt />} label={t('gstManagement')} />
+          <Tab icon={<Security />} label={t('complianceStatus')} />
+          <Tab icon={<Schedule />} label={t('calendar')} />
+          <Tab icon={<Calculate />} label={t('gstCalculator')} />
         </Tabs>
       </Paper>
 
@@ -581,7 +586,7 @@ const ComplianceGST = () => {
                     onClick={() => generateReturn('GSTR-1')}
                     disabled={Boolean(busyAction)}
                   >
-                    {busyAction === 'GSTR-1' ? 'Preparing…' : 'Generate GSTR-1'}
+                    {busyAction === 'GSTR-1' ? t('preparing') : t('generateGstr1')}
                   </Button>
                   <Button
                     variant="contained"
@@ -589,7 +594,7 @@ const ComplianceGST = () => {
                     onClick={() => generateReturn('GSTR-2B')}
                     disabled={Boolean(busyAction)}
                   >
-                    {busyAction === 'GSTR-2B' ? 'Preparing…' : 'Generate GSTR-2B'}
+                    {busyAction === 'GSTR-2B' ? t('preparing') : t('generateGstr2b')}
                   </Button>
                   <Button
                     variant="outlined"
@@ -597,7 +602,7 @@ const ComplianceGST = () => {
                     onClick={() => generateReturn('GSTR-3B')}
                     disabled={Boolean(busyAction)}
                   >
-                    {busyAction === 'GSTR-3B' ? 'Preparing…' : 'Generate GSTR-3B'}
+                    {busyAction === 'GSTR-3B' ? t('preparing') : t('generateGstr3b')}
                   </Button>
                 </Box>
                 <Typography variant="body2" color="text.secondary">
@@ -626,7 +631,7 @@ const ComplianceGST = () => {
                   }}
                   sx={{ mb: 2 }}
                 >
-                  Generate GST Invoice
+                  {t('generateGstInvoice')}
                 </Button>
                 <Typography variant="body2" color="text.secondary">
                   Opens a form and downloads a preview invoice. Does not file GST or post to Finance.
@@ -766,7 +771,7 @@ const ComplianceGST = () => {
                       </TableCell>
                       <TableCell>
                         <Button size="small" variant="outlined" onClick={() => setCalendarItem(item)}>
-                          View Details
+                          {t('viewDetails')}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -783,10 +788,10 @@ const ComplianceGST = () => {
           <Grid item xs={12} md={6}>
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom>GST Calculator</Typography>
+                <Typography variant="h6" gutterBottom>{t('gstCalculator')}</Typography>
                 <TextField
                   fullWidth
-                  label="Amount"
+                  label={t('gstAmount')}
                   type="number"
                   value={gstCalculator.amount}
                   onChange={(e) => {
@@ -796,13 +801,13 @@ const ComplianceGST = () => {
                   margin="normal"
                   required
                   error={Boolean(amountError)}
-                  helperText={amountError || 'Taxable value in ₹, greater than 0'}
+                  helperText={amountError || t('gstAmountHelp')}
                   inputProps={{ min: 0, step: 'any' }}
                 />
                 <TextField
                   fullWidth
                   select
-                  label="Product Category"
+                  label={t('productCategory')}
                   value={gstCalculator.product_category}
                   onChange={(e) => setGstCalculator({ ...gstCalculator, product_category: e.target.value })}
                   margin="normal"
@@ -814,25 +819,25 @@ const ComplianceGST = () => {
                 <TextField
                   fullWidth
                   select
-                  label="Transaction Type"
+                  label={t('transactionType')}
                   value={gstCalculator.transaction_type}
                   onChange={(e) => setGstCalculator({ ...gstCalculator, transaction_type: e.target.value })}
                   margin="normal"
                 >
-                  <MenuItem value="sale">Sale</MenuItem>
-                  <MenuItem value="purchase">Purchase</MenuItem>
+                  <MenuItem value="sale">{t('sale')}</MenuItem>
+                  <MenuItem value="purchase">{t('purchase')}</MenuItem>
                 </TextField>
                 <TextField
                   fullWidth
                   select
-                  label="Supply"
+                  label={t('supply')}
                   value={gstCalculator.supply}
                   onChange={(e) => setGstCalculator({ ...gstCalculator, supply: e.target.value })}
                   margin="normal"
-                  helperText="Intra-state splits GST into CGST + SGST. Inter-state uses IGST."
+                  helperText={t('supplyHelp')}
                 >
-                  <MenuItem value="intra">Intra-state (CGST + SGST)</MenuItem>
-                  <MenuItem value="inter">Inter-state (IGST)</MenuItem>
+                  <MenuItem value="intra">{t('intraState')}</MenuItem>
+                  <MenuItem value="inter">{t('interState')}</MenuItem>
                 </TextField>
                 <Button
                   variant="contained"
@@ -841,7 +846,7 @@ const ComplianceGST = () => {
                   sx={{ mt: 2 }}
                   fullWidth
                 >
-                  Calculate GST
+                  {t('calculateGst')}
                 </Button>
               </CardContent>
             </Card>
@@ -851,47 +856,47 @@ const ComplianceGST = () => {
             {gstResult ? (
               <Card>
                 <CardContent>
-                  <Typography variant="h6" gutterBottom>GST Calculation Result</Typography>
+                  <Typography variant="h6" gutterBottom>{t('gstCalcResult')}</Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    {gstResult.category_label} · HSN {gstResult.hsn} · {gstResult.supply}
+                    {gstResult.category_label} · HSN {gstResult.hsn} · {gstResult.igst > 0 ? t('interState') : t('intraState')}
                   </Typography>
                   <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" color="text.secondary">Taxable value</Typography>
+                    <Typography variant="body2" color="text.secondary">{t('taxableValue')}</Typography>
                     <Typography variant="h6">{formatInr(gstResult.base_amount)}</Typography>
                   </Box>
                   <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" color="text.secondary">GST rate</Typography>
+                    <Typography variant="body2" color="text.secondary">{t('gstRate')}</Typography>
                     <Typography variant="h6">{gstResult.gst_rate}%</Typography>
                   </Box>
                   {gstResult.igst > 0 ? (
                     <Box sx={{ mb: 2 }}>
-                      <Typography variant="body2" color="text.secondary">IGST</Typography>
+                      <Typography variant="body2" color="text.secondary">{t('igst')}</Typography>
                       <Typography variant="body1">{formatInr(gstResult.igst)}</Typography>
                     </Box>
                   ) : (
                     <>
                       <Box sx={{ mb: 2 }}>
-                        <Typography variant="body2" color="text.secondary">CGST</Typography>
+                        <Typography variant="body2" color="text.secondary">{t('cgst')}</Typography>
                         <Typography variant="body1">{formatInr(gstResult.cgst)}</Typography>
                       </Box>
                       <Box sx={{ mb: 2 }}>
-                        <Typography variant="body2" color="text.secondary">SGST</Typography>
+                        <Typography variant="body2" color="text.secondary">{t('sgst')}</Typography>
                         <Typography variant="body1">{formatInr(gstResult.sgst)}</Typography>
                       </Box>
                     </>
                   )}
                   <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" color="text.secondary">Total GST</Typography>
+                    <Typography variant="body2" color="text.secondary">{t('totalGst')}</Typography>
                     <Typography variant="h6" color="primary.main">{formatInr(gstResult.gst_amount)}</Typography>
                   </Box>
                   <Box>
-                    <Typography variant="body2" color="text.secondary">Total amount</Typography>
+                    <Typography variant="body2" color="text.secondary">{t('totalAmount')}</Typography>
                     <Typography variant="h5" color="success.main">{formatInr(gstResult.total_amount)}</Typography>
                   </Box>
                 </CardContent>
               </Card>
             ) : (
-              <Alert severity="info">Enter an amount and click Calculate GST to see taxable value, rate, and tax split.</Alert>
+              <Alert severity="info">{t('gstCalcHelp')}</Alert>
             )}
           </Grid>
         </Grid>
@@ -954,10 +959,10 @@ const ComplianceGST = () => {
                     amount: 0,
                     form: calendarItem.task,
                   }, ...prev]);
-                  showMessage('success', 'Saved on this mill. This is not a government filing.');
+                  showMessage('success', t('gstSavedChecklist'));
                   setCalendarItem(null);
                 } catch (error) {
-                  showMessage('error', getApiErrorMessage(error, 'Could not save the checklist row'));
+                  showMessage('error', getApiErrorMessage(error, t('couldNotSaveChecklist')));
                 } finally {
                   setBusyAction('');
                 }
@@ -966,7 +971,7 @@ const ComplianceGST = () => {
               Record in MillMitra
             </Button>
           )}
-          <Button onClick={() => setCalendarItem(null)}>Close</Button>
+          <Button onClick={() => setCalendarItem(null)}>{t('close')}</Button>
         </DialogActions>
       </Dialog>
 
@@ -983,7 +988,7 @@ const ComplianceGST = () => {
           <Typography sx={{ mt: 2 }}>{alertItem?.nextStep}</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setAlertItem(null)}>Close</Button>
+          <Button onClick={() => setAlertItem(null)}>{t('close')}</Button>
         </DialogActions>
       </Dialog>
 
@@ -1006,15 +1011,13 @@ const ComplianceGST = () => {
                   : 'No issues listed on this preview check.'}
               </Typography>
               <Alert severity="info" sx={{ mt: 2 }}>
-                {isSample
-                  ? 'These scores are sample. They are not a statutory compliance assessment.'
-                  : 'This is an invoice-based GST preview, not a statutory compliance assessment.'}
+                {isSample ? t('gstSampleStatus') : t('gstLiveStatus')}
               </Alert>
             </Box>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setStatusItem(null)}>Close</Button>
+          <Button onClick={() => setStatusItem(null)}>{t('close')}</Button>
         </DialogActions>
       </Dialog>
 
@@ -1025,21 +1028,21 @@ const ComplianceGST = () => {
         fullWidth
         aria-labelledby="gst-invoice-title"
       >
-        <DialogTitle id="gst-invoice-title">Generate GST Invoice</DialogTitle>
+        <DialogTitle id="gst-invoice-title">{t('generateGstInvoice')}</DialogTitle>
         <DialogContent>
           {invoiceError && <Alert severity="error" sx={{ mt: 1 }} role="alert">{invoiceError}</Alert>}
           <TextField
             fullWidth
-            label="Customer ID"
+            label={t('customerId')}
             value={invoiceForm.customer_id}
             onChange={(e) => setInvoiceForm({ ...invoiceForm, customer_id: e.target.value })}
             margin="normal"
             required
-            helperText="Numeric ID from Customers (preview only)"
+            helperText={t('customerIdPreviewHelp')}
           />
           <TextField
             fullWidth
-            label="Invoice Date"
+            label={t('invoiceDate')}
             type="date"
             value={invoiceForm.invoice_date}
             onChange={(e) => setInvoiceForm({ ...invoiceForm, invoice_date: e.target.value })}
@@ -1048,29 +1051,29 @@ const ComplianceGST = () => {
           />
           <TextField
             fullWidth
-            label="Due Date"
+            label={t('dueDate')}
             type="date"
             value={invoiceForm.due_date}
             onChange={(e) => setInvoiceForm({ ...invoiceForm, due_date: e.target.value })}
             margin="normal"
             InputLabelProps={{ shrink: true }}
           />
-          <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>Invoice Items</Typography>
+          <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>{t('invoiceItems')}</Typography>
           {invoiceForm.items.map((item, index) => (
             <Box key={index} sx={{ border: '1px solid #ddd', p: 2, mb: 2, borderRadius: 1 }}>
               <TextField
                 fullWidth
-                label="Description"
+                label={t('lineDescription')}
                 value={item.description}
                 onChange={(e) => updateInvoiceItem(index, 'description', e.target.value)}
                 margin="normal"
-                helperText="Use a product name such as Basmati Rice"
+                helperText={t('gstInvoiceHelp')}
               />
               <Grid container spacing={2}>
                 <Grid item xs={4}>
                   <TextField
                     fullWidth
-                    label="Quantity"
+                    label={t('quantity')}
                     type="number"
                     value={item.quantity}
                     onChange={(e) => updateInvoiceItem(index, 'quantity', parseFloat(e.target.value) || 0)}
@@ -1081,7 +1084,7 @@ const ComplianceGST = () => {
                 <Grid item xs={4}>
                   <TextField
                     fullWidth
-                    label="Unit Price"
+                    label={t('unitPrice')}
                     type="number"
                     value={item.unit_price}
                     onChange={(e) => updateInvoiceItem(index, 'unit_price', parseFloat(e.target.value) || 0)}
@@ -1093,7 +1096,7 @@ const ComplianceGST = () => {
                   <TextField
                     fullWidth
                     select
-                    label="Category"
+                    label={t('category')}
                     value={item.product_category}
                     onChange={(e) => updateInvoiceItem(index, 'product_category', e.target.value)}
                     margin="normal"
@@ -1106,11 +1109,11 @@ const ComplianceGST = () => {
               </Grid>
             </Box>
           ))}
-          <Button onClick={addInvoiceItem} variant="outlined" sx={{ mt: 1 }}>Add Item</Button>
+          <Button onClick={addInvoiceItem} variant="outlined" sx={{ mt: 1 }}>{t('addItem')}</Button>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setShowInvoiceDialog(false)}>Cancel</Button>
-          <Button onClick={generateGSTInvoice} variant="contained">Generate Invoice</Button>
+          <Button onClick={() => setShowInvoiceDialog(false)}>{t('cancel')}</Button>
+          <Button onClick={generateGSTInvoice} variant="contained">{t('generateInvoice')}</Button>
         </DialogActions>
       </Dialog>
     </Box>

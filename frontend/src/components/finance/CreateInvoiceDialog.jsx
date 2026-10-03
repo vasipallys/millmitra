@@ -15,8 +15,10 @@ import {
   Alert
 } from '@mui/material';
 import { Add, Remove } from '@mui/icons-material';
+import { useI18n } from '../../i18n/I18nContext';
 
 const CreateInvoiceDialog = ({ open, onClose, onSubmit, loading = false }) => {
+  const { t } = useI18n();
   const [formData, setFormData] = useState({
     customer_id: '',
     invoice_date: new Date().toISOString().split('T')[0],
@@ -98,7 +100,7 @@ const CreateInvoiceDialog = ({ open, onClose, onSubmit, loading = false }) => {
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>Create New Invoice</DialogTitle>
+      <DialogTitle>{t('createNewInvoice')}</DialogTitle>
       <DialogContent>
         {submitError && <Alert severity="error" sx={{ mt: 1 }}>{submitError}</Alert>}
         <Grid container spacing={2} sx={{ mt: 1 }}>
@@ -106,19 +108,19 @@ const CreateInvoiceDialog = ({ open, onClose, onSubmit, loading = false }) => {
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
-              label="Customer ID"
+              label={t('customerId')}
               type="number"
               value={formData.customer_id}
               onChange={(e) => handleInputChange('customer_id', e.target.value)}
               error={Boolean(submitError) && !formData.customer_id}
-              helperText={!formData.customer_id && submitError ? submitError : 'Numeric ID from the Customers list'}
+              helperText={!formData.customer_id && submitError ? submitError : t('customerIdHelp')}
               required
             />
           </Grid>
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
-              label="Invoice Date"
+              label={t('invoiceDate')}
               type="date"
               value={formData.invoice_date}
               onChange={(e) => handleInputChange('invoice_date', e.target.value)}
@@ -129,7 +131,7 @@ const CreateInvoiceDialog = ({ open, onClose, onSubmit, loading = false }) => {
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
-              label="Due Date"
+              label={t('dueDate')}
               type="date"
               value={formData.due_date}
               onChange={(e) => handleInputChange('due_date', e.target.value)}
@@ -140,7 +142,7 @@ const CreateInvoiceDialog = ({ open, onClose, onSubmit, loading = false }) => {
             <TextField
               fullWidth
               select
-              label="Payment Terms"
+              label={t('paymentTerms')}
               value={formData.payment_terms}
               onChange={(e) => handleInputChange('payment_terms', e.target.value)}
             >
@@ -167,17 +169,17 @@ const CreateInvoiceDialog = ({ open, onClose, onSubmit, loading = false }) => {
                   <Grid item xs={12} sm={4}>
                     <TextField
                       fullWidth
-                      label="Description"
+                      label={t('lineDescription')}
                       value={item.description}
                       onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-                      helperText="Use a product name from Inventory (e.g. Basmati)"
+                      helperText={t('lineDescriptionHelp')}
                       required
                     />
                   </Grid>
                   <Grid item xs={6} sm={2}>
                     <TextField
                       fullWidth
-                      label="Quantity"
+                      label={t('quantity')}
                       type="number"
                       value={item.quantity}
                       onChange={(e) => handleItemChange(index, 'quantity', parseFloat(e.target.value) || 0)}
@@ -188,7 +190,7 @@ const CreateInvoiceDialog = ({ open, onClose, onSubmit, loading = false }) => {
                   <Grid item xs={6} sm={2}>
                     <TextField
                       fullWidth
-                      label="Unit Price"
+                      label={t('unitPrice')}
                       type="number"
                       value={item.unit_price}
                       onChange={(e) => handleItemChange(index, 'unit_price', parseFloat(e.target.value) || 0)}
@@ -200,7 +202,7 @@ const CreateInvoiceDialog = ({ open, onClose, onSubmit, loading = false }) => {
                     <TextField
                       fullWidth
                       select
-                      label="Category"
+                      label={t('category')}
                       value={item.product_category}
                       onChange={(e) => handleItemChange(index, 'product_category', e.target.value)}
                     >
@@ -245,12 +247,12 @@ const CreateInvoiceDialog = ({ open, onClose, onSubmit, loading = false }) => {
           <Grid item xs={12}>
             <TextField
               fullWidth
-              label="Notes"
+              label={t('notes')}
               multiline
               rows={3}
               value={formData.notes}
               onChange={(e) => handleInputChange('notes', e.target.value)}
-              placeholder="Additional notes or terms..."
+              placeholder={t('notesPh')}
             />
           </Grid>
 
@@ -268,13 +270,13 @@ const CreateInvoiceDialog = ({ open, onClose, onSubmit, loading = false }) => {
         </Grid>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={loading}>Cancel</Button>
+        <Button onClick={onClose} disabled={loading}>{t('cancel')}</Button>
         <Button 
           onClick={handleSubmit} 
           variant="contained"
           disabled={loading}
         >
-          {loading ? 'Saving...' : 'Create Invoice'}
+          {loading ? t('saving') : t('createInvoice')}
         </Button>
       </DialogActions>
     </Dialog>

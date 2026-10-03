@@ -13,6 +13,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { inventoryService } from '../services/inventoryService';
 import { useToastNotifications } from '../hooks/useToastNotifications';
+import { useI18n } from '../i18n/I18nContext';
 import ValidationErrorDisplay, { useValidation } from '../components/common/ValidationErrorDisplay';
 import StockCard from '../components/StockCard';
 import ReorderAlerts from '../components/ReorderAlerts';
@@ -35,6 +36,7 @@ const normalizeStock = (stock, type) => ({
 });
 
 const Inventory = () => {
+  const { t } = useI18n();
   const [activeTab, setActiveTab] = useState(0);
   const [addStockOpen, setAddStockOpen] = useState(false);
   const [stockType, setStockType] = useState('paddy');
@@ -206,8 +208,8 @@ const Inventory = () => {
   return (
     <PageShell>
       <PageHeader
-        title="Inventory Management"
-        subtitle="Paddy lots, milled product, and godown movements"
+        title={t('inventoryTitle')}
+        subtitle={t('inventorySubtitle')}
         actions={
           <>
             <Button
@@ -227,7 +229,7 @@ const Inventory = () => {
               startIcon={<Add />}
               onClick={() => setAddStockOpen(true)}
             >
-              Add Stock
+              {t('addStock')}
             </Button>
           </>
         }
@@ -327,10 +329,10 @@ const Inventory = () => {
       {/* Tabs */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
-          <Tab label="Paddy Stock" />
-          <Tab label="Product Stock" />
-          <Tab label="Stock Movements" />
-          <Tab label="Analytics" />
+          <Tab label={t('paddyStock')} />
+          <Tab label={t('productStock')} />
+          <Tab label={t('stockMovements')} />
+          <Tab label={t('analytics')} />
         </Tabs>
       </Box>
 
@@ -352,10 +354,10 @@ const Inventory = () => {
               <Paper sx={{ p: 4, textAlign: 'center' }}>
                 <InventoryIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
                 <Typography variant="h6" color="text.secondary">
-                  No paddy lots yet
+                  {t('noPaddyLots')}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Add a paddy lot so milling can start.
+                  {t('noPaddyLotsHint')}
                 </Typography>
                 <Button
                   variant="contained"
@@ -440,20 +442,20 @@ const Inventory = () => {
       />
 
       <Dialog open={stockDetailOpen} onClose={() => setStockDetailOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>{selectedStock?.product_name || 'Stock details'}</DialogTitle>
+        <DialogTitle>{selectedStock?.product_name || t('stockDetails')}</DialogTitle>
         <DialogContent>
           {selectedStock && (
             <Box sx={{ pt: 1 }}>
               <Typography>Quantity: {selectedStock.current_stock} {selectedStock.unit}</Typography>
-              <Typography>Location: {selectedStock.storage_location || '—'}</Typography>
-              <Typography>Grade: {selectedStock.quality_grade || selectedStock.grade || '—'}</Typography>
-              <Typography>Unit price: ₹{selectedStock.unit_price || 0}/kg</Typography>
-              <Typography>Lot ID: {selectedStock.id}</Typography>
+              <Typography>{t('location')}: {selectedStock.storage_location || '—'}</Typography>
+              <Typography>{t('grade')}: {selectedStock.quality_grade || selectedStock.grade || '—'}</Typography>
+              <Typography>{t('unitPriceSlash', { price: selectedStock.unit_price || 0 })}</Typography>
+              <Typography>{t('lotId')}: {selectedStock.id}</Typography>
             </Box>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setStockDetailOpen(false)}>Close</Button>
+          <Button onClick={() => setStockDetailOpen(false)}>{t('close')}</Button>
           <Button
             variant="contained"
             onClick={() => {
@@ -467,13 +469,13 @@ const Inventory = () => {
               }
             }}
           >
-            Edit
+            {t('edit')}
           </Button>
         </DialogActions>
       </Dialog>
 
       <Dialog open={stockEditOpen} onClose={() => !updateStockMutation.isLoading && setStockEditOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Edit {selectedStock?.product_name || 'stock'}</DialogTitle>
+        <DialogTitle>{t('editNamed', { name: selectedStock?.product_name || t('stockWord') })}</DialogTitle>
         <DialogContent>
           {stockActionError && stockEditOpen && (
             <Alert severity="error" sx={{ mt: 1 }}>{stockActionError}</Alert>
@@ -481,7 +483,7 @@ const Inventory = () => {
           <TextField
             fullWidth
             margin="normal"
-            label="Quantity (kg)"
+            label={t('quantityKg')}
             type="number"
             value={editForm.quantity}
             onChange={(e) => setEditForm((prev) => ({ ...prev, quantity: e.target.value }))}
@@ -489,20 +491,20 @@ const Inventory = () => {
           <TextField
             fullWidth
             margin="normal"
-            label="Storage location"
+            label={t('storageLocation')}
             value={editForm.storage_location}
             onChange={(e) => setEditForm((prev) => ({ ...prev, storage_location: e.target.value }))}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setStockEditOpen(false)} disabled={updateStockMutation.isLoading}>Cancel</Button>
+          <Button onClick={() => setStockEditOpen(false)} disabled={updateStockMutation.isLoading}>{t('cancel')}</Button>
           <Button
             variant="contained"
             disabled={updateStockMutation.isLoading}
             onClick={() => {
               const quantity = parseFloat(editForm.quantity);
               if (!Number.isFinite(quantity) || quantity < 0) {
-                setStockActionError('Quantity must be 0 or greater');
+                setStockActionError(t('qtyMustBeNonneg'));
                 return;
               }
               setStockActionError('');
@@ -515,7 +517,7 @@ const Inventory = () => {
               });
             }}
           >
-            {updateStockMutation.isLoading ? 'Saving...' : 'Save'}
+            {updateStockMutation.isLoading ? t('saving') : t('save')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -563,6 +565,7 @@ const emptyStockForm = () => ({
 });
 
 const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit, loading, error }) => {
+  const { t } = useI18n();
   const [formData, setFormData] = useState(emptyStockForm);
   const validation = useValidation();
   const varietyOptions = stockType === 'paddy' ? PADDY_VARIETIES : PRODUCT_TYPES;
@@ -670,29 +673,29 @@ const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit,
       fullWidth
       disableRestoreFocus
     >
-      <DialogTitle>Add New Stock</DialogTitle>
+      <DialogTitle>{t('addNewStock')}</DialogTitle>
       <DialogContent sx={{ overflow: 'visible' }}>
         {error && <Alert severity="error" sx={{ mt: 1 }}>{error}</Alert>}
         <ValidationErrorDisplay
           errors={validation.errors}
           warnings={validation.warnings}
-          title="Stock Entry Validation"
+          title={t('stockEntryValidation')}
           onClose={() => validation.clearAll()}
         />
 
         <Grid container spacing={2} sx={{ mt: 1 }}>
           <Grid item xs={12}>
             <FormControl fullWidth>
-              <InputLabel id="stock-type-label">Stock Type</InputLabel>
+              <InputLabel id="stock-type-label">{t('stockType')}</InputLabel>
               <Select
                 labelId="stock-type-label"
-                label="Stock Type"
+                label={t('stockType')}
                 value={stockType}
                 onChange={(e) => handleStockTypeChange(e.target.value)}
                 MenuProps={SELECT_MENU_PROPS}
               >
-                <MenuItem value="paddy">Paddy Stock</MenuItem>
-                <MenuItem value="product">Product Stock</MenuItem>
+                <MenuItem value="paddy">{t('paddyStock')}</MenuItem>
+                <MenuItem value="product">{t('productStock')}</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -700,11 +703,11 @@ const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit,
           <Grid item xs={12} md={6}>
             <FormControl fullWidth required>
               <InputLabel id="stock-variety-label">
-                {stockType === 'paddy' ? 'Paddy Variety' : 'Product Type'}
+                {stockType === 'paddy' ? t('paddyVariety') : t('productType')}
               </InputLabel>
               <Select
                 labelId="stock-variety-label"
-                label={stockType === 'paddy' ? 'Paddy Variety' : 'Product Type'}
+                label={stockType === 'paddy' ? t('paddyVariety') : t('productType')}
                 value={formData.variety}
                 onChange={(e) => updateField('variety', e.target.value)}
                 MenuProps={SELECT_MENU_PROPS}
@@ -722,12 +725,12 @@ const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit,
             <TextField
               fullWidth
               required
-              label="Quantity (kg)"
+              label={t('quantityKg')}
               type="number"
               inputProps={{ min: 0, step: 'any' }}
               value={formData.quantity}
               onChange={(e) => updateField('quantity', e.target.value)}
-              helperText="Kilograms greater than 0"
+              helperText={t('qtyHelper')}
             />
           </Grid>
 
@@ -735,21 +738,21 @@ const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit,
             <TextField
               fullWidth
               required
-              label={stockType === 'paddy' ? 'Purchase Price (₹/kg)' : 'Selling Price (₹/kg)'}
+              label={stockType === 'paddy' ? t('purchasePrice') : t('sellingPrice')}
               type="number"
               inputProps={{ min: 0, step: 'any' }}
               value={formData.purchase_price}
               onChange={(e) => updateField('purchase_price', e.target.value)}
-              helperText="Rupees per kg, greater than 0"
+              helperText={t('priceHelper')}
             />
           </Grid>
 
           <Grid item xs={12} md={6}>
             <FormControl fullWidth>
-              <InputLabel id="quality-grade-label">Quality Grade</InputLabel>
+              <InputLabel id="quality-grade-label">{t('qualityGrade')}</InputLabel>
               <Select
                 labelId="quality-grade-label"
-                label="Quality Grade"
+                label={t('qualityGrade')}
                 value={formData.quality_grade}
                 onChange={(e) => updateField('quality_grade', e.target.value)}
                 MenuProps={SELECT_MENU_PROPS}
@@ -767,17 +770,17 @@ const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit,
             <TextField
               fullWidth
               required
-              label="Storage Location"
+              label={t('storageLocation')}
               value={formData.storage_location}
               onChange={(e) => updateField('storage_location', e.target.value)}
-              helperText="Godown or bay name"
+              helperText={t('locationHelper')}
             />
           </Grid>
 
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
-              label="Moisture Content (%)"
+              label={t('moisture')}
               type="number"
               inputProps={{ min: 0, max: 100, step: 'any' }}
               value={formData.moisture_content}
@@ -788,7 +791,7 @@ const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit,
           <Grid item xs={12}>
             <TextField
               fullWidth
-              label="Notes"
+              label={t('notes')}
               multiline
               rows={3}
               value={formData.notes}
@@ -798,9 +801,9 @@ const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit,
         </Grid>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose}>{t('cancel')}</Button>
         <Button onClick={handleSubmit} variant="contained" disabled={loading}>
-          {loading ? 'Saving…' : (stockType === 'paddy' ? 'Save paddy lot' : 'Save product lot')}
+          {loading ? t('saving') : (stockType === 'paddy' ? t('savePaddyLot') : t('saveProductLot'))}
         </Button>
       </DialogActions>
     </Dialog>

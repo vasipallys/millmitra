@@ -35,8 +35,10 @@ import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { salesAPI } from '../services/api';
 import { getApiErrorMessage } from '../utils/apiError';
 import { PageEmpty, PageHeader, PageShell, QueryErrorAlert } from '../components/common/PageChrome';
+import { useI18n } from '../i18n/I18nContext';
 
 const Sales = () => {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const [openDialog, setOpenDialog] = useState(false);
   const [formError, setFormError] = useState('');
@@ -159,8 +161,8 @@ const Sales = () => {
   return (
     <PageShell>
       <PageHeader
-        title="Sales Management"
-        subtitle="Live order book. New Order saves a customer, variety, quantity, and price."
+        title={t('salesTitle')}
+        subtitle={t('salesSubtitle')}
         actions={
           <Button
             variant="contained"
@@ -170,7 +172,7 @@ const Sales = () => {
               setOpenDialog(true);
             }}
           >
-            New Order
+            {t('newOrder')}
           </Button>
         }
       />
@@ -299,11 +301,11 @@ const Sales = () => {
           {isLoading && <LinearProgress />}
           {!isLoading && !isError && orders.length === 0 && (
             <PageEmpty
-              title="No sales orders yet"
-              description="Use New Order to record a customer, variety, quantity, and price."
+              title={t('noSalesOrders')}
+              description={t('noSalesOrdersHint')}
               action={
                 <Button variant="contained" startIcon={<AddIcon />} onClick={() => setOpenDialog(true)}>
-                  New Order
+                  {t('newOrder')}
                 </Button>
               }
             />
@@ -360,7 +362,7 @@ const Sales = () => {
         fullWidth
         aria-labelledby="new-order-title"
       >
-        <DialogTitle id="new-order-title">Create New Order</DialogTitle>
+        <DialogTitle id="new-order-title">{t('createNewOrder')}</DialogTitle>
         <DialogContent>
           {formError && <Alert severity="error" sx={{ mt: 2 }} role="alert">{formError}</Alert>}
           {openDialog && customers.length === 0 && (
@@ -373,7 +375,7 @@ const Sales = () => {
               <TextField
                 fullWidth
                 select
-                label="Customer"
+                label={t('customer')}
                 value={form.customer_id}
                 onChange={(e) => setForm({ ...form, customer_id: e.target.value })}
                 required
@@ -389,7 +391,7 @@ const Sales = () => {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Order Date"
+                label={t('orderDate')}
                 type="date"
                 value={form.order_date}
                 onChange={(e) => setForm({ ...form, order_date: e.target.value })}
@@ -399,18 +401,18 @@ const Sales = () => {
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Item / variety"
+                label={t('itemVariety')}
                 required
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                helperText="Variety you are selling. Invoices, not this order, deduct product stock."
+                helperText={t('itemVarietyHelp')}
               />
             </Grid>
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
                 required
-                label="Quantity (kg)"
+                label={t('quantityKg')}
                 type="number"
                 value={form.quantity}
                 onChange={(e) => setForm({ ...form, quantity: e.target.value })}
@@ -422,7 +424,7 @@ const Sales = () => {
               <TextField
                 fullWidth
                 required
-                label="Unit price (₹/kg)"
+                label={t('unitPriceKg')}
                 type="number"
                 value={form.unit_price}
                 onChange={(e) => setForm({ ...form, unit_price: e.target.value })}
@@ -433,13 +435,13 @@ const Sales = () => {
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
+          <Button onClick={() => setOpenDialog(false)}>{t('cancel')}</Button>
           <Button
             variant="contained"
             onClick={handleSubmit}
             disabled={createOrderMutation.isLoading}
           >
-            {createOrderMutation.isLoading ? 'Saving…' : 'Save order'}
+            {createOrderMutation.isLoading ? t('saving') : t('saveOrderShort')}
           </Button>
         </DialogActions>
       </Dialog>

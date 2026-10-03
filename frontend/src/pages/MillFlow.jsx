@@ -168,8 +168,8 @@ const MillFlow = () => {
     if (next.step >= 3 && !canSales && !canFinance) {
       return {
         step: 2,
-        title: 'Finish mill-floor work',
-        reason: 'Orders, invoices, and payments need a sales or finance login. Continue with paddy and batches here.',
+        title: 'suggestOfficeOnly',
+        reason: 'suggestOfficeOnlyReason',
       };
     }
     return next;
@@ -476,7 +476,7 @@ const MillFlow = () => {
   if (snapshotLoading && phase === 'home') {
     return (
       <PageShell>
-        <PageLoading label="Reading mill records…" />
+        <PageLoading label={t('readingMill')} />
       </PageShell>
     );
   }
@@ -500,41 +500,41 @@ const MillFlow = () => {
           <Grid item xs={12}>
             <Card>
               <CardContent>
-                <Typography variant="overline" color="text.secondary">Suggested next step</Typography>
-                <Typography variant="h5" sx={{ mt: 0.5 }}>{suggestion.title}</Typography>
+                <Typography variant="overline" color="text.secondary">{t('suggestedNext')}</Typography>
+                <Typography variant="h5" sx={{ mt: 0.5 }}>{t(suggestion.title)}</Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 2 }}>
-                  {suggestion.reason}
+                  {t(suggestion.reason, suggestion.reasonVars)}
                 </Typography>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                   <Button
                     variant="contained"
-                    aria-label={`Start suggested step: ${suggestion.title}`}
+                    aria-label={t('continueSuggested')}
                     onClick={() => beginWizard(suggestion.step)}
                   >
-                    Continue suggested step
+                    {t('continueSuggested')}
                   </Button>
                   <Button
                     variant="outlined"
-                    aria-label="Start mill flow from receive paddy"
+                    aria-label={t('startFromReceive')}
                     onClick={() => beginWizard(0)}
                   >
-                    Start from receive paddy
+                    {t('startFromReceive')}
                   </Button>
                 </Box>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <SummaryCard label="Paddy remaining" value={`${remainingPaddyKg(paddyLots).toLocaleString('en-IN')} kg`} />
+            <SummaryCard label={t('paddyRemaining')} value={`${remainingPaddyKg(paddyLots).toLocaleString('en-IN')} kg`} />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <SummaryCard label="Open batches" value={batches.filter(isOpenBatch).length} />
+            <SummaryCard label={t('openBatches')} value={batches.filter(isOpenBatch).length} />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <SummaryCard label="Product stock" value={`${productStockKg(products).toLocaleString('en-IN')} kg`} />
+            <SummaryCard label={t('productStock')} value={`${productStockKg(products).toLocaleString('en-IN')} kg`} />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <SummaryCard label="Unpaid invoices" value={canFinance ? unpaidInvoices.length : '—'} />
+            <SummaryCard label={t('unpaidInvoices')} value={canFinance ? unpaidInvoices.length : '—'} />
           </Grid>
         </Grid>
       )}
@@ -570,6 +570,7 @@ const MillFlow = () => {
                   setNewFarmer={setNewFarmer}
                   paddyForm={paddyForm}
                   setPaddyForm={setPaddyForm}
+                  t={t}
                 />
               )}
               {activeStep === 1 && (
@@ -578,6 +579,7 @@ const MillFlow = () => {
                   batchForm={batchForm}
                   setBatchForm={setBatchForm}
                   existing={context.batch}
+                  t={t}
                 />
               )}
               {activeStep === 2 && (
@@ -588,6 +590,7 @@ const MillFlow = () => {
                   completeForm={completeForm}
                   setCompleteForm={setCompleteForm}
                   onSkipQuality={skipQualityOnly}
+                  t={t}
                 />
               )}
               {activeStep === 3 && (
@@ -601,6 +604,7 @@ const MillFlow = () => {
                   setNewCustomer={setNewCustomer}
                   orderForm={orderForm}
                   setOrderForm={setOrderForm}
+                  t={t}
                 />
               )}
               {activeStep === 4 && (
@@ -612,6 +616,7 @@ const MillFlow = () => {
                   paymentForm={paymentForm}
                   setPaymentForm={setPaymentForm}
                   unpaidInvoices={unpaidInvoices}
+                  t={t}
                   onPickInvoice={(invoice) => {
                     setContext((prev) => ({ ...prev, invoice }));
                     setPaymentForm((prev) => ({
@@ -625,7 +630,7 @@ const MillFlow = () => {
 
             {context.payment && activeStep === 4 && (
               <Alert severity="success" sx={{ mt: 2 }}>
-                Payment recorded. You can open Finance or Dashboard to confirm the mill books.
+                {t('paymentRecorded')}
               </Alert>
             )}
 
@@ -662,14 +667,14 @@ const SummaryCard = ({ label, value }) => (
 );
 
 const ReceiveStep = ({
-  farmerMode, setFarmerMode, farmerId, setFarmerId, farmers, newFarmer, setNewFarmer, paddyForm, setPaddyForm,
+  farmerMode, setFarmerMode, farmerId, setFarmerId, farmers, newFarmer, setNewFarmer, paddyForm, setPaddyForm, t,
 }) => {
   const missing = receiveMissingFields({ farmerMode, newFarmer, paddyForm });
   return (
     <Box>
-    <Typography variant="h6" gutterBottom>1. Receive paddy</Typography>
+    <Typography variant="h6" gutterBottom>1. {t('stepReceive')}</Typography>
     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-      Keep Existing farmer and Walk-in / later, or switch to New farmer. Then fill variety, quantity, price, and location.
+      {t('receiveHelp')}
     </Typography>
     <FormControl component="fieldset" sx={{ mb: 2 }}>
       <RadioGroup
@@ -677,23 +682,23 @@ const ReceiveStep = ({
         value={farmerMode}
         onChange={(event) => setFarmerMode(event.target.value)}
       >
-        <FormControlLabel value="existing" control={<Radio />} label="Existing farmer" />
-        <FormControlLabel value="new" control={<Radio />} label="New farmer" />
+        <FormControlLabel value="existing" control={<Radio />} label={t('existingFarmer')} />
+        <FormControlLabel value="new" control={<Radio />} label={t('newFarmerLabel')} />
       </RadioGroup>
     </FormControl>
     <Grid container spacing={2}>
       {farmerMode === 'existing' ? (
         <Grid item xs={12}>
           <FormControl fullWidth>
-            <InputLabel id="mill-flow-farmer-label">Farmer</InputLabel>
+            <InputLabel id="mill-flow-farmer-label">{t('farmers')}</InputLabel>
             <Select
               labelId="mill-flow-farmer-label"
-              label="Farmer"
+              label={t('farmers')}
               value={farmerId || WALK_IN}
               onChange={(event) => setFarmerId(event.target.value)}
               MenuProps={SELECT_MENU_PROPS}
             >
-              <MenuItem value={WALK_IN}>Walk-in / later</MenuItem>
+              <MenuItem value={WALK_IN}>{t('walkInLater')}</MenuItem>
               {farmers.map((farmer) => (
                 <MenuItem key={farmer.id} value={String(farmer.id)}>
                   {farmer.name} {farmer.phone ? `· ${farmer.phone}` : ''}
@@ -701,35 +706,35 @@ const ReceiveStep = ({
               ))}
             </Select>
             <FormHelperText>
-              Walk-in / later files the lot without a farmer id. The mill walk-in farmer is used on save.
+              {t('walkInHelp')}
             </FormHelperText>
           </FormControl>
         </Grid>
       ) : (
         <>
           <Grid item xs={12} sm={6}>
-            <TextField fullWidth required label="Farmer name" value={newFarmer.name} onChange={(e) => setNewFarmer({ ...newFarmer, name: e.target.value })} />
+            <TextField fullWidth required label={t('farmerName')} value={newFarmer.name} onChange={(e) => setNewFarmer({ ...newFarmer, name: e.target.value })} />
           </Grid>
           <Grid item xs={12} sm={6}>
-            <TextField fullWidth required label="Phone" value={newFarmer.phone} onChange={(e) => setNewFarmer({ ...newFarmer, phone: e.target.value })} />
+            <TextField fullWidth required label={t('phone')} value={newFarmer.phone} onChange={(e) => setNewFarmer({ ...newFarmer, phone: e.target.value })} />
           </Grid>
           <Grid item xs={12} sm={4}>
-            <TextField fullWidth required label="Village" value={newFarmer.village} onChange={(e) => setNewFarmer({ ...newFarmer, village: e.target.value })} />
+            <TextField fullWidth required label={t('village')} value={newFarmer.village} onChange={(e) => setNewFarmer({ ...newFarmer, village: e.target.value })} />
           </Grid>
           <Grid item xs={12} sm={4}>
-            <TextField fullWidth required label="District" value={newFarmer.district} onChange={(e) => setNewFarmer({ ...newFarmer, district: e.target.value })} />
+            <TextField fullWidth required label={t('district')} value={newFarmer.district} onChange={(e) => setNewFarmer({ ...newFarmer, district: e.target.value })} />
           </Grid>
           <Grid item xs={12} sm={4}>
-            <TextField fullWidth required label="State" value={newFarmer.state} onChange={(e) => setNewFarmer({ ...newFarmer, state: e.target.value })} />
+            <TextField fullWidth required label={t('state')} value={newFarmer.state} onChange={(e) => setNewFarmer({ ...newFarmer, state: e.target.value })} />
           </Grid>
         </>
       )}
       <Grid item xs={12} sm={6}>
         <FormControl fullWidth required>
-          <InputLabel id="mill-flow-variety-label">Variety</InputLabel>
+          <InputLabel id="mill-flow-variety-label">{t('variety')}</InputLabel>
           <Select
             labelId="mill-flow-variety-label"
-            label="Variety"
+            label={t('variety')}
             value={paddyForm.variety}
             onChange={(e) => setPaddyForm({ ...paddyForm, variety: e.target.value })}
             MenuProps={SELECT_MENU_PROPS}
@@ -745,10 +750,10 @@ const ReceiveStep = ({
           fullWidth
           required
           type="number"
-          label="Quantity (kg)"
+          label={t('quantityKg')}
           value={paddyForm.quantity}
           onChange={(e) => setPaddyForm({ ...paddyForm, quantity: e.target.value })}
-          helperText="Kilograms greater than 0"
+          helperText={t('qtyHelper')}
           error={missing.includes('quantity (kg > 0)')}
         />
       </Grid>
@@ -757,10 +762,10 @@ const ReceiveStep = ({
           fullWidth
           required
           type="number"
-          label="Price (₹/kg)"
+          label={t('purchasePrice')}
           value={paddyForm.purchase_price}
           onChange={(e) => setPaddyForm({ ...paddyForm, purchase_price: e.target.value })}
-          helperText="Rupees per kg, greater than 0"
+          helperText={t('priceHelper')}
           error={missing.includes('price (₹/kg > 0)')}
         />
       </Grid>
@@ -768,49 +773,49 @@ const ReceiveStep = ({
         <TextField
           fullWidth
           required
-          label="Storage location"
+          label={t('storageLocation')}
           value={paddyForm.storage_location}
           onChange={(e) => setPaddyForm({ ...paddyForm, storage_location: e.target.value })}
-          helperText="Godown or bay name"
+          helperText={t('locationHelper')}
           error={missing.includes('storage location')}
         />
       </Grid>
       <Grid item xs={12} sm={6}>
-        <TextField fullWidth type="number" label="Moisture % (optional)" value={paddyForm.moisture_content} onChange={(e) => setPaddyForm({ ...paddyForm, moisture_content: e.target.value })} />
+        <TextField fullWidth type="number" label={t('moistureOptional')} value={paddyForm.moisture_content} onChange={(e) => setPaddyForm({ ...paddyForm, moisture_content: e.target.value })} />
       </Grid>
     </Grid>
       {missing.length > 0 && (
         <Alert severity="info" sx={{ mt: 2 }} role="status">
-          Still needed: {missing.join(', ')}
+          {t('stillNeeded', { fields: missing.join(', ') })}
         </Alert>
       )}
     </Box>
   );
 };
 
-const BatchStep = ({ lots, batchForm, setBatchForm, existing }) => (
+const BatchStep = ({ lots, batchForm, setBatchForm, existing, t }) => (
   <Box>
-    <Typography variant="h6" gutterBottom>2. Start a batch</Typography>
+    <Typography variant="h6" gutterBottom>2. {t('stepBatch')}</Typography>
     {existing && (
       <Alert severity="info" sx={{ mb: 2 }}>
-        Using batch {existing.batch_number || existing.id} ({existing.status}). Starting deducts paddy for a planned batch.
+        {t('usingBatch', { batch: existing.batch_number || existing.id, status: existing.status })}
       </Alert>
     )}
     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-      Choose the paddy lot. Starting the batch deducts remaining kg. This step cannot skip stock rules.
+      {t('batchHelp')}
     </Typography>
     <Grid container spacing={2}>
       <Grid item xs={12}>
         <FormControl fullWidth required>
-          <InputLabel id="mill-flow-lot-label">Paddy lot</InputLabel>
+          <InputLabel id="mill-flow-lot-label">{t('paddyLot')}</InputLabel>
           <Select
             labelId="mill-flow-lot-label"
-            label="Paddy lot"
+            label={t('paddyLot')}
             value={batchForm.paddy_stock_id || NONE}
             onChange={(e) => setBatchForm({ ...batchForm, paddy_stock_id: e.target.value })}
             MenuProps={SELECT_MENU_PROPS}
           >
-            <MenuItem value={NONE}>Select a paddy lot</MenuItem>
+            <MenuItem value={NONE}>{t('selectPaddyLot')}</MenuItem>
             {lots.map((lot) => (
               <MenuItem key={lot.id} value={String(lot.id)}>
                 {lot.variety} · {lotRemaining(lot)} kg · {lot.warehouse_id || lot.storage_location || lot.stock_id}
@@ -824,24 +829,24 @@ const BatchStep = ({ lots, batchForm, setBatchForm, existing }) => (
           fullWidth
           required
           type="number"
-          label="Input quantity (kg)"
+          label={t('inputQtyKg')}
           value={batchForm.input_quantity}
           onChange={(e) => setBatchForm({ ...batchForm, input_quantity: e.target.value })}
         />
       </Grid>
       <Grid item xs={12} sm={6}>
         <FormControl fullWidth>
-          <InputLabel id="mill-flow-grade-label">Grade</InputLabel>
+          <InputLabel id="mill-flow-grade-label">{t('grade')}</InputLabel>
           <Select
             labelId="mill-flow-grade-label"
-            label="Grade"
+            label={t('grade')}
             value={batchForm.quality_grade}
             onChange={(e) => setBatchForm({ ...batchForm, quality_grade: e.target.value })}
             MenuProps={SELECT_MENU_PROPS}
           >
-            <MenuItem value="A">Grade A</MenuItem>
-            <MenuItem value="B">Grade B</MenuItem>
-            <MenuItem value="C">Grade C</MenuItem>
+            <MenuItem value="A">{t('gradeA')}</MenuItem>
+            <MenuItem value="B">{t('gradeB')}</MenuItem>
+            <MenuItem value="C">{t('gradeC')}</MenuItem>
           </Select>
         </FormControl>
       </Grid>
@@ -849,69 +854,69 @@ const BatchStep = ({ lots, batchForm, setBatchForm, existing }) => (
   </Box>
 );
 
-const CompleteStep = ({ batch, qualityForm, setQualityForm, completeForm, setCompleteForm, onSkipQuality }) => (
+const CompleteStep = ({ batch, qualityForm, setQualityForm, completeForm, setCompleteForm, onSkipQuality, t }) => (
   <Box>
-    <Typography variant="h6" gutterBottom>3. Quality and complete</Typography>
+    <Typography variant="h6" gutterBottom>3. {t('stepQuality')}</Typography>
     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-      Quality test is optional. Rice output kg is required so product stock increases.
+      {t('qualityCompleteHelp')}
     </Typography>
-    {batch && <Chip sx={{ mb: 2 }} label={`Batch ${batch.batch_number || batch.id}`} />}
+    {batch && <Chip sx={{ mb: 2 }} label={`${t('batch')} ${batch.batch_number || batch.id}`} />}
     <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
-      <Button aria-label="Skip quality test" onClick={onSkipQuality}>Skip quality test</Button>
+      <Button aria-label={t('skipQuality')} onClick={onSkipQuality}>{t('skipQuality')}</Button>
     </Box>
     <Grid container spacing={2}>
       <Grid item xs={12} sm={4}>
-        <TextField fullWidth type="number" label="Moisture %" value={qualityForm.moisture_content} onChange={(e) => setQualityForm({ ...qualityForm, moisture_content: e.target.value })} />
+        <TextField fullWidth type="number" label={t('moisturePct')} value={qualityForm.moisture_content} onChange={(e) => setQualityForm({ ...qualityForm, moisture_content: e.target.value })} />
       </Grid>
       <Grid item xs={12} sm={4}>
-        <TextField fullWidth type="number" label="Broken %" value={qualityForm.broken_percentage} onChange={(e) => setQualityForm({ ...qualityForm, broken_percentage: e.target.value })} />
+        <TextField fullWidth type="number" label={t('brokenGrains')} value={qualityForm.broken_percentage} onChange={(e) => setQualityForm({ ...qualityForm, broken_percentage: e.target.value })} />
       </Grid>
       <Grid item xs={12} sm={4}>
-        <TextField fullWidth type="number" label="Foreign matter %" value={qualityForm.foreign_matter} onChange={(e) => setQualityForm({ ...qualityForm, foreign_matter: e.target.value })} />
+        <TextField fullWidth type="number" label={t('foreignMatter')} value={qualityForm.foreign_matter} onChange={(e) => setQualityForm({ ...qualityForm, foreign_matter: e.target.value })} />
       </Grid>
       <Grid item xs={12} sm={6}>
-        <TextField fullWidth required type="number" label="Rice output (kg)" value={completeForm.rice_output} onChange={(e) => setCompleteForm({ ...completeForm, rice_output: e.target.value })} />
+        <TextField fullWidth required type="number" label={t('riceOutputKg')} value={completeForm.rice_output} onChange={(e) => setCompleteForm({ ...completeForm, rice_output: e.target.value })} />
       </Grid>
       <Grid item xs={12} sm={6}>
-        <TextField fullWidth type="number" label="Broken rice (kg)" value={completeForm.broken_rice_output} onChange={(e) => setCompleteForm({ ...completeForm, broken_rice_output: e.target.value })} />
+        <TextField fullWidth type="number" label={t('brokenRiceKg')} value={completeForm.broken_rice_output} onChange={(e) => setCompleteForm({ ...completeForm, broken_rice_output: e.target.value })} />
       </Grid>
       <Grid item xs={12} sm={6}>
-        <TextField fullWidth type="number" label="Bran (kg)" value={completeForm.bran_output} onChange={(e) => setCompleteForm({ ...completeForm, bran_output: e.target.value })} />
+        <TextField fullWidth type="number" label={t('branKg')} value={completeForm.bran_output} onChange={(e) => setCompleteForm({ ...completeForm, bran_output: e.target.value })} />
       </Grid>
       <Grid item xs={12} sm={6}>
-        <TextField fullWidth type="number" label="Husk (kg)" value={completeForm.husk_output} onChange={(e) => setCompleteForm({ ...completeForm, husk_output: e.target.value })} />
+        <TextField fullWidth type="number" label={t('huskKg')} value={completeForm.husk_output} onChange={(e) => setCompleteForm({ ...completeForm, husk_output: e.target.value })} />
       </Grid>
     </Grid>
   </Box>
 );
 
 const SellStep = ({
-  customerMode, setCustomerMode, customerId, setCustomerId, customers, newCustomer, setNewCustomer, orderForm, setOrderForm,
+  customerMode, setCustomerMode, customerId, setCustomerId, customers, newCustomer, setNewCustomer, orderForm, setOrderForm, t,
 }) => (
   <Box>
-    <Typography variant="h6" gutterBottom>4. Sell</Typography>
+    <Typography variant="h6" gutterBottom>4. {t('stepSell')}</Typography>
     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-      Select or create a customer, then save a sales order.
+      {t('sellHelp')}
     </Typography>
     <FormControl component="fieldset" sx={{ mb: 2 }}>
       <RadioGroup row value={customerMode} onChange={(e) => setCustomerMode(e.target.value)}>
-        <FormControlLabel value="existing" control={<Radio />} label="Existing customer" />
-        <FormControlLabel value="new" control={<Radio />} label="New customer" />
+        <FormControlLabel value="existing" control={<Radio />} label={t('existingCustomer')} />
+        <FormControlLabel value="new" control={<Radio />} label={t('newCustomerLabel')} />
       </RadioGroup>
     </FormControl>
     <Grid container spacing={2}>
       {customerMode === 'existing' ? (
         <Grid item xs={12}>
           <FormControl fullWidth required>
-            <InputLabel id="mill-flow-customer-label">Customer</InputLabel>
+            <InputLabel id="mill-flow-customer-label">{t('customer')}</InputLabel>
             <Select
               labelId="mill-flow-customer-label"
-              label="Customer"
+              label={t('customer')}
               value={customerId || NONE}
               onChange={(e) => setCustomerId(e.target.value)}
               MenuProps={SELECT_MENU_PROPS}
             >
-              <MenuItem value={NONE}>Select a customer</MenuItem>
+              <MenuItem value={NONE}>{t('selectCustomer')}</MenuItem>
               {customers.map((customer) => (
                 <MenuItem key={customer.id} value={String(customer.id)}>
                   {customer.name} {customer.phone ? `· ${customer.phone}` : ''}
@@ -919,43 +924,43 @@ const SellStep = ({
               ))}
             </Select>
             {!customers.length && (
-              <FormHelperText>No customers yet. Switch to New customer.</FormHelperText>
+              <FormHelperText>{t('noCustomersSwitch')}</FormHelperText>
             )}
           </FormControl>
         </Grid>
       ) : (
         <>
           <Grid item xs={12} sm={6}>
-            <TextField fullWidth required label="Customer name" value={newCustomer.name} onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })} />
+            <TextField fullWidth required label={t('customerName')} value={newCustomer.name} onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })} />
           </Grid>
           <Grid item xs={12} sm={6}>
-            <TextField fullWidth required label="Phone" value={newCustomer.phone} onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })} />
+            <TextField fullWidth required label={t('phone')} value={newCustomer.phone} onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })} />
           </Grid>
         </>
       )}
       <Grid item xs={12}>
-        <TextField fullWidth required label="Item / variety" value={orderForm.description} onChange={(e) => setOrderForm({ ...orderForm, description: e.target.value })} helperText="Use wording that matches product stock if you will invoice next" />
+        <TextField fullWidth required label={t('itemVariety')} value={orderForm.description} onChange={(e) => setOrderForm({ ...orderForm, description: e.target.value })} helperText={t('itemVarietyHelp')} />
       </Grid>
       <Grid item xs={12} sm={4}>
-        <TextField fullWidth required type="number" label="Quantity (kg)" value={orderForm.quantity} onChange={(e) => setOrderForm({ ...orderForm, quantity: e.target.value })} />
+        <TextField fullWidth required type="number" label={t('quantityKg')} value={orderForm.quantity} onChange={(e) => setOrderForm({ ...orderForm, quantity: e.target.value })} />
       </Grid>
       <Grid item xs={12} sm={4}>
-        <TextField fullWidth required type="number" label="Unit price (₹/kg)" value={orderForm.unit_price} onChange={(e) => setOrderForm({ ...orderForm, unit_price: e.target.value })} />
+        <TextField fullWidth required type="number" label={t('unitPriceKg')} value={orderForm.unit_price} onChange={(e) => setOrderForm({ ...orderForm, unit_price: e.target.value })} />
       </Grid>
       <Grid item xs={12} sm={4}>
-        <TextField fullWidth type="date" label="Order date" InputLabelProps={{ shrink: true }} value={orderForm.order_date} onChange={(e) => setOrderForm({ ...orderForm, order_date: e.target.value })} />
+        <TextField fullWidth type="date" label={t('orderDate')} InputLabelProps={{ shrink: true }} value={orderForm.order_date} onChange={(e) => setOrderForm({ ...orderForm, order_date: e.target.value })} />
       </Grid>
     </Grid>
   </Box>
 );
 
 const PayStep = ({
-  invoice, customer, invoiceForm, setInvoiceForm, paymentForm, setPaymentForm, unpaidInvoices, onPickInvoice,
+  invoice, customer, invoiceForm, setInvoiceForm, paymentForm, setPaymentForm, unpaidInvoices, onPickInvoice, t,
 }) => (
   <Box>
-    <Typography variant="h6" gutterBottom>5. Invoice and payment</Typography>
+    <Typography variant="h6" gutterBottom>5. {t('stepPay')}</Typography>
     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-      Invoice lines must match product stock. Payment amount must be greater than 0.
+      {t('invoicePayHelp')}
     </Typography>
     {invoice ? (
       <Alert severity="info" sx={{ mb: 2 }}>
@@ -967,10 +972,10 @@ const PayStep = ({
         {unpaidInvoices.length > 0 && (
           <Grid item xs={12}>
             <FormControl fullWidth>
-              <InputLabel id="mill-flow-unpaid-label">Or pick an unpaid invoice</InputLabel>
+              <InputLabel id="mill-flow-unpaid-label">{t('pickUnpaidInvoice')}</InputLabel>
               <Select
                 labelId="mill-flow-unpaid-label"
-                label="Or pick an unpaid invoice"
+                label={t('pickUnpaidInvoice')}
                 value={invoice?.id ? String(invoice.id) : NONE}
                 onChange={(e) => {
                   const found = unpaidInvoices.find((item) => String(item.id) === String(e.target.value));
@@ -978,7 +983,7 @@ const PayStep = ({
                 }}
                 MenuProps={SELECT_MENU_PROPS}
               >
-                <MenuItem value={NONE}>Create a new invoice below</MenuItem>
+                <MenuItem value={NONE}>{t('createInvoiceBelow')}</MenuItem>
                 {unpaidInvoices.map((item) => (
                   <MenuItem key={item.id} value={String(item.id)}>
                     {item.invoice_number || item.id} · ₹{Number(item.total_amount || 0).toLocaleString('en-IN')}
@@ -989,13 +994,13 @@ const PayStep = ({
           </Grid>
         )}
         <Grid item xs={12}>
-          <TextField fullWidth required label="Invoice line" value={invoiceForm.description} onChange={(e) => setInvoiceForm({ ...invoiceForm, description: e.target.value })} />
+          <TextField fullWidth required label={t('invoiceLine')} value={invoiceForm.description} onChange={(e) => setInvoiceForm({ ...invoiceForm, description: e.target.value })} />
         </Grid>
         <Grid item xs={12} sm={6}>
-          <TextField fullWidth required type="number" label="Quantity (kg)" value={invoiceForm.quantity} onChange={(e) => setInvoiceForm({ ...invoiceForm, quantity: e.target.value })} />
+          <TextField fullWidth required type="number" label={t('quantityKg')} value={invoiceForm.quantity} onChange={(e) => setInvoiceForm({ ...invoiceForm, quantity: e.target.value })} />
         </Grid>
         <Grid item xs={12} sm={6}>
-          <TextField fullWidth required type="number" label="Unit price (₹/kg)" value={invoiceForm.unit_price} onChange={(e) => setInvoiceForm({ ...invoiceForm, unit_price: e.target.value })} />
+          <TextField fullWidth required type="number" label={t('unitPriceKg')} value={invoiceForm.unit_price} onChange={(e) => setInvoiceForm({ ...invoiceForm, unit_price: e.target.value })} />
         </Grid>
       </Grid>
     )}
@@ -1005,25 +1010,25 @@ const PayStep = ({
           fullWidth
           required
           type="number"
-          label="Payment amount (₹)"
+          label={t('paymentAmountRs')}
           value={paymentForm.amount}
           onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
         />
       </Grid>
       <Grid item xs={12} sm={6}>
         <FormControl fullWidth>
-          <InputLabel id="mill-flow-pay-method-label">Payment method</InputLabel>
+          <InputLabel id="mill-flow-pay-method-label">{t('paymentMethod')}</InputLabel>
           <Select
             labelId="mill-flow-pay-method-label"
-            label="Payment method"
+            label={t('paymentMethod')}
             value={paymentForm.payment_method}
             onChange={(e) => setPaymentForm({ ...paymentForm, payment_method: e.target.value })}
             MenuProps={SELECT_MENU_PROPS}
           >
-            <MenuItem value="cash">Cash</MenuItem>
-            <MenuItem value="upi">UPI</MenuItem>
-            <MenuItem value="bank_transfer">Bank transfer</MenuItem>
-            <MenuItem value="cheque">Cheque</MenuItem>
+            <MenuItem value="cash">{t('payCash')}</MenuItem>
+            <MenuItem value="upi">{t('payUpi')}</MenuItem>
+            <MenuItem value="bank_transfer">{t('payBank')}</MenuItem>
+            <MenuItem value="cheque">{t('payCheque')}</MenuItem>
           </Select>
         </FormControl>
       </Grid>

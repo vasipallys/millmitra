@@ -15,8 +15,10 @@ import {
   Select,
   Chip
 } from '@mui/material';
+import { useI18n } from '../../i18n/I18nContext';
 
 const RecordPaymentDialog = ({ open, onClose, onSubmit, invoice = null, loading = false }) => {
+  const { t } = useI18n();
   const [formData, setFormData] = useState({
     invoice_id: invoice?.id || '',
     amount: invoice?.total_amount || '',
@@ -59,12 +61,12 @@ const RecordPaymentDialog = ({ open, onClose, onSubmit, invoice = null, loading 
   };
 
   const paymentMethods = [
-    { value: 'cash', label: 'Cash' },
-    { value: 'bank_transfer', label: 'Bank Transfer' },
-    { value: 'cheque', label: 'Cheque' },
-    { value: 'upi', label: 'UPI' },
-    { value: 'card', label: 'Card Payment' },
-    { value: 'online', label: 'Online Payment' }
+    { value: 'cash', label: t('payCash') },
+    { value: 'bank_transfer', label: t('payBank') },
+    { value: 'cheque', label: t('payCheque') },
+    { value: 'upi', label: t('payUpi') },
+    { value: 'card', label: 'Card' },
+    { value: 'online', label: 'Online' }
   ];
 
   const getPaymentMethodColor = (method) => {
@@ -81,7 +83,7 @@ const RecordPaymentDialog = ({ open, onClose, onSubmit, invoice = null, loading 
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Record Payment</DialogTitle>
+      <DialogTitle>{t('recordPayment')}</DialogTitle>
       <DialogContent>
         {submitError && (
           <Box sx={{ mt: 1, mb: 1 }}>
@@ -117,12 +119,12 @@ const RecordPaymentDialog = ({ open, onClose, onSubmit, invoice = null, loading 
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Invoice ID"
+                label={t('invoiceId')}
                 type="number"
                 value={formData.invoice_id}
                 onChange={(e) => handleInputChange('invoice_id', e.target.value)}
                 required
-                helperText="Enter the invoice ID for this payment"
+                helperText={t('invoiceIdHelp')}
               />
             </Grid>
           )}
@@ -134,10 +136,10 @@ const RecordPaymentDialog = ({ open, onClose, onSubmit, invoice = null, loading 
               <Select
                 value={formData.payment_type}
                 onChange={(e) => handleInputChange('payment_type', e.target.value)}
-                label="Payment Type"
+                label={t('paymentType')}
               >
-                <MenuItem value="full">Full Payment</MenuItem>
-                <MenuItem value="partial">Partial Payment</MenuItem>
+                <MenuItem value="full">{t('payFull')}</MenuItem>
+                <MenuItem value="partial">{t('payPartial')}</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -146,13 +148,13 @@ const RecordPaymentDialog = ({ open, onClose, onSubmit, invoice = null, loading 
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
-              label="Payment Amount"
+              label={t('paymentAmount')}
               type="number"
               value={formData.amount}
               onChange={(e) => handleInputChange('amount', e.target.value)}
               inputProps={{ min: 0, step: 0.01 }}
               required
-              helperText={formData.payment_type === 'partial' ? 'Enter partial amount' : 'Full invoice amount'}
+              helperText={formData.payment_type === 'partial' ? t('partialAmountHelp') : t('fullAmountHelp')}
             />
           </Grid>
 
@@ -163,7 +165,7 @@ const RecordPaymentDialog = ({ open, onClose, onSubmit, invoice = null, loading 
               <Select
                 value={formData.payment_method}
                 onChange={(e) => handleInputChange('payment_method', e.target.value)}
-                label="Payment Method"
+                label={t('paymentMethod')}
               >
                 {paymentMethods.map((method) => (
                   <MenuItem key={method.value} value={method.value}>
@@ -184,7 +186,7 @@ const RecordPaymentDialog = ({ open, onClose, onSubmit, invoice = null, loading 
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
-              label="Payment Date"
+              label={t('paymentDate')}
               type="date"
               value={formData.payment_date}
               onChange={(e) => handleInputChange('payment_date', e.target.value)}
@@ -197,11 +199,11 @@ const RecordPaymentDialog = ({ open, onClose, onSubmit, invoice = null, loading 
           <Grid item xs={12}>
             <TextField
               fullWidth
-              label="Reference Number"
+              label={t('referenceNumber')}
               value={formData.reference_number}
               onChange={(e) => handleInputChange('reference_number', e.target.value)}
-              placeholder="Transaction ID, Cheque number, etc."
-              helperText="Optional: Enter transaction reference for tracking"
+              placeholder={t('refPh')}
+              helperText={t('referenceHelp')}
             />
           </Grid>
 
@@ -209,7 +211,7 @@ const RecordPaymentDialog = ({ open, onClose, onSubmit, invoice = null, loading 
           <Grid item xs={12}>
             <TextField
               fullWidth
-              label="Notes"
+              label={t('notes')}
               multiline
               rows={3}
               value={formData.notes}
@@ -249,13 +251,13 @@ const RecordPaymentDialog = ({ open, onClose, onSubmit, invoice = null, loading 
         </Grid>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose}>{t('cancel')}</Button>
         <Button 
           onClick={handleSubmit} 
           variant="contained"
           disabled={loading || !formData.amount}
         >
-          {loading ? 'Saving...' : 'Record Payment'}
+          {loading ? t('saving') : t('recordPayment')}
         </Button>
       </DialogActions>
     </Dialog>

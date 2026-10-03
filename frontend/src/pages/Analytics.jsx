@@ -46,6 +46,7 @@ import {
 import DemoBanner from '../components/DemoBanner';
 import PreviewModeToggle from '../components/PreviewModeToggle';
 import { usePreviewMode } from '../hooks/usePreviewMode';
+import { useI18n } from '../i18n/I18nContext';
 import { dashboardService } from '../services/dashboardService';
 import { financeService } from '../services/financeService';
 import { productionService } from '../services/productionService';
@@ -62,6 +63,7 @@ import {
 } from '../utils/previewLiveData';
 
 const Analytics = () => {
+  const { t } = useI18n();
   const { mode, setMode, isSample } = usePreviewMode('analytics');
   const [timeRange, setTimeRange] = useState('30d');
   const [loading, setLoading] = useState(true);
@@ -237,7 +239,7 @@ const Analytics = () => {
 
   return (
     <Box>
-      <DemoBanner title="Business Analytics" mode={mode} />
+      <DemoBanner title={t('businessAnalytics')} mode={mode} />
       {/* Header */}
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
         <Typography variant="h4" component="h1" fontWeight="bold">

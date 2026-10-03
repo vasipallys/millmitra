@@ -1,58 +1,60 @@
 import { useToast } from '../components/common/ToastProvider';
 import { TOAST_MESSAGES } from '../utils/toastMessages';
+import { useI18n } from '../i18n/I18nContext';
 
 /**
  * Enhanced toast hook with predefined messages and smart error handling
  */
 export const useToastNotifications = () => {
   const toast = useToast();
+  const { t } = useI18n();
 
   // Farmer-related notifications
   const farmer = {
     created: (farmerName) => toast.success(
-      `Farmer "${farmerName}" has been successfully added`,
-      { ...TOAST_MESSAGES.FARMER.FARMER_CREATED, details: `Name: ${farmerName}` }
+      t('toastFarmerCreated', { name: farmerName }),
+      { ...TOAST_MESSAGES.FARMER.FARMER_CREATED, details: t('toastName', { name: farmerName }) }
     ),
     
     updated: (farmerName, field = null) => toast.success(
       field 
-        ? `${field} updated for farmer "${farmerName}"`
-        : `Farmer "${farmerName}" has been successfully updated`,
+        ? t('toastFarmerUpdatedField', { field, name: farmerName })
+        : t('toastFarmerUpdated', { name: farmerName }),
       { 
         ...TOAST_MESSAGES.FARMER.FARMER_UPDATED, 
         field,
-        details: `Name: ${farmerName}` 
+        details: t('toastName', { name: farmerName }) 
       }
     ),
     
     deleted: (farmerName) => toast.success(
-      `Farmer "${farmerName}" has been removed from the system`,
-      { ...TOAST_MESSAGES.FARMER.FARMER_DELETED, details: `Name: ${farmerName}` }
+      t('toastFarmerDeleted', { name: farmerName }),
+      { ...TOAST_MESSAGES.FARMER.FARMER_DELETED, details: t('toastName', { name: farmerName }) }
     ),
     
     editRequestSubmitted: (farmerName, changes) => toast.success(
-      `Edit request submitted for farmer "${farmerName}"`,
+      t('toastEditSubmitted', { name: farmerName }),
       { 
         ...TOAST_MESSAGES.FARMER.EDIT_REQUEST_SUBMITTED,
-        details: `Changes: ${Object.keys(changes).join(', ')}`
+        details: Object.keys(changes).join(', ')
       }
     ),
     
     editRequestApproved: (farmerName) => toast.success(
-      `Edit request for farmer "${farmerName}" has been approved`,
-      { ...TOAST_MESSAGES.FARMER.EDIT_REQUEST_APPROVED, details: `Name: ${farmerName}` }
+      t('toastFarmerUpdated', { name: farmerName }),
+      { ...TOAST_MESSAGES.FARMER.EDIT_REQUEST_APPROVED, details: t('toastName', { name: farmerName }) }
     ),
     
     editRequestRejected: (farmerName, reason) => toast.warning(
-      `Edit request for farmer "${farmerName}" has been rejected`,
+      t('toastFarmerFailed', { action: t('edit'), error: reason || farmerName }),
       { 
         ...TOAST_MESSAGES.FARMER.EDIT_REQUEST_REJECTED,
-        details: reason ? `Reason: ${reason}` : `Name: ${farmerName}`
+        details: reason || farmerName
       }
     ),
     
     error: (action, error) => toast.error(
-      `Failed to ${action.toLowerCase()} farmer: ${error}`,
+      t('toastFarmerFailed', { action: String(action).toLowerCase(), error }),
       { 
         module: 'farmer',
         action,
@@ -63,7 +65,7 @@ export const useToastNotifications = () => {
     validationError: (field, message) => toast.error(
       message,
       {
-        title: `Invalid ${field}`,
+        title: t('toastInvalidField', { field }),
         module: 'farmer',
         field,
         action: 'Validation'
@@ -74,43 +76,43 @@ export const useToastNotifications = () => {
   // Inventory-related notifications
   const inventory = {
     stockAdded: (item, quantity) => toast.success(
-      `${quantity} units of ${item} added to inventory`,
+      t('toastStockAdded', { quantity, item }),
       { 
         ...TOAST_MESSAGES.INVENTORY.STOCK_ADDED,
-        details: `Item: ${item}, Quantity: ${quantity}`
+        details: `${item}, ${quantity}`
       }
     ),
     
     stockUpdated: (item, field = null) => toast.success(
       field 
-        ? `${field} updated for ${item}`
-        : `Stock information updated for ${item}`,
+        ? t('toastStockUpdatedField', { field, item })
+        : t('toastStockUpdated', { item }),
       { 
         ...TOAST_MESSAGES.INVENTORY.STOCK_UPDATED,
         field,
-        details: `Item: ${item}`
+        details: item
       }
     ),
     
     movementRecorded: (type, item, quantity) => toast.success(
-      `${type} movement recorded: ${quantity} units of ${item}`,
+      t('toastMovement', { type, quantity, item }),
       { 
         ...TOAST_MESSAGES.INVENTORY.STOCK_MOVEMENT_RECORDED,
-        details: `Type: ${type}, Item: ${item}, Quantity: ${quantity}`
+        details: `${type}, ${item}, ${quantity}`
       }
     ),
     
     lowStockAlert: (items) => toast.warning(
-      `Low stock alert for ${items.length} item(s)`,
+      t('toastLowStock', { count: items.length }),
       { 
         ...TOAST_MESSAGES.INVENTORY.LOW_STOCK_ALERT,
-        details: `Items: ${items.join(', ')}`,
+        details: items.join(', '),
         persistent: true
       }
     ),
     
     error: (action, error) => toast.error(
-      `Failed to ${action.toLowerCase()}: ${error}`,
+      t('toastInvFailed', { action: String(action).toLowerCase(), error }),
       { 
         module: 'inventory',
         action,
@@ -122,40 +124,40 @@ export const useToastNotifications = () => {
   // Production-related notifications
   const production = {
     batchStarted: (batchId, product) => toast.success(
-      `Production batch ${batchId} started for ${product}`,
+      t('toastBatchStarted', { batch: batchId, product }),
       { 
         ...TOAST_MESSAGES.PRODUCTION.BATCH_STARTED,
-        details: `Batch: ${batchId}, Product: ${product}`
+        details: `${batchId}, ${product}`
       }
     ),
     
     batchCompleted: (batchId, quantity) => toast.success(
-      `Production batch ${batchId} completed - ${quantity} units produced`,
+      t('toastBatchCompleted', { batch: batchId, quantity }),
       { 
         ...TOAST_MESSAGES.PRODUCTION.BATCH_COMPLETED,
-        details: `Batch: ${batchId}, Output: ${quantity} units`
+        details: `${batchId}, ${quantity}`
       }
     ),
     
     qualityCheckPassed: (batchId, grade) => toast.success(
-      `Quality check passed for batch ${batchId} - Grade: ${grade}`,
+      t('toastQualityPass', { batch: batchId, grade }),
       { 
         ...TOAST_MESSAGES.PRODUCTION.QUALITY_CHECK_PASSED,
-        details: `Batch: ${batchId}, Grade: ${grade}`
+        details: `${batchId}, ${grade}`
       }
     ),
     
     qualityCheckFailed: (batchId, issues) => toast.error(
-      `Quality check failed for batch ${batchId}`,
+      t('toastQualityFail', { batch: batchId }),
       { 
         ...TOAST_MESSAGES.PRODUCTION.QUALITY_CHECK_FAILED,
-        details: `Issues: ${issues.join(', ')}`,
+        details: issues.join(', '),
         persistent: true
       }
     ),
     
     error: (action, error) => toast.error(
-      `Production ${action.toLowerCase()} failed: ${error}`,
+      t('toastProdFailed', { action: String(action).toLowerCase(), error }),
       { 
         module: 'production',
         action,
@@ -168,8 +170,8 @@ export const useToastNotifications = () => {
   const user = {
     profileUpdated: (field = null) => toast.success(
       field 
-        ? `${field} has been updated successfully`
-        : 'Your profile has been updated successfully',
+        ? t('toastProfileField', { field })
+        : t('toastProfileUpdated'),
       { 
         ...TOAST_MESSAGES.USER.PROFILE_UPDATED,
         field
@@ -177,25 +179,25 @@ export const useToastNotifications = () => {
     ),
     
     passwordChanged: () => toast.success(
-      'Your password has been changed successfully',
+      t('toastPasswordChanged'),
       TOAST_MESSAGES.USER.PASSWORD_CHANGED
     ),
     
     loginSuccess: (username) => toast.success(
-      `Welcome back, ${username}!`,
+      t('toastWelcomeBack', { name: username }),
       { 
         ...TOAST_MESSAGES.USER.LOGIN_SUCCESS,
-        details: `User: ${username}`
+        details: username
       }
     ),
     
     logoutSuccess: () => toast.info(
-      'You have been logged out successfully',
+      t('toastLoggedOut'),
       TOAST_MESSAGES.USER.LOGOUT_SUCCESS
     ),
     
     sessionExpired: () => toast.warning(
-      'Your session has expired. Please log in again',
+      t('toastSessionExpired'),
       { 
         ...TOAST_MESSAGES.USER.SESSION_EXPIRED,
         persistent: true
@@ -203,7 +205,7 @@ export const useToastNotifications = () => {
     ),
     
     error: (action, error) => toast.error(
-      `${action} failed: ${error}`,
+      t('toastActionFailed', { action, error }),
       { 
         module: 'settings',
         action,
@@ -216,49 +218,49 @@ export const useToastNotifications = () => {
   const notifications = {
     markedAsRead: (count = 1) => toast.success(
       count === 1 
-        ? 'Notification marked as read'
-        : `${count} notifications marked as read`,
+        ? t('toastNotifRead')
+        : t('toastNotifReadMany', { count }),
       { 
         ...TOAST_MESSAGES.NOTIFICATION.MARKED_AS_READ,
-        details: `Count: ${count}`
+        details: String(count)
       }
     ),
     
     allMarkedAsRead: (count) => toast.success(
-      `All ${count} notifications marked as read`,
+      t('toastAllRead', { count }),
       { 
         ...TOAST_MESSAGES.NOTIFICATION.ALL_MARKED_AS_READ,
-        details: `Total: ${count}`
+        details: String(count)
       }
     ),
     
     deleted: (count = 1) => toast.success(
       count === 1 
-        ? 'Notification deleted'
-        : `${count} notifications deleted`,
+        ? t('toastNotifDeleted')
+        : t('toastNotifDeletedMany', { count }),
       { 
         ...TOAST_MESSAGES.NOTIFICATION.NOTIFICATION_DELETED,
-        details: `Count: ${count}`
+        details: String(count)
       }
     )
   };
 
   // System-related notifications
   const system = {
-    saveSuccess: (item = 'Changes') => toast.success(
-      `${item} saved successfully`,
+    saveSuccess: (item) => toast.success(
+      t('toastSaved', { item: item || t('save') }),
       TOAST_MESSAGES.SYSTEM.SAVE_SUCCESS
     ),
     
     saveError: (error) => toast.error(
-      `Failed to save: ${error}`,
+      t('toastSaveFailed', { error }),
       { 
         ...TOAST_MESSAGES.SYSTEM.SAVE_ERROR,
         details: error
       }
     ),
     
-    loading: (message = 'Loading data...') => toast.info(
+    loading: (message = t('loading')) => toast.info(
       message,
       { 
         ...TOAST_MESSAGES.SYSTEM.LOADING,
@@ -267,7 +269,7 @@ export const useToastNotifications = () => {
     ),
     
     networkError: () => toast.error(
-      'Network connection error. Please check your internet connection',
+      t('toastNetwork'),
       { 
         ...TOAST_MESSAGES.SYSTEM.NETWORK_ERROR,
         persistent: true
@@ -275,7 +277,7 @@ export const useToastNotifications = () => {
     ),
     
     validationError: (errors) => toast.error(
-      `Please fix ${errors.length} validation error(s)`,
+      t('toastValidationCount', { count: errors.length }),
       { 
         ...TOAST_MESSAGES.SYSTEM.VALIDATION_ERROR,
         details: errors.join(', ')
@@ -283,7 +285,7 @@ export const useToastNotifications = () => {
     ),
     
     permissionDenied: (action) => toast.error(
-      `You don't have permission to ${action.toLowerCase()}`,
+      t('toastNoPermission', { action: String(action).toLowerCase() }),
       { 
         ...TOAST_MESSAGES.SYSTEM.PERMISSION_DENIED,
         action

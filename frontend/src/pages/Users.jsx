@@ -25,7 +25,7 @@ import { useI18n } from '../i18n/I18nContext';
 const ROLES = ['admin', 'manager', 'operator', 'quality_control', 'sales', 'accountant'];
 
 export default function Users({ currentUser }) {
-  const { t } = useI18n();
+  const { t, roleLabel } = useI18n();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ username: '', password: '', role: 'operator' });
@@ -41,14 +41,14 @@ export default function Users({ currentUser }) {
       setForm({ username: '', password: '', role: 'operator' });
       setError('');
     },
-    onError: (err) => setError(getApiErrorMessage(err, 'Could not create user')),
+    onError: (err) => setError(getApiErrorMessage(err, t('couldNotCreateUser'))),
   });
 
   const patchMutation = useMutation(
     ({ id, payload }) => userAdminService.updateUser(id, payload),
     {
       onSuccess: () => queryClient.invalidateQueries('admin-users'),
-      onError: (err) => setError(getApiErrorMessage(err, 'Could not update user')),
+      onError: (err) => setError(getApiErrorMessage(err, t('couldNotUpdateUser'))),
     }
   );
 
@@ -86,7 +86,7 @@ export default function Users({ currentUser }) {
                   onChange={(event) => patchMutation.mutate({ id: user.id, payload: { role: event.target.value } })}
                 >
                   {ROLES.map((role) => (
-                    <MenuItem key={role} value={role}>{role}</MenuItem>
+                    <MenuItem key={role} value={role}>{roleLabel(role)}</MenuItem>
                   ))}
                 </Select>
               </TableCell>
@@ -135,7 +135,7 @@ export default function Users({ currentUser }) {
             sx={{ mt: 2 }}
           >
             {ROLES.map((role) => (
-              <MenuItem key={role} value={role}>{role}</MenuItem>
+              <MenuItem key={role} value={role}>{roleLabel(role)}</MenuItem>
             ))}
           </Select>
         </DialogContent>

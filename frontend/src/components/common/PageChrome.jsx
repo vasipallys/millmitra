@@ -6,6 +6,7 @@ import {
   Typography,
 } from '@mui/material';
 import { getApiErrorMessage } from '../../utils/apiError';
+import { useI18n } from '../../i18n/I18nContext';
 
 export function PageShell({ children }) {
   return (
@@ -65,7 +66,9 @@ export function PageHeader({ title, subtitle, actions }) {
   );
 }
 
-export function PageLoading({ label = 'Loading mill data…' }) {
+export function PageLoading({ label }) {
+  const { t } = useI18n();
+  const text = label || t('loadingMill');
   return (
     <Box
       display="flex"
@@ -79,7 +82,7 @@ export function PageLoading({ label = 'Loading mill data…' }) {
     >
       <CircularProgress />
       <Typography variant="body2" color="text.secondary">
-        {label}
+        {text}
       </Typography>
     </Box>
   );
@@ -112,6 +115,7 @@ export function PageEmpty({ title, description, action }) {
 }
 
 export function QueryErrorAlert({ error, onRetry, entity = 'data' }) {
+  const { t } = useI18n();
   if (!error) return null;
   return (
     <Alert
@@ -120,12 +124,12 @@ export function QueryErrorAlert({ error, onRetry, entity = 'data' }) {
       action={
         onRetry ? (
           <Button color="inherit" size="small" onClick={onRetry}>
-            Retry
+            {t('retry')}
           </Button>
         ) : null
       }
     >
-      {getApiErrorMessage(error, `Could not load ${entity}`)}
+      {getApiErrorMessage(error, t('couldNotLoad', { entity }))}
     </Alert>
   );
 }

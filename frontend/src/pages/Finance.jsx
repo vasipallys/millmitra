@@ -15,8 +15,10 @@ import RecordPaymentDialog from '../components/finance/RecordPaymentDialog';
 import CashFlowChart from '../components/finance/CashFlowChart';
 import { getApiErrorMessage } from '../utils/apiError';
 import { PageEmpty, PageHeader, PageShell, QueryErrorAlert } from '../components/common/PageChrome';
+import { useI18n } from '../i18n/I18nContext';
 
 const Finance = () => {
+  const { t } = useI18n();
   const [createInvoiceOpen, setCreateInvoiceOpen] = useState(false);
   const [recordPaymentOpen, setRecordPaymentOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
@@ -97,8 +99,8 @@ const Finance = () => {
   return (
     <PageShell>
       <PageHeader
-        title="Financial Management"
-        subtitle="Invoices and payments you entered. Line descriptions must match product stock."
+        title={t('financeTitle')}
+        subtitle={t('financeSubtitle')}
         actions={
           <>
             <Button
@@ -106,14 +108,14 @@ const Finance = () => {
               startIcon={<Add />}
               onClick={() => { setActionError(''); setCreateInvoiceOpen(true); }}
             >
-              Create Invoice
+              {t('createInvoice')}
             </Button>
             <Button
               variant="outlined"
               startIcon={<Payment />}
               onClick={() => { setActionError(''); setRecordPaymentOpen(true); }}
             >
-              Record Payment
+              {t('recordPayment')}
             </Button>
           </>
         }
@@ -261,11 +263,11 @@ const Finance = () => {
               </Typography>
               {!recentInvoices?.invoices?.length && (
                 <PageEmpty
-                  title="No invoices yet"
-                  description="Create Invoice to bill a customer. Product line wording must match Inventory."
+                  title={t('noInvoicesYet')}
+                  description={t('noInvoicesHint')}
                   action={
                     <Button variant="contained" startIcon={<Add />} onClick={() => setCreateInvoiceOpen(true)}>
-                      Create Invoice
+                      {t('createInvoice')}
                     </Button>
                   }
                 />
@@ -306,7 +308,7 @@ const Finance = () => {
                             onClick={() => setSelectedInvoice(invoice)}
                             sx={{ minHeight: 40 }}
                           >
-                            View
+                            {t('view')}
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -352,14 +354,14 @@ const Finance = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setSelectedInvoice(null)}>Close</Button>
+          <Button onClick={() => setSelectedInvoice(null)}>{t('close')}</Button>
           <Button
             variant="contained"
             onClick={() => {
               setRecordPaymentOpen(true);
             }}
           >
-            Record Payment
+            {t('recordPayment')}
           </Button>
         </DialogActions>
       </Dialog>

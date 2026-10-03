@@ -22,6 +22,7 @@ import {
   Schedule,
   Assignment
 } from '@mui/icons-material';
+import { useI18n } from '../i18n/I18nContext';
 
 const BatchCard = ({ 
   batch, 
@@ -34,6 +35,7 @@ const BatchCard = ({
   onView,
   onQualityTest 
 }) => {
+  const { statusLabel } = useI18n();
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
 
@@ -120,7 +122,7 @@ const BatchCard = ({
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               {getStatusIcon(batch.status)}
               <Chip 
-                label={(batch.status || 'planned').replace('_', ' ').toUpperCase()} 
+                label={statusLabel(batch.status || 'planned')} 
                 color={getStatusColor(batch.status)}
                 size="small"
               />

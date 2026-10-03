@@ -5,8 +5,10 @@ import {
   MenuItem, Box, Typography, Chip, Alert
 } from '@mui/material';
 import { customerService } from '../services/customerService';
+import { useI18n } from '../i18n/I18nContext';
 
 const InteractionDialog = ({ open, onClose, customer, onSubmit, loading }) => {
+  const { t, statusLabel } = useI18n();
   const [formData, setFormData] = useState({
     interaction_type: 'call',
     subject: '',
@@ -69,10 +71,10 @@ const InteractionDialog = ({ open, onClose, customer, onSubmit, loading }) => {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
-        Add Customer Interaction
+        {t('addInteraction')}
         {customer && (
           <Typography variant="subtitle2" color="text.secondary">
-            Customer: {customer.name}
+            {t('customer')}: {customer.name}
           </Typography>
         )}
       </DialogTitle>
@@ -82,25 +84,25 @@ const InteractionDialog = ({ open, onClose, customer, onSubmit, loading }) => {
           {submitError && <Alert severity="error">{submitError}</Alert>}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <FormControl fullWidth>
-              <InputLabel>Interaction Type</InputLabel>
+              <InputLabel>{t('interactionType')}</InputLabel>
               <Select
                 value={formData.interaction_type}
                 onChange={handleChange('interaction_type')}
                 required
               >
-                <MenuItem value="call">Phone Call</MenuItem>
-                <MenuItem value="email">Email</MenuItem>
-                <MenuItem value="meeting">In-Person Meeting</MenuItem>
-                <MenuItem value="complaint">Complaint</MenuItem>
-                <MenuItem value="inquiry">General Inquiry</MenuItem>
-                <MenuItem value="feedback">Feedback</MenuItem>
-                <MenuItem value="support">Support Request</MenuItem>
+                <MenuItem value="call">{t('phoneCall')}</MenuItem>
+                <MenuItem value="email">{t('email')}</MenuItem>
+                <MenuItem value="meeting">{t('meeting')}</MenuItem>
+                <MenuItem value="complaint">{t('complaint')}</MenuItem>
+                <MenuItem value="inquiry">{t('inquiry')}</MenuItem>
+                <MenuItem value="feedback">{t('feedback')}</MenuItem>
+                <MenuItem value="support">{t('supportRequest')}</MenuItem>
               </Select>
             </FormControl>
 
             <TextField
               fullWidth
-              label="Subject"
+              label={t('subject')}
               value={formData.subject}
               onChange={handleChange('subject')}
               required
@@ -108,7 +110,7 @@ const InteractionDialog = ({ open, onClose, customer, onSubmit, loading }) => {
 
             <TextField
               fullWidth
-              label="Description"
+              label={t('description')}
               value={formData.description}
               onChange={handleChange('description')}
               multiline
@@ -131,7 +133,7 @@ const InteractionDialog = ({ open, onClose, customer, onSubmit, loading }) => {
                   />
                   {aiAnalysis.action_required && (
                     <Chip
-                      label="Action Required"
+                      label={t('actionRequired')}
                       color="error"
                       size="small"
                     />
@@ -147,48 +149,48 @@ const InteractionDialog = ({ open, onClose, customer, onSubmit, loading }) => {
 
             <Box sx={{ display: 'flex', gap: 2 }}>
               <FormControl sx={{ minWidth: 120 }}>
-                <InputLabel>Priority</InputLabel>
+                <InputLabel>{t('priority')}</InputLabel>
                 <Select
                   value={formData.priority}
                   onChange={handleChange('priority')}
                 >
-                  <MenuItem value="low">Low</MenuItem>
-                  <MenuItem value="medium">Medium</MenuItem>
-                  <MenuItem value="high">High</MenuItem>
-                  <MenuItem value="urgent">Urgent</MenuItem>
+                  <MenuItem value="low">{t('priorityLow')}</MenuItem>
+                  <MenuItem value="medium">{t('priorityMedium')}</MenuItem>
+                  <MenuItem value="high">{t('priorityHigh')}</MenuItem>
+                  <MenuItem value="urgent">{t('priorityUrgent')}</MenuItem>
                 </Select>
               </FormControl>
 
               <FormControl sx={{ minWidth: 120 }}>
-                <InputLabel>Status</InputLabel>
+                <InputLabel>{t('status')}</InputLabel>
                 <Select
                   value={formData.status}
                   onChange={handleChange('status')}
                 >
-                  <MenuItem value="open">Open</MenuItem>
-                  <MenuItem value="in_progress">In Progress</MenuItem>
-                  <MenuItem value="resolved">Resolved</MenuItem>
-                  <MenuItem value="closed">Closed</MenuItem>
+                  <MenuItem value="open">{statusLabel('open')}</MenuItem>
+                  <MenuItem value="in_progress">{statusLabel('in_progress')}</MenuItem>
+                  <MenuItem value="resolved">{statusLabel('resolved')}</MenuItem>
+                  <MenuItem value="closed">{statusLabel('closed')}</MenuItem>
                 </Select>
               </FormControl>
             </Box>
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <FormControl>
-                <InputLabel>Follow-up Required</InputLabel>
+                <InputLabel>{t('followUpRequired')}</InputLabel>
                 <Select
                   value={formData.follow_up_required}
                   onChange={handleChange('follow_up_required')}
                 >
-                  <MenuItem value={false}>No</MenuItem>
-                  <MenuItem value={true}>Yes</MenuItem>
+                  <MenuItem value={false}>{t('no')}</MenuItem>
+                  <MenuItem value={true}>{t('yes')}</MenuItem>
                 </Select>
               </FormControl>
 
               {formData.follow_up_required && (
                 <TextField
                   type="datetime-local"
-                  label="Follow-up Date"
+                  label={t('followUpDate')}
                   value={formData.follow_up_date}
                   onChange={handleChange('follow_up_date')}
                   InputLabelProps={{ shrink: true }}
@@ -199,13 +201,13 @@ const InteractionDialog = ({ open, onClose, customer, onSubmit, loading }) => {
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={onClose}>{t('cancel')}</Button>
           <Button
             type="submit"
             variant="contained"
             disabled={loading || !formData.subject || !formData.description}
           >
-            {loading ? 'Creating...' : 'Create Interaction'}
+            {loading ? t('creating') : t('createInteraction')}
           </Button>
         </DialogActions>
       </form>

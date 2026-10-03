@@ -45,43 +45,42 @@ export function suggestMillStep({ paddyLots = [], batches = [], products = [], i
   if (paddyKg <= 0 && !openBatches.length && !plannedBatches.length) {
     return {
       step: 0,
-      title: 'Receive paddy',
-      reason: 'No paddy in the godown. Start by recording a farmer lot so the mill has grain to mill.',
+      title: 'stepReceive',
+      reason: 'suggestReceiveReason',
     };
   }
   if (openBatches.length) {
     return {
       step: 2,
-      title: 'Finish the batch',
-      reason: 'A batch is in progress. Record a quality test if needed, then complete it with output kg.',
+      title: 'suggestFinishBatch',
+      reason: 'suggestFinishBatchReason',
     };
   }
   if (paddyKg > 0 || plannedBatches.length) {
     return {
       step: 1,
-      title: 'Start a batch',
-      reason: plannedBatches.length
-        ? 'A planned batch is waiting. Start it so paddy is deducted and milling can be recorded.'
-        : 'Paddy is available and no batch is running. Start a batch from a lot.',
+      title: 'suggestStartBatch',
+      reason: plannedBatches.length ? 'suggestStartBatchPlanned' : 'suggestStartBatchPaddy',
     };
   }
   if (unpaid.length) {
     return {
       step: 4,
-      title: 'Record payment',
-      reason: `${unpaid.length} unpaid invoice${unpaid.length === 1 ? '' : 's'}. Record a collection on Finance.`,
+      title: 'recordPayment',
+      reason: 'suggestPayReason',
+      reasonVars: { count: unpaid.length },
     };
   }
   if (productKg > 0) {
     return {
       step: 3,
-      title: 'Sell or invoice',
-      reason: 'Rice is in product stock and there is no unpaid invoice. Create an order or invoice.',
+      title: 'suggestSell',
+      reason: 'suggestSellReason',
     };
   }
   return {
     step: 0,
-    title: 'Receive paddy',
-    reason: 'No open mill work. Receive paddy to begin a new run.',
+    title: 'stepReceive',
+    reason: 'suggestIdleReason',
   };
 }

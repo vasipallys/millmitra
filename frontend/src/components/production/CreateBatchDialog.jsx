@@ -9,6 +9,7 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { productionAPI, inventoryAPI } from '../../services/api';
 import ValidationErrorDisplay, { useValidation } from '../common/ValidationErrorDisplay';
+import { useI18n } from '../../i18n/I18nContext';
 
 const validationSchema = Yup.object({
   paddy_variety: Yup.string().required('Paddy variety is required'),
@@ -19,6 +20,7 @@ const validationSchema = Yup.object({
 });
 
 const CreateBatchDialog = ({ open, onClose, onSuccess }) => {
+  const { t } = useI18n();
   const [loading, setLoading] = useState(false);
   const [aiRecommendations, setAiRecommendations] = useState(null);
   const [paddyStock, setPaddyStock] = useState([]);
@@ -116,14 +118,14 @@ const CreateBatchDialog = ({ open, onClose, onSuccess }) => {
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>Create New Production Batch</DialogTitle>
+      <DialogTitle>{t('createNewBatch')}</DialogTitle>
       <form onSubmit={formik.handleSubmit}>
         <DialogContent>
           {/* Validation Error Display */}
           <ValidationErrorDisplay
             errors={validation.errors}
             warnings={validation.warnings}
-            title="Production Batch Validation"
+            title={t('batchValidation')}
             onClose={() => validation.clearAll()}
           />
 
@@ -131,7 +133,7 @@ const CreateBatchDialog = ({ open, onClose, onSuccess }) => {
             {/* Basic Information */}
             <Grid item xs={12}>
               <Typography variant="h6" gutterBottom>
-                Basic Information
+                {t('basicInfo')}
               </Typography>
             </Grid>
 
@@ -139,7 +141,7 @@ const CreateBatchDialog = ({ open, onClose, onSuccess }) => {
               <TextField
                 select
                 fullWidth
-                label="Paddy Variety"
+                label={t('paddyVariety')}
                 name="paddy_variety"
                 value={formik.values.paddy_variety}
                 onChange={(e) => handleVarietyChange(e.target.value)}
@@ -157,7 +159,7 @@ const CreateBatchDialog = ({ open, onClose, onSuccess }) => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Input Quantity (Quintals)"
+                label={t('inputQtyQt')}
                 name="input_quantity"
                 type="number"
                 value={formik.values.input_quantity}
@@ -174,7 +176,7 @@ const CreateBatchDialog = ({ open, onClose, onSuccess }) => {
               <TextField
                 select
                 fullWidth
-                label="Target Rice Variety"
+                label={t('targetRiceVariety')}
                 name="target_rice_variety"
                 value={formik.values.target_rice_variety}
                 onChange={formik.handleChange}
@@ -193,7 +195,7 @@ const CreateBatchDialog = ({ open, onClose, onSuccess }) => {
               <TextField
                 select
                 fullWidth
-                label="Priority"
+                label={t('priority')}
                 name="priority"
                 value={formik.values.priority}
                 onChange={formik.handleChange}
@@ -202,7 +204,7 @@ const CreateBatchDialog = ({ open, onClose, onSuccess }) => {
               >
                 {priorities.map((priority) => (
                   <MenuItem key={priority} value={priority}>
-                    {priority.charAt(0).toUpperCase() + priority.slice(1)}
+                    {t(`priority${priority.charAt(0).toUpperCase()}${priority.slice(1)}`)}
                   </MenuItem>
                 ))}
               </TextField>
@@ -212,13 +214,13 @@ const CreateBatchDialog = ({ open, onClose, onSuccess }) => {
             <Grid item xs={12}>
               <Divider sx={{ my: 2 }} />
               <Typography variant="h6" gutterBottom>
-                Scheduling
+                {t('scheduling')}
               </Typography>
             </Grid>
 
             <Grid item xs={12} sm={6}>
               <DateTimePicker
-                label="Planned Start Time"
+                label={t('plannedStart')}
                 value={formik.values.planned_start_time}
                 onChange={(value) => formik.setFieldValue('planned_start_time', value)}
                 renderInput={(params) => (
@@ -234,7 +236,7 @@ const CreateBatchDialog = ({ open, onClose, onSuccess }) => {
 
             <Grid item xs={12} sm={6}>
               <DateTimePicker
-                label="Planned End Time (Optional)"
+                label={t('plannedEndOptional')}
                 value={formik.values.planned_end_time}
                 onChange={(value) => formik.setFieldValue('planned_end_time', value)}
                 renderInput={(params) => (
@@ -247,7 +249,7 @@ const CreateBatchDialog = ({ open, onClose, onSuccess }) => {
             <Grid item xs={12}>
               <Divider sx={{ my: 2 }} />
               <Typography variant="h6" gutterBottom>
-                Source Information
+                {t('sourceInfo')}
               </Typography>
             </Grid>
 
@@ -255,13 +257,13 @@ const CreateBatchDialog = ({ open, onClose, onSuccess }) => {
               <TextField
                 select
                 fullWidth
-                label="Input Source"
+                label={t('inputSource')}
                 name="input_source"
                 value={formik.values.input_source}
                 onChange={formik.handleChange}
               >
-                <MenuItem value="procurement">Fresh Procurement</MenuItem>
-                <MenuItem value="inventory">Existing Stock</MenuItem>
+                <MenuItem value="procurement">{t('freshProcurement')}</MenuItem>
+                <MenuItem value="inventory">{t('existingStock')}</MenuItem>
               </TextField>
             </Grid>
 
@@ -270,7 +272,7 @@ const CreateBatchDialog = ({ open, onClose, onSuccess }) => {
                 <TextField
                   select
                   fullWidth
-                  label="Stock Reference"
+                  label={t('stockReference')}
                   name="source_reference_id"
                   value={formik.values.source_reference_id}
                   onChange={formik.handleChange}
@@ -292,7 +294,7 @@ const CreateBatchDialog = ({ open, onClose, onSuccess }) => {
                 fullWidth
                 multiline
                 rows={3}
-                label="Production Notes"
+                label={t('productionNotes')}
                 name="notes"
                 value={formik.values.notes}
                 onChange={formik.handleChange}
@@ -337,13 +339,13 @@ const CreateBatchDialog = ({ open, onClose, onSuccess }) => {
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
+          <Button onClick={handleClose}>{t('cancel')}</Button>
           <Button
             type="submit"
             variant="contained"
             disabled={loading}
           >
-            {loading ? 'Creating...' : 'Create Batch'}
+            {loading ? t('creating') : t('createBatch')}
           </Button>
         </DialogActions>
       </form>

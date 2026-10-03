@@ -7,7 +7,7 @@ import { getApiErrorMessage } from '../utils/apiError';
 import { useI18n } from '../i18n/I18nContext';
 
 export default function Access() {
-  const { t } = useI18n();
+  const { t, roleLabel } = useI18n();
   const queryClient = useQueryClient();
   const [error, setError] = useState('');
   const matrixQuery = useQuery('access-matrix', () => userAdminService.getAccess(), { retry: false });
@@ -15,7 +15,7 @@ export default function Access() {
     (payload) => userAdminService.saveAccess(payload),
     {
       onSuccess: () => queryClient.invalidateQueries('access-matrix'),
-      onError: (err) => setError(getApiErrorMessage(err, 'Could not save access')),
+      onError: (err) => setError(getApiErrorMessage(err, t('couldNotSaveAccess'))),
     }
   );
 
@@ -36,14 +36,14 @@ export default function Access() {
           <TableRow>
             <TableCell>{t('role')}</TableCell>
             {permissions.map((perm) => (
-              <TableCell key={perm} align="center">{perm}</TableCell>
+              <TableCell key={perm} align="center">{t(`perm_${perm}`) === `perm_${perm}` ? perm : t(`perm_${perm}`)}</TableCell>
             ))}
           </TableRow>
         </TableHead>
         <TableBody>
           {roles.map((role) => (
             <TableRow key={role}>
-              <TableCell>{role}</TableCell>
+              <TableCell>{roleLabel(role)}</TableCell>
               {permissions.map((perm) => (
                 <TableCell key={`${role}-${perm}`} align="center">
                   <Checkbox

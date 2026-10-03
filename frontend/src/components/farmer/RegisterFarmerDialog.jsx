@@ -9,35 +9,35 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { useToastNotifications } from '../../hooks/useToastNotifications';
 import ValidationErrorDisplay, { useValidation } from '../common/ValidationErrorDisplay';
-
-const validationSchema = Yup.object({
-  name: Yup.string().required('Name is required'),
-  phone: Yup.string()
-    .matches(/^[0-9]{10}$/, 'Phone number must be 10 digits')
-    .required('Phone number is required'),
-  email: Yup.string().email('Invalid email format').required('Email is required'),
-  village: Yup.string(), // Made optional
-  district: Yup.string(), // Made optional
-  state: Yup.string(), // Made optional
-  aadhar_number: Yup.string()
-    .matches(/^[0-9]{12}$/, 'Aadhar number must be 12 digits')
-    .required('Aadhar number is required'),
-  pan_number: Yup.string()
-    .matches(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, 'Invalid PAN format'),
-  total_land_area: Yup.number().min(0.1, 'Land area must be greater than 0').required('Land area is required'),
-  bank_account_number: Yup.string().min(8, 'Bank account must be at least 8 digits').required('Bank account is required'),
-  bank_ifsc: Yup.string()
-    .matches(/^[A-Z]{4}0[A-Z0-9]{6}$/, 'Invalid IFSC code format')
-    .required('IFSC code is required')
-});
-
-const steps = ['Basic Information', 'Contact Details', 'Farm Details', 'Bank Details'];
+import { useI18n } from '../../i18n/I18nContext';
 
 const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
+  const { t } = useI18n();
   const [activeStep, setActiveStep] = useState(0);
   const [aiVerification, setAiVerification] = useState(null);
   const toast = useToastNotifications();
   const validation = useValidation();
+  const steps = [t('stepBasic'), t('stepContact'), t('stepFarm'), t('stepBank')];
+  const validationSchema = useMemo(() => Yup.object({
+    name: Yup.string().required(t('yupNameRequired')),
+    phone: Yup.string()
+      .matches(/^[0-9]{10}$/, t('yupPhoneDigits'))
+      .required(t('yupPhoneRequired')),
+    email: Yup.string().email(t('yupEmailInvalid')).required(t('yupEmailRequired')),
+    village: Yup.string(),
+    district: Yup.string(),
+    state: Yup.string(),
+    aadhar_number: Yup.string()
+      .matches(/^[0-9]{12}$/, t('yupAadharDigits'))
+      .required(t('yupAadharRequired')),
+    pan_number: Yup.string()
+      .matches(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, t('yupPanInvalid')),
+    total_land_area: Yup.number().min(0.1, t('yupLandMin')).required(t('yupLandRequired')),
+    bank_account_number: Yup.string().min(8, t('yupBankMin')).required(t('yupBankRequired')),
+    bank_ifsc: Yup.string()
+      .matches(/^[A-Z]{4}0[A-Z0-9]{6}$/, t('yupIfscInvalid'))
+      .required(t('yupIfscRequired')),
+  }), [t]);
 
   // Step-aware validation function
   const validateCurrentStep = (values, step = activeStep) => {
@@ -47,37 +47,37 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
     switch (step) {
       case 0: // Basic Information
         if (!values.name || values.name.trim().length < 2) {
-          validation.addError('Name', 'Name is required and must be at least 2 characters', 'Enter the farmer\'s full name');
+          validation.addError(t('name'), t('valNameRequired'), t('valNameHint'));
         }
 
         if (!values.phone || !/^[0-9]{10}$/.test(values.phone)) {
-          validation.addError('Phone', 'Phone number must be exactly 10 digits', 'Enter a valid 10-digit mobile number');
+          validation.addError(t('phone'), t('valPhoneRequired'), t('valPhoneHint'));
         }
 
         if (!values.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
-          validation.addError('Email', 'Valid email address is required', 'Enter a valid email address (e.g., farmer@example.com)');
+          validation.addError(t('email'), t('valEmailRequired'), t('valEmailHint'));
         }
         break;
 
       case 1: // Contact Details
         if (!values.aadhar_number || !/^[0-9]{12}$/.test(values.aadhar_number)) {
-          validation.addError('Aadhar Number', 'Aadhar number must be exactly 12 digits', 'Enter the 12-digit Aadhar number without spaces');
+          validation.addError(t('aadharNumber'), t('valAadharRequired'), t('valAadharHint'));
         }
         break;
 
       case 2: // Farm Details
         if (!values.total_land_area || values.total_land_area <= 0) {
-          validation.addError('Land Area', 'Land area must be greater than 0', 'Enter the total land area in acres');
+          validation.addError(t('landArea'), t('valLandRequired'), t('valLandHint'));
         }
         break;
 
       case 3: // Bank Details
         if (!values.bank_account_number || values.bank_account_number.length < 8) {
-          validation.addError('Bank Account', 'Bank account number must be at least 8 digits', 'Enter a valid bank account number');
+          validation.addError(t('bankAccount'), t('valBankRequired'), t('valBankHint'));
         }
 
         if (!values.bank_ifsc || !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(values.bank_ifsc)) {
-          validation.addError('IFSC Code', 'Invalid IFSC code format', 'Enter a valid IFSC code (e.g., SBIN0001234)');
+          validation.addError(t('ifscCode'), t('valIfscInvalid'), t('valIfscHint'));
         }
         break;
     }
@@ -109,7 +109,7 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
     if (missingFields.length > 0) {
       validation.clearAll();
       missingFields.forEach(field => {
-        validation.addError(field, `${field.replace('_', ' ')} is required or invalid`, 'Please check this field');
+        validation.addError(field, t('valFieldInvalid', { field: field.replace('_', ' ') }), t('valCheckField'));
       });
       return false;
     }
@@ -283,19 +283,19 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
               <TextField
                 fullWidth
                 name="name"
-                label="Full Name"
+                label={t('fullName')}
                 required
                 value={formik.values.name}
                 onChange={formik.handleChange}
                 error={formik.touched.name && Boolean(formik.errors.name)}
-                helperText={(formik.touched.name && formik.errors.name) || 'Farmer full name'}
+                helperText={(formik.touched.name && formik.errors.name) || t('helperFarmerName')}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
                 name="father_name"
-                label="Father's Name"
+                label={t('fatherName')}
                 value={formik.values.father_name}
                 onChange={formik.handleChange}
               />
@@ -304,19 +304,19 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
               <TextField
                 fullWidth
                 name="phone"
-                label="Phone Number"
+                label={t('phoneNumber')}
                 required
                 value={formik.values.phone}
                 onChange={formik.handleChange}
                 error={formik.touched.phone && Boolean(formik.errors.phone)}
-                helperText={(formik.touched.phone && formik.errors.phone) || '10-digit mobile number'}
+                helperText={(formik.touched.phone && formik.errors.phone) || t('helperPhone10')}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
                 name="alternate_phone"
-                label="Alternate Phone"
+                label={t('altPhone')}
                 value={formik.values.alternate_phone}
                 onChange={formik.handleChange}
               />
@@ -325,7 +325,7 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
               <TextField
                 fullWidth
                 name="email"
-                label="Email Address"
+                label={t('emailAddress')}
                 type="email"
                 value={formik.values.email}
                 onChange={formik.handleChange}
@@ -341,7 +341,7 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
               <TextField
                 fullWidth
                 name="village"
-                label="Village *"
+                label={`${t('village')} *`}
                 value={formik.values.village}
                 onChange={formik.handleChange}
                 error={formik.touched.village && Boolean(formik.errors.village)}
@@ -352,7 +352,7 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
               <TextField
                 fullWidth
                 name="district"
-                label="District *"
+                label={`${t('district')} *`}
                 value={formik.values.district}
                 onChange={formik.handleChange}
                 error={formik.touched.district && Boolean(formik.errors.district)}
@@ -363,7 +363,7 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
               <TextField
                 fullWidth
                 name="state"
-                label="State *"
+                label={`${t('state')} *`}
                 value={formik.values.state}
                 onChange={formik.handleChange}
                 error={formik.touched.state && Boolean(formik.errors.state)}
@@ -374,7 +374,7 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
               <TextField
                 fullWidth
                 name="pincode"
-                label="Pincode"
+                label={t('pincode')}
                 value={formik.values.pincode}
                 onChange={formik.handleChange}
               />
@@ -383,7 +383,7 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
               <TextField
                 fullWidth
                 name="aadhar_number"
-                label="Aadhar Number"
+                label={t('aadharNumber')}
                 value={formik.values.aadhar_number}
                 onChange={formik.handleChange}
                 error={formik.touched.aadhar_number && Boolean(formik.errors.aadhar_number)}
@@ -394,7 +394,7 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
               <TextField
                 fullWidth
                 name="pan_number"
-                label="PAN Number"
+                label={t('panNumber')}
                 value={formik.values.pan_number}
                 onChange={formik.handleChange}
                 error={formik.touched.pan_number && Boolean(formik.errors.pan_number)}
@@ -411,7 +411,7 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
               <TextField
                 fullWidth
                 name="total_land_area"
-                label="Total Land Area (acres)"
+                label={t('totalLandAcres')}
                 type="number"
                 value={formik.values.total_land_area}
                 onChange={formik.handleChange}
@@ -423,7 +423,7 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
               <TextField
                 fullWidth
                 name="irrigated_area"
-                label="Irrigated Area (acres)"
+                label={t('irrigatedAcres')}
                 type="number"
                 value={formik.values.irrigated_area}
                 onChange={formik.handleChange}
@@ -433,7 +433,7 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
               <TextField
                 fullWidth
                 name="farming_experience"
-                label="Farming Experience (years)"
+                label={t('farmingYears')}
                 type="number"
                 value={formik.values.farming_experience}
                 onChange={formik.handleChange}
@@ -441,12 +441,12 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
             </Grid>
             <Grid item xs={12} sm={6}>
               <FormControl fullWidth>
-                <InputLabel>Primary Crop</InputLabel>
+                <InputLabel>{t('primaryCrop')}</InputLabel>
                 <Select
                   name="primary_crop"
                   value={formik.values.primary_crop}
                   onChange={formik.handleChange}
-                  label="Primary Crop"
+                  label={t('primaryCrop')}
                   MenuProps={{
                     PaperProps: {
                       style: {
@@ -455,10 +455,10 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
                     },
                   }}
                 >
-                  <MenuItem value="paddy">Paddy</MenuItem>
-                  <MenuItem value="wheat">Wheat</MenuItem>
-                  <MenuItem value="sugarcane">Sugarcane</MenuItem>
-                  <MenuItem value="cotton">Cotton</MenuItem>
+                  <MenuItem value="paddy">{t('cropPaddy')}</MenuItem>
+                  <MenuItem value="wheat">{t('cropWheat')}</MenuItem>
+                  <MenuItem value="sugarcane">{t('cropSugarcane')}</MenuItem>
+                  <MenuItem value="cotton">{t('cropCotton')}</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -472,7 +472,7 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
               <TextField
                 fullWidth
                 name="bank_account_number"
-                label="Bank Account Number"
+                label={t('bankAccount')}
                 value={formik.values.bank_account_number}
                 onChange={formik.handleChange}
               />
@@ -481,7 +481,7 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
               <TextField
                 fullWidth
                 name="bank_ifsc"
-                label="IFSC Code"
+                label={t('ifscCode')}
                 value={formik.values.bank_ifsc}
                 onChange={formik.handleChange}
                 error={formik.touched.bank_ifsc && Boolean(formik.errors.bank_ifsc)}
@@ -492,7 +492,7 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
               <TextField
                 fullWidth
                 name="bank_name"
-                label="Bank Name"
+                label={t('bankName')}
                 value={formik.values.bank_name}
                 onChange={formik.handleChange}
               />
@@ -501,7 +501,7 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
               <TextField
                 fullWidth
                 name="notes"
-                label="Additional Notes"
+                label={t('additionalNotes')}
                 multiline
                 rows={3}
                 value={formik.values.notes}
@@ -529,7 +529,7 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
       hideBackdrop={false}
     >
       <DialogTitle>
-        Register New Farmer
+        {t('registerNewFarmer')}
       </DialogTitle>
 
       <DialogContent>
@@ -537,7 +537,7 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
         <ValidationErrorDisplay
           errors={validation.errors}
           warnings={validation.warnings}
-          title="Registration Form Validation"
+          title={t('valFormTitle')}
           onClose={() => validation.clearAll()}
         />
 
@@ -571,10 +571,10 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={handleClose}>Cancel</Button>
+        <Button onClick={handleClose}>{t('cancel')}</Button>
         
         {activeStep > 0 && (
-          <Button onClick={handleBack}>Back</Button>
+          <Button onClick={handleBack}>{t('back')}</Button>
         )}
         
         {activeStep < steps.length - 1 ? (
@@ -583,7 +583,7 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
             disabled={!currentStepValid}
             variant="contained"
           >
-            Next
+            {t('next')}
           </Button>
         ) : (
           <Button
@@ -592,7 +592,7 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
             variant="contained"
             startIcon={loading && <CircularProgress size={20} />}
           >
-            Register Farmer
+            {t('registerFarmerSubmit')}
           </Button>
         )}
       </DialogActions>

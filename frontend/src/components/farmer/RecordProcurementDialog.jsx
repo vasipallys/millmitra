@@ -10,6 +10,7 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { useQuery } from 'react-query';
 import { farmerService } from '../../services/farmerService';
+import { useI18n } from '../../i18n/I18nContext';
 
 const validationSchema = Yup.object({
   farmer_id: Yup.number().required('Farmer selection is required'),
@@ -34,6 +35,7 @@ const validationSchema = Yup.object({
 });
 
 const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) => {
+  const { t } = useI18n();
   const [qualityAssessment, setQualityAssessment] = useState(null);
   const [pricingRecommendation, setPricingRecommendation] = useState(null);
   const [selectedFarmerId, setSelectedFarmerId] = useState('');
@@ -181,7 +183,7 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth>
       <DialogTitle>
-        Record Paddy Procurement
+        {t('recordProcurement')}
       </DialogTitle>
 
       <DialogContent>
@@ -234,7 +236,7 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
                 renderInput={(params) => (
                   <TextField
                     {...params}
-                    label="Select Farmer *"
+                    label={`${t('selectFarmer')} *`}
                     error={formik.touched.farmer_id && Boolean(formik.errors.farmer_id)}
                     helperText={formik.touched.farmer_id && formik.errors.farmer_id}
                   />
@@ -249,7 +251,7 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
                   name="contract_id"
                   value={formik.values.contract_id}
                   onChange={formik.handleChange}
-                  label="Contract (Optional)"
+                  label={t('selectContract')}
                   disabled={!formik.values.farmer_id}
                 >
                   <MenuItem value="">No Contract</MenuItem>
@@ -266,7 +268,7 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
             <Grid item xs={12} md={4}>
               <TextField
                 fullWidth
-                label="Procurement Date"
+                label={t('procurementDate')}
                 name="procurement_date"
                 type="date"
                 value={formik.values.procurement_date ? formik.values.procurement_date.toISOString().split('T')[0] : ''}
@@ -289,7 +291,7 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
                 renderInput={(params) => (
                   <TextField
                     {...params}
-                    label="Paddy Variety *"
+                    label={`${t('paddyVariety')} *`}
                     error={formik.touched.paddy_variety && Boolean(formik.errors.paddy_variety)}
                     helperText={formik.touched.paddy_variety && formik.errors.paddy_variety}
                   />
@@ -301,7 +303,7 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
               <TextField
                 fullWidth
                 name="quantity"
-                label="Quantity (quintals) *"
+                label={`${t('qtyQuintalsShort')} *`}
                 type="number"
                 value={formik.values.quantity}
                 onChange={formik.handleChange}
@@ -321,7 +323,7 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
               <TextField
                 fullWidth
                 name="moisture_content"
-                label="Moisture Content (%)"
+                label={t('moisture')}
                 type="number"
                 inputProps={{ step: 0.1, min: 0, max: 100 }}
                 value={formik.values.moisture_content || ''}
@@ -335,7 +337,7 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
               <TextField
                 fullWidth
                 name="foreign_matter"
-                label="Foreign Matter (%)"
+                label={t('foreignMatter')}
                 type="number"
                 inputProps={{ step: 0.1, min: 0, max: 100 }}
                 value={formik.values.foreign_matter || ''}
@@ -349,7 +351,7 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
               <TextField
                 fullWidth
                 name="broken_grains"
-                label="Broken Grains (%)"
+                label={t('brokenGrains')}
                 type="number"
                 inputProps={{ step: 0.1, min: 0, max: 100 }}
                 value={formik.values.broken_grains || ''}
@@ -385,7 +387,7 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
               <TextField
                 fullWidth
                 name="price_per_unit"
-                label="Price per Unit (₹/quintal) *"
+                label={`${t('pricePerQt')} *`}
                 type="number"
                 value={formik.values.price_per_unit || ''}
                 onChange={formik.handleChange}
@@ -398,7 +400,7 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
               <TextField
                 fullWidth
                 name="base_price"
-                label="Base Price (₹/quintal) *"
+                label={`${t('basePriceQt')} *`}
                 type="number"
                 value={formik.values.base_price || ''}
                 onChange={formik.handleChange}
@@ -417,7 +419,7 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
                 }}
                 isOptionEqualToValue={(option, value) => option === value}
                 renderInput={(params) => (
-                  <TextField {...params} label="Storage Location" />
+                  <TextField {...params} label={t('storageLocation')} />
                 )}
               />
             </Grid>
@@ -426,7 +428,7 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
               <TextField
                 fullWidth
                 name="vehicle_number"
-                label="Vehicle Number"
+                label={t('vehicleNumber')}
                 value={formik.values.vehicle_number || ''}
                 onChange={formik.handleChange}
               />
@@ -436,7 +438,7 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
               <TextField
                 fullWidth
                 name="driver_name"
-                label="Driver Name"
+                label={t('driverName')}
                 value={formik.values.driver_name || ''}
                 onChange={formik.handleChange}
               />
@@ -447,7 +449,7 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
               <TextField
                 fullWidth
                 name="inspector_notes"
-                label="Inspector Notes"
+                label={t('inspectorNotes')}
                 multiline
                 rows={3}
                 value={formik.values.inspector_notes || ''}
@@ -459,7 +461,7 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={handleClose}>Cancel</Button>
+        <Button onClick={handleClose}>{t('cancel')}</Button>
         <Button
           type="submit"
           form="procurement-form"
@@ -467,7 +469,7 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
           variant="contained"
           startIcon={loading && <CircularProgress size={20} />}
         >
-          Record Procurement
+          {t('recordProcurement')}
         </Button>
       </DialogActions>
     </Dialog>

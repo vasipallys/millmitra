@@ -12,10 +12,12 @@ import {
 } from '@mui/icons-material';
 import { Line } from 'react-chartjs-2';
 import { productionAPI } from '../../services/api';
+import { useI18n } from '../../i18n/I18nContext';
 import AddProductionStepDialog from './AddProductionStepDialog';
 import QualityTestDialog from './QualityTestDialog';
 
 const BatchDetailsDialog = ({ open, onClose, batch, onUpdate }) => {
+  const { t, statusLabel } = useI18n();
   const [tabValue, setTabValue] = useState(0);
   const [batchDetails, setBatchDetails] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -108,7 +110,7 @@ const BatchDetailsDialog = ({ open, onClose, batch, onUpdate }) => {
               <Box display="flex" justifyContent="space-between">
                 <Typography variant="body2" color="textSecondary">Status:</Typography>
                 <Chip
-                  label={batchDetails.batch.status}
+                  label={statusLabel(batchDetails.batch.status)}
                   color={getStatusColor(batchDetails.batch.status)}
                   size="small"
                 />
@@ -405,9 +407,9 @@ const BatchDetailsDialog = ({ open, onClose, batch, onUpdate }) => {
 
       <DialogContent>
         <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)}>
-          <Tab label="Overview" icon={<Assessment />} />
-          <Tab label="Steps" icon={<Timeline />} />
-          <Tab label="Quality" icon={<QualityControl />} />
+          <Tab label={t('overview')} icon={<Assessment />} />
+          <Tab label={t('steps')} icon={<Timeline />} />
+          <Tab label={t('quality')} icon={<QualityControl />} />
         </Tabs>
 
         <Box mt={3}>
@@ -418,7 +420,7 @@ const BatchDetailsDialog = ({ open, onClose, batch, onUpdate }) => {
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={onClose}>Close</Button>
+        <Button onClick={onClose}>{t('close')}</Button>
       </DialogActions>
 
       {/* Sub-dialogs */}
@@ -443,7 +445,7 @@ const BatchDetailsDialog = ({ open, onClose, batch, onUpdate }) => {
       />
 
       <Dialog open={Boolean(viewStep)} onClose={() => setViewStep(null)} maxWidth="sm" fullWidth>
-        <DialogTitle>{viewStep?.step_name || 'Production step'}</DialogTitle>
+        <DialogTitle>{viewStep?.step_name || t('productionStep')}</DialogTitle>
         <DialogContent>
           <Typography sx={{ mt: 1 }}>Status: {viewStep?.status || '—'}</Typography>
           <Typography>Order: {viewStep?.step_order ?? '—'}</Typography>
@@ -451,19 +453,19 @@ const BatchDetailsDialog = ({ open, onClose, batch, onUpdate }) => {
           <Typography>Output: {viewStep?.output_quantity || '—'}</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setViewStep(null)}>Close</Button>
+          <Button onClick={() => setViewStep(null)}>{t('close')}</Button>
         </DialogActions>
       </Dialog>
 
       <Dialog open={Boolean(viewTest)} onClose={() => setViewTest(null)} maxWidth="sm" fullWidth>
-        <DialogTitle>{viewTest?.test_number || 'Quality test'}</DialogTitle>
+        <DialogTitle>{viewTest?.test_number || t('qualityTest')}</DialogTitle>
         <DialogContent>
           <Typography sx={{ mt: 1 }}>Type: {viewTest?.test_type || '—'}</Typography>
           <Typography>Grade: {viewTest?.overall_grade || '—'}</Typography>
           <Typography>Score: {viewTest?.quality_score ?? '—'}%</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setViewTest(null)}>Close</Button>
+          <Button onClick={() => setViewTest(null)}>{t('close')}</Button>
         </DialogActions>
       </Dialog>
     </Dialog>

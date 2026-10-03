@@ -53,6 +53,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import DemoBanner from '../components/DemoBanner';
 import PreviewModeToggle from '../components/PreviewModeToggle';
 import { usePreviewMode } from '../hooks/usePreviewMode';
+import { useI18n } from '../i18n/I18nContext';
 import { dashboardService } from '../services/dashboardService';
 import { financeService } from '../services/financeService';
 import { productionService } from '../services/productionService';
@@ -66,6 +67,7 @@ import {
 } from '../utils/previewLiveData';
 
 const AnalyticsReporting = () => {
+  const { t } = useI18n();
   const { mode, setMode, isSample } = usePreviewMode('analytics-reporting');
   const [activeTab, setActiveTab] = useState(0);
   const [dashboardData, setDashboardData] = useState(null);
@@ -390,7 +392,7 @@ const AnalyticsReporting = () => {
 
   return (
     <Box>
-      <DemoBanner title="Analytics & Reporting" mode={mode} />
+      <DemoBanner title={t('reporting')} mode={mode} />
       {pageMessage && (
         <Alert severity={pageMessage.severity} sx={{ mb: 2 }} onClose={() => setPageMessage(null)}>
           {pageMessage.text}
@@ -796,26 +798,26 @@ const AnalyticsReporting = () => {
 
       {/* Generate Report Dialog */}
       <Dialog open={showReportDialog} onClose={() => setShowReportDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Generate Natural Language Report</DialogTitle>
+        <DialogTitle>{t('nlReport')}</DialogTitle>
         <DialogContent>
           <TextField
             fullWidth
             select
-            label="Report Type"
+            label={t('reportType')}
             value={reportForm.report_type}
             onChange={(e) => setReportForm({ ...reportForm, report_type: e.target.value })}
             margin="normal"
           >
-            <MenuItem value="production_summary">Production Summary</MenuItem>
-            <MenuItem value="financial_performance">Financial Performance</MenuItem>
-            <MenuItem value="quality_analysis">Quality Analysis</MenuItem>
-            <MenuItem value="sales_performance">Sales Performance</MenuItem>
-            <MenuItem value="operational_efficiency">Operational Efficiency</MenuItem>
+            <MenuItem value="production_summary">{t('reportProduction')}</MenuItem>
+            <MenuItem value="financial_performance">{t('reportFinancial')}</MenuItem>
+            <MenuItem value="quality_analysis">{t('reportQuality')}</MenuItem>
+            <MenuItem value="sales_performance">{t('reportSales')}</MenuItem>
+            <MenuItem value="operational_efficiency">{t('reportOps')}</MenuItem>
           </TextField>
           
           <TextField
             fullWidth
-            label="Start Date"
+            label={t('startDate')}
             type="date"
             value={reportForm.start_date}
             onChange={(e) => setReportForm({ ...reportForm, start_date: e.target.value })}
@@ -825,7 +827,7 @@ const AnalyticsReporting = () => {
           
           <TextField
             fullWidth
-            label="End Date"
+            label={t('endDate')}
             type="date"
             value={reportForm.end_date}
             onChange={(e) => setReportForm({ ...reportForm, end_date: e.target.value })}
@@ -836,45 +838,45 @@ const AnalyticsReporting = () => {
           <TextField
             fullWidth
             select
-            label="Language"
+            label={t('language')}
             value={reportForm.language}
             onChange={(e) => setReportForm({ ...reportForm, language: e.target.value })}
             margin="normal"
           >
-            <MenuItem value="english">English</MenuItem>
-            <MenuItem value="hindi">Hindi</MenuItem>
+            <MenuItem value="english">{t('langEnglish')}</MenuItem>
+            <MenuItem value="hindi">{t('langHindi')}</MenuItem>
           </TextField>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setShowReportDialog(false)}>Cancel</Button>
+          <Button onClick={() => setShowReportDialog(false)}>{t('cancel')}</Button>
           <Button onClick={generateReport} variant="contained">
-            Generate Report
+            {t('generateReport')}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Predictive Analysis Dialog */}
       <Dialog open={showPredictiveDialog} onClose={() => setShowPredictiveDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Run Predictive Analysis</DialogTitle>
+        <DialogTitle>{t('runPredictive')}</DialogTitle>
         <DialogContent>
           <TextField
             fullWidth
             select
-            label="Analysis Type"
+            label={t('analysisType')}
             value={predictiveForm.analysis_type}
             onChange={(e) => setPredictiveForm({ ...predictiveForm, analysis_type: e.target.value })}
             margin="normal"
           >
-            <MenuItem value="production_forecast">Production Forecast</MenuItem>
-            <MenuItem value="demand_prediction">Demand Prediction</MenuItem>
-            <MenuItem value="quality_prediction">Quality Prediction</MenuItem>
-            <MenuItem value="financial_forecast">Financial Forecast</MenuItem>
-            <MenuItem value="market_analysis">Market Analysis</MenuItem>
+            <MenuItem value="production_forecast">{t('analysisForecast')}</MenuItem>
+            <MenuItem value="demand_prediction">{t('analysisDemand')}</MenuItem>
+            <MenuItem value="quality_prediction">{t('analysisQuality')}</MenuItem>
+            <MenuItem value="financial_forecast">{t('analysisFinancial')}</MenuItem>
+            <MenuItem value="market_analysis">{t('analysisMarket')}</MenuItem>
           </TextField>
           
           <TextField
             fullWidth
-            label="Forecast Period (days)"
+            label={t('forecastDays')}
             type="number"
             value={predictiveForm.forecast_period}
             onChange={(e) => setPredictiveForm({ ...predictiveForm, forecast_period: parseInt(e.target.value) })}
@@ -883,9 +885,9 @@ const AnalyticsReporting = () => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setShowPredictiveDialog(false)}>Cancel</Button>
+          <Button onClick={() => setShowPredictiveDialog(false)}>{t('cancel')}</Button>
           <Button onClick={runPredictiveAnalysis} variant="contained">
-            Run Analysis
+            {t('runAnalysis')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -895,12 +897,12 @@ const AnalyticsReporting = () => {
         <DialogContent>
           <Typography sx={{ mt: 1 }}>{insightItem?.insight}</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            Priority: {insightItem?.priority_level} · Confidence: {insightItem ? Math.round(insightItem.confidence * 100) : 0}%
+            {t('priorityLabel', { priority: insightItem?.priority_level, confidence: insightItem ? Math.round(insightItem.confidence * 100) : 0 })}
           </Typography>
-          <Alert severity="info" sx={{ mt: 2 }}>Sample insight. Live mill figures are on Dashboard and Finance.</Alert>
+          <Alert severity="info" sx={{ mt: 2 }}>{t('sampleInsight')}</Alert>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setInsightItem(null)}>Close</Button>
+          <Button onClick={() => setInsightItem(null)}>{t('close')}</Button>
         </DialogActions>
       </Dialog>
 
@@ -911,7 +913,7 @@ const AnalyticsReporting = () => {
           <Typography variant="body2">{viewReport?.note}</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setViewReport(null)}>Close</Button>
+          <Button onClick={() => setViewReport(null)}>{t('close')}</Button>
         </DialogActions>
       </Dialog>
     </Box>

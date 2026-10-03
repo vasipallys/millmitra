@@ -19,8 +19,10 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import notificationService from '../services/notificationService';
+import { useI18n } from '../i18n/I18nContext';
 
 const NotificationsPage = () => {
+  const { t } = useI18n();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [activeTab, setActiveTab] = useState(0);
@@ -402,18 +404,17 @@ const NotificationsPage = () => {
 
       {/* Settings Dialog */}
       <Dialog open={settingsOpen} onClose={() => setSettingsOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Notification Settings</DialogTitle>
+        <DialogTitle>{t('notifSettingsTitle')}</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Configure your notification preferences
+            {t('notifSettingsHelp')}
           </Typography>
-          {/* Settings content would go here */}
           <Typography variant="body2">
-            Advanced notification settings coming soon...
+            {t('notifSettingsSoon')}
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setSettingsOpen(false)}>Close</Button>
+          <Button onClick={() => setSettingsOpen(false)}>{t('close')}</Button>
         </DialogActions>
       </Dialog>
     </Container>

@@ -17,15 +17,18 @@ import {
   ExpandMore,
   ExpandLess
 } from '@mui/icons-material';
+import { useI18n } from '../../i18n/I18nContext';
 
 const ValidationErrorDisplay = ({ 
   errors = [], 
   warnings = [], 
-  title = "Validation Errors",
+  title,
   showDetails = true,
   onClose,
   sx = {}
 }) => {
+  const { t } = useI18n();
+  const heading = title || t('valTitle');
   const [expanded, setExpanded] = React.useState(true);
   
   // Don't render if no errors or warnings
@@ -44,7 +47,7 @@ const ValidationErrorDisplay = ({
         action={
           showDetails && (
             <IconButton
-              aria-label="toggle details"
+              aria-label={t('toggleDetails')}
               color="inherit"
               size="small"
               onClick={() => setExpanded(!expanded)}
@@ -60,12 +63,12 @@ const ValidationErrorDisplay = ({
         }}
       >
         <AlertTitle>
-          {title} ({errors.length + warnings.length} issue{errors.length + warnings.length !== 1 ? 's' : ''})
+          {t('valIssueCount', { title: heading, count: errors.length + warnings.length })}
         </AlertTitle>
         
         {!showDetails && (
           <Typography variant="body2">
-            Please fix the highlighted fields below to continue.
+            {t('valFixFields')}
           </Typography>
         )}
 
@@ -74,7 +77,7 @@ const ValidationErrorDisplay = ({
             {hasErrors && (
               <Box sx={{ mb: hasWarnings ? 2 : 0 }}>
                 <Typography variant="subtitle2" color="error" sx={{ mb: 1, fontWeight: 'bold' }}>
-                  Errors ({errors.length}):
+                  {t('valErrors', { count: errors.length })}
                 </Typography>
                 <List dense sx={{ py: 0 }}>
                   {errors.map((error, index) => (
@@ -103,7 +106,7 @@ const ValidationErrorDisplay = ({
             {hasWarnings && (
               <Box>
                 <Typography variant="subtitle2" color="warning.main" sx={{ mb: 1, fontWeight: 'bold' }}>
-                  Warnings ({warnings.length}):
+                  {t('valWarnings', { count: warnings.length })}
                 </Typography>
                 <List dense sx={{ py: 0 }}>
                   {warnings.map((warning, index) => (

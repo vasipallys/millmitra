@@ -9,6 +9,7 @@ import { Add, Delete } from '@mui/icons-material';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { salesAPI } from '../../services/api';
+import { useI18n } from '../../i18n/I18nContext';
 
 const validationSchema = Yup.object({
   customer_id: Yup.number().required('Customer is required'),
@@ -17,6 +18,7 @@ const validationSchema = Yup.object({
 });
 
 const CreateSalesOrderDialog = ({ open, onClose, onSubmit }) => {
+  const { t } = useI18n();
   const [customers, setCustomers] = useState([]);
   const [aiInsights, setAiInsights] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -107,16 +109,16 @@ const CreateSalesOrderDialog = ({ open, onClose, onSubmit }) => {
   };
 
   const orderTypes = [
-    { value: 'standard', label: 'Standard' },
-    { value: 'urgent', label: 'Urgent' },
-    { value: 'export', label: 'Export' }
+    { value: 'standard', label: t('orderStandard') },
+    { value: 'urgent', label: t('orderUrgent') },
+    { value: 'export', label: t('orderExport') }
   ];
 
   const paymentTerms = [
-    { value: 'cash', label: 'Cash' },
-    { value: 'credit_15', label: 'Credit 15 days' },
-    { value: 'credit_30', label: 'Credit 30 days' },
-    { value: 'credit_60', label: 'Credit 60 days' }
+    { value: 'cash', label: t('payCash') },
+    { value: 'credit_15', label: t('credit15') },
+    { value: 'credit_30', label: t('credit30') },
+    { value: 'credit_60', label: t('credit60') }
   ];
 
   const productGrades = ['A', 'B', 'C'];
@@ -124,7 +126,7 @@ const CreateSalesOrderDialog = ({ open, onClose, onSubmit }) => {
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth>
-      <DialogTitle>Create Sales Order</DialogTitle>
+      <DialogTitle>{t('createSalesOrder')}</DialogTitle>
       
       <form onSubmit={formik.handleSubmit}>
         <DialogContent>
@@ -179,7 +181,7 @@ const CreateSalesOrderDialog = ({ open, onClose, onSubmit }) => {
                 fullWidth
                 select
                 name="customer_id"
-                label="Customer"
+                label={t('customer')}
                 value={formik.values.customer_id}
                 onChange={formik.handleChange}
                 error={formik.touched.customer_id && Boolean(formik.errors.customer_id)}
@@ -198,7 +200,7 @@ const CreateSalesOrderDialog = ({ open, onClose, onSubmit }) => {
               <TextField
                 fullWidth
                 name="delivery_date"
-                label="Delivery Date"
+                label={t('deliveryDate')}
                 type="date"
                 value={formik.values.delivery_date}
                 onChange={formik.handleChange}
@@ -214,7 +216,7 @@ const CreateSalesOrderDialog = ({ open, onClose, onSubmit }) => {
                 fullWidth
                 select
                 name="order_type"
-                label="Order Type"
+                label={t('orderType')}
                 value={formik.values.order_type}
                 onChange={formik.handleChange}
               >
@@ -231,7 +233,7 @@ const CreateSalesOrderDialog = ({ open, onClose, onSubmit }) => {
                 fullWidth
                 select
                 name="payment_terms"
-                label="Payment Terms"
+                label={t('paymentTerms')}
                 value={formik.values.payment_terms}
                 onChange={formik.handleChange}
               >
@@ -247,7 +249,7 @@ const CreateSalesOrderDialog = ({ open, onClose, onSubmit }) => {
               <TextField
                 fullWidth
                 name="delivery_address"
-                label="Delivery Address"
+                label={t('deliveryAddress')}
                 multiline
                 rows={2}
                 value={formik.values.delivery_address}
@@ -258,14 +260,14 @@ const CreateSalesOrderDialog = ({ open, onClose, onSubmit }) => {
             {/* Order Items */}
             <Grid item xs={12}>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography variant="h6">Order Items</Typography>
+                <Typography variant="h6">{t('orderItems')}</Typography>
                 <Button
                   startIcon={<Add />}
                   onClick={addItem}
                   variant="outlined"
                   size="small"
                 >
-                  Add Item
+                  {t('addItem')}
                 </Button>
               </Box>
               
@@ -273,14 +275,14 @@ const CreateSalesOrderDialog = ({ open, onClose, onSubmit }) => {
                 <Table size="small">
                   <TableHead>
                     <TableRow>
-                      <TableCell>Product</TableCell>
-                      <TableCell>Variety</TableCell>
-                      <TableCell>Grade</TableCell>
-                      <TableCell>Quantity</TableCell>
-                      <TableCell>Unit</TableCell>
-                      <TableCell>Unit Price</TableCell>
-                      <TableCell>Total</TableCell>
-                      <TableCell>Action</TableCell>
+                      <TableCell>{t('product')}</TableCell>
+                      <TableCell>{t('variety')}</TableCell>
+                      <TableCell>{t('grade')}</TableCell>
+                      <TableCell>{t('quantity')}</TableCell>
+                      <TableCell>{t('unit')}</TableCell>
+                      <TableCell>{t('unitPrice')}</TableCell>
+                      <TableCell>{t('totalAmount')}</TableCell>
+                      <TableCell>{t('actions')}</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -291,7 +293,7 @@ const CreateSalesOrderDialog = ({ open, onClose, onSubmit }) => {
                             size="small"
                             value={item.product_name}
                             onChange={(e) => updateItem(index, 'product_name', e.target.value)}
-                            placeholder="Product name"
+                            placeholder={t('productNamePh')}
                           />
                         </TableCell>
                         <TableCell>
@@ -299,7 +301,7 @@ const CreateSalesOrderDialog = ({ open, onClose, onSubmit }) => {
                             size="small"
                             value={item.product_variety}
                             onChange={(e) => updateItem(index, 'product_variety', e.target.value)}
-                            placeholder="Variety"
+                            placeholder={t('variety')}
                           />
                         </TableCell>
                         <TableCell>
@@ -364,7 +366,7 @@ const CreateSalesOrderDialog = ({ open, onClose, onSubmit }) => {
                     ))}
                     <TableRow>
                       <TableCell colSpan={6} align="right">
-                        <Typography variant="h6">Total:</Typography>
+                        <Typography variant="h6">{t('totalAmount')}:</Typography>
                       </TableCell>
                       <TableCell>
                         <Typography variant="h6">
@@ -381,13 +383,13 @@ const CreateSalesOrderDialog = ({ open, onClose, onSubmit }) => {
         </DialogContent>
         
         <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
+          <Button onClick={handleClose}>{t('cancel')}</Button>
           <Button 
             type="submit" 
             variant="contained"
             disabled={loading}
           >
-            Create Order
+            {t('createOrder')}
           </Button>
         </DialogActions>
       </form>
