@@ -289,7 +289,10 @@ const Customers = () => {
               <Paper sx={{ p: 4, textAlign: 'center' }}>
                 <Person sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
                 <Typography variant="h6" color="text.secondary">
-                  No customers found
+                  No customers yet
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Add a buyer before you create an order or invoice.
                 </Typography>
                 <Button
                   variant="contained"

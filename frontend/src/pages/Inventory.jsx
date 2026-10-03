@@ -352,7 +352,10 @@ const Inventory = () => {
               <Paper sx={{ p: 4, textAlign: 'center' }}>
                 <InventoryIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
                 <Typography variant="h6" color="text.secondary">
-                  No paddy stock available
+                  No paddy lots yet
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Add a paddy lot so milling can start.
                 </Typography>
                 <Button
                   variant="contained"
@@ -695,7 +698,7 @@ const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit,
           </Grid>
 
           <Grid item xs={12} md={6}>
-            <FormControl fullWidth>
+            <FormControl fullWidth required>
               <InputLabel id="stock-variety-label">
                 {stockType === 'paddy' ? 'Paddy Variety' : 'Product Type'}
               </InputLabel>
@@ -718,22 +721,26 @@ const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit,
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
+              required
               label="Quantity (kg)"
               type="number"
               inputProps={{ min: 0, step: 'any' }}
               value={formData.quantity}
               onChange={(e) => updateField('quantity', e.target.value)}
+              helperText="Kilograms greater than 0"
             />
           </Grid>
 
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
+              required
               label={stockType === 'paddy' ? 'Purchase Price (₹/kg)' : 'Selling Price (₹/kg)'}
               type="number"
               inputProps={{ min: 0, step: 'any' }}
               value={formData.purchase_price}
               onChange={(e) => updateField('purchase_price', e.target.value)}
+              helperText="Rupees per kg, greater than 0"
             />
           </Grid>
 
@@ -759,9 +766,11 @@ const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit,
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
+              required
               label="Storage Location"
               value={formData.storage_location}
               onChange={(e) => updateField('storage_location', e.target.value)}
+              helperText="Godown or bay name"
             />
           </Grid>
 
@@ -791,7 +800,7 @@ const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit,
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
         <Button onClick={handleSubmit} variant="contained" disabled={loading}>
-          {loading ? 'Adding...' : 'Add Stock'}
+          {loading ? 'Saving…' : (stockType === 'paddy' ? 'Save paddy lot' : 'Save product lot')}
         </Button>
       </DialogActions>
     </Dialog>

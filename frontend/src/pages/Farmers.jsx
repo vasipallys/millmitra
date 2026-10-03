@@ -559,32 +559,17 @@ const Farmers = () => {
                         />
                       </TableCell>
                       <TableCell>
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                          <IconButton
-                            size="small"
-                            onClick={() => handleViewFarmer(farmer)}
-                            color="primary"
-                            title="View Details"
-                          >
-                            <Visibility />
-                          </IconButton>
-                          <IconButton
-                            size="small"
-                            onClick={() => handleEditFarmer(farmer)}
-                            color="secondary"
-                            title="Edit Farmer"
-                          >
-                            <Assignment />
-                          </IconButton>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                          <Button size="small" startIcon={<Visibility />} onClick={() => handleViewFarmer(farmer)} sx={{ minHeight: 40 }}>
+                            View
+                          </Button>
+                          <Button size="small" startIcon={<Assignment />} onClick={() => handleEditFarmer(farmer)} sx={{ minHeight: 40 }}>
+                            Edit
+                          </Button>
                           {!farmer.is_verified && (
-                            <IconButton
-                              size="small"
-                              onClick={() => handleApproveFarmer(farmer)}
-                              color="success"
-                              title="Approve/Verify"
-                            >
-                              <Payment />
-                            </IconButton>
+                            <Button size="small" color="success" startIcon={<Payment />} onClick={() => handleApproveFarmer(farmer)} sx={{ minHeight: 40 }}>
+                              Verify
+                            </Button>
                           )}
                         </Box>
                       </TableCell>

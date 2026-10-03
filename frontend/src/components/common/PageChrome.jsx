@@ -15,6 +15,7 @@ export function PageShell({ children }) {
         maxWidth: 1600,
         mx: 'auto',
         width: '100%',
+        overflowX: 'hidden',
       }}
     >
       {children}
@@ -53,6 +54,7 @@ export function PageHeader({ title, subtitle, actions }) {
             width: { xs: '100%', sm: 'auto' },
             '& .MuiButton-root': {
               flex: { xs: '1 1 auto', sm: '0 0 auto' },
+              minHeight: 40,
             },
           }}
         >

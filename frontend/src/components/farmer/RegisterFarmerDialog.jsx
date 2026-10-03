@@ -283,11 +283,12 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
               <TextField
                 fullWidth
                 name="name"
-                label="Full Name *"
+                label="Full Name"
+                required
                 value={formik.values.name}
                 onChange={formik.handleChange}
                 error={formik.touched.name && Boolean(formik.errors.name)}
-                helperText={formik.touched.name && formik.errors.name}
+                helperText={(formik.touched.name && formik.errors.name) || 'Farmer full name'}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -303,11 +304,12 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
               <TextField
                 fullWidth
                 name="phone"
-                label="Phone Number *"
+                label="Phone Number"
+                required
                 value={formik.values.phone}
                 onChange={formik.handleChange}
                 error={formik.touched.phone && Boolean(formik.errors.phone)}
-                helperText={formik.touched.phone && formik.errors.phone}
+                helperText={(formik.touched.phone && formik.errors.phone) || '10-digit mobile number'}
               />
             </Grid>
             <Grid item xs={12} sm={6}>

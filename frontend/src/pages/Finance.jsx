@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Grid, Card, CardContent, Typography, Box, Button,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Paper, Chip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions
+  Paper, Chip, Dialog, DialogTitle, DialogContent, DialogActions
 } from '@mui/material';
 import {
   TrendingUp, TrendingDown, AccountBalance, Receipt,
@@ -299,13 +299,15 @@ const Finance = () => {
                           />
                         </TableCell>
                         <TableCell>
-                          <IconButton
+                          <Button
                             size="small"
+                            startIcon={<Visibility />}
                             aria-label={`View invoice ${invoice.invoice_number}`}
                             onClick={() => setSelectedInvoice(invoice)}
+                            sx={{ minHeight: 40 }}
                           >
-                            <Visibility />
-                          </IconButton>
+                            View
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}

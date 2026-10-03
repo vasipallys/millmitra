@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Grid, Card, CardContent, Typography, Box, Alert,
-  IconButton,
   Dialog, DialogTitle, DialogContent, DialogActions, Button,
   FormGroup, FormControlLabel, Checkbox
 } from '@mui/material';
@@ -10,6 +10,9 @@ import {
   Settings, Refresh, Insights
 } from '@mui/icons-material';
 import { dashboardService } from '../services/dashboardService';
+import { farmerService } from '../services/farmerService';
+import { inventoryService } from '../services/inventoryService';
+import { productionService } from '../services/productionService';
 import { useQuery, useQueryClient } from 'react-query';
 import SmartWidget from '../components/SmartWidget';
 import AIInsights from '../components/AIInsights';
@@ -17,6 +20,8 @@ import AlertsPanel from '../components/AlertsPanel';
 import { PageHeader, PageLoading, PageShell, QueryErrorAlert } from '../components/common/PageChrome';
 import { getApiErrorMessage } from '../utils/apiError';
 import { useI18n } from '../i18n/I18nContext';
+import { can, storedUser } from '../utils/permissions';
+import { suggestMillStep, unwrapList } from '../utils/millFlowSuggestion';
 
 const DEFAULT_WIDGETS = [
   { id: 'production', label: 'Production snapshot' },
@@ -28,6 +33,13 @@ const DEFAULT_WIDGETS = [
 
 const Dashboard = () => {
   const { t } = useI18n();
+  const navigate = useNavigate();
+  const user = storedUser();
+  const canMillFlow = can(user, 'mill_flow');
+  const canFarmers = can(user, 'farmers');
+  const canInventory = can(user, 'inventory');
+  const canSales = can(user, 'sales');
+  const canFinance = can(user, 'finance');
   const [timeRange, setTimeRange] = useState(7);
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [selectedWidgets, setSelectedWidgets] = useState([]);
@@ -61,11 +73,58 @@ const Dashboard = () => {
     { refetchInterval: 30000 }
   );
 
+  const { data: farmersPayload } = useQuery(
+    'dashboard-next-farmers',
+    () => farmerService.getFarmers({}),
+    { enabled: canFarmers, retry: false }
+  );
+  const { data: paddyPayload } = useQuery(
+    'dashboard-next-paddy',
+    () => inventoryService.getPaddyStock(),
+    { enabled: canInventory, retry: false }
+  );
+  const { data: batchesPayload } = useQuery(
+    'dashboard-next-batches',
+    () => productionService.getBatches({ per_page: 20 }),
+    { enabled: can(user, 'production'), retry: false }
+  );
+
+  const nextAction = useMemo(() => {
+    const farmers = unwrapList(farmersPayload, ['farmers', 'items']);
+    const paddyLots = unwrapList(paddyPayload, ['stocks', 'stock', 'paddy_stock', 'items']);
+    const batches = unwrapList(batchesPayload, ['batches', 'items']);
+    const emptyMill = farmers.length === 0 && paddyLots.length === 0 && batches.length === 0;
+    if (emptyMill) {
+      if (canFarmers) {
+        return { title: t('nextActionRegisterFarmer'), reason: t('nextActionEmpty'), path: '/farmers', label: t('nextActionRegisterFarmer') };
+      }
+      if (canInventory) {
+        return { title: t('nextActionAddStock'), reason: t('nextActionEmpty'), path: '/inventory', label: t('nextActionAddStock') };
+      }
+    }
+    const suggested = suggestMillStep({ paddyLots, batches, products: [], invoices: [] });
+    if (canMillFlow) {
+      return {
+        title: suggested.title || t('millFlow'),
+        reason: suggested.reason || t('millFlowSubtitle'),
+        path: '/mill-flow',
+        label: t('nextActionGoMillFlow'),
+      };
+    }
+    if (canFarmers) {
+      return { title: t('nextActionRegisterFarmer'), reason: t('nextActionEmpty'), path: '/farmers', label: t('nextActionRegisterFarmer') };
+    }
+    return { title: t('nextAction'), reason: t('dashboardSubtitle'), path: '/dashboard', label: t('refresh') };
+  }, [farmersPayload, paddyPayload, batchesPayload, canFarmers, canInventory, canMillFlow, t]);
+
   const handleRefresh = () => {
     queryClient.invalidateQueries('dashboard-overview');
     queryClient.invalidateQueries('dashboard-widgets');
     queryClient.invalidateQueries('dashboard-insights');
     queryClient.invalidateQueries('dashboard-alerts');
+    queryClient.invalidateQueries('dashboard-next-farmers');
+    queryClient.invalidateQueries('dashboard-next-paddy');
+    queryClient.invalidateQueries('dashboard-next-batches');
   };
 
   const handleCustomize = () => {
@@ -109,15 +168,33 @@ const Dashboard = () => {
         subtitle={t('dashboardSubtitle')}
         actions={
           <>
-            <IconButton onClick={handleRefresh} aria-label="Refresh dashboard">
-              <Refresh />
-            </IconButton>
-            <IconButton onClick={handleCustomize} aria-label="Customize dashboard widgets">
-              <Settings />
-            </IconButton>
+            <Button variant="outlined" startIcon={<Refresh />} onClick={handleRefresh} sx={{ minHeight: 40 }}>
+              {t('refresh')}
+            </Button>
+            <Button variant="outlined" startIcon={<Settings />} onClick={handleCustomize} sx={{ minHeight: 40 }}>
+              {t('customize')}
+            </Button>
           </>
         }
       />
+
+      <Card sx={{ mb: 3, border: '1px solid', borderColor: 'primary.light' }}>
+        <CardContent sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, alignItems: { sm: 'center' } }}>
+          <Box sx={{ flexGrow: 1 }}>
+            <Typography variant="overline" color="primary">{t('nextAction')}</Typography>
+            <Typography variant="h6">{nextAction.title}</Typography>
+            <Typography variant="body2" color="text.secondary">{nextAction.reason}</Typography>
+          </Box>
+          <Button
+            variant="contained"
+            size="large"
+            onClick={() => navigate(nextAction.path)}
+            sx={{ minHeight: 44, minWidth: 200 }}
+          >
+            {nextAction.label}
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* AI Insights Banner */}
       {insights?.insights?.length > 0 && (
@@ -165,6 +242,7 @@ const Dashboard = () => {
             color="info"
           />
         </Grid>
+        {(canSales || canFinance) && (
         <Grid item xs={12} sm={6} md={4} lg={2.4}>
           <MetricCard
             title="Pending Orders"
@@ -174,6 +252,7 @@ const Dashboard = () => {
             color="warning"
           />
         </Grid>
+        )}
         <Grid item xs={12} sm={6} md={4} lg={2.4}>
           <MetricCard
             title="Active Farmers"

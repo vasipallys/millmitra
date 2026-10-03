@@ -110,7 +110,8 @@ const CreateInvoiceDialog = ({ open, onClose, onSubmit, loading = false }) => {
               type="number"
               value={formData.customer_id}
               onChange={(e) => handleInputChange('customer_id', e.target.value)}
-              helperText="Numeric ID from the Customers list"
+              error={Boolean(submitError) && !formData.customer_id}
+              helperText={!formData.customer_id && submitError ? submitError : 'Numeric ID from the Customers list'}
               required
             />
           </Grid>

@@ -4,7 +4,7 @@ import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField,
   Select, MenuItem, FormControl, InputLabel, Alert, LinearProgress,
-  Tabs, Tab, IconButton, Tooltip
+  Tabs, Tab
 } from '@mui/material';
 import {
   Add, PlayArrow, Stop, Visibility, Assessment, Settings,
@@ -311,6 +311,21 @@ const Production = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
+                  {!(batches?.batches?.length) && (
+                    <TableRow>
+                      <TableCell colSpan={8}>
+                        <PageEmpty
+                          title="No batches yet"
+                          description="Create a planned batch after paddy is in stock."
+                          action={
+                            <Button variant="contained" startIcon={<Add />} onClick={() => setCreateBatchOpen(true)} sx={{ minHeight: 40 }}>
+                              New Batch
+                            </Button>
+                          }
+                        />
+                      </TableCell>
+                    </TableRow>
+                  )}
                   {batches?.batches?.map((batch) => (
                     <TableRow key={batch.id}>
                       <TableCell>{batch.batch_number}</TableCell>
@@ -332,52 +347,44 @@ const Production = () => {
                         {batch.current_quality_score ? `${batch.current_quality_score.toFixed(1)}%` : '-'}
                       </TableCell>
                       <TableCell>
-                        <Tooltip title="View Details">
-                          <IconButton aria-label="View batch details" onClick={() => handleViewBatch(batch)}>
-                            <Visibility />
-                          </IconButton>
-                        </Tooltip>
-                        {batch.status === 'planned' && (
-                          <Tooltip title="Start Batch">
-                            <IconButton aria-label="Start batch" onClick={() => handleStartBatch(batch.id)}>
-                              <PlayArrow />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                        {batch.status === 'paused' && (
-                          <Tooltip title="Resume Batch">
-                            <IconButton aria-label="Resume batch" onClick={() => handleResumeBatch(batch.id)}>
-                              <PlayArrow />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                        {batch.status === 'in_progress' && (
-                          <Tooltip title="Pause Batch">
-                            <IconButton aria-label="Pause batch" onClick={() => handlePauseBatch(batch.id)}>
-                              <Stop />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                        {(batch.status === 'in_progress' || batch.status === 'paused') && (
-                          <>
-                            <Tooltip title="Quality Test">
-                              <IconButton
-                                aria-label="Open quality test"
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                          <Button size="small" startIcon={<Visibility />} onClick={() => handleViewBatch(batch)} sx={{ minHeight: 40 }}>
+                            View
+                          </Button>
+                          {batch.status === 'planned' && (
+                            <Button size="small" startIcon={<PlayArrow />} onClick={() => handleStartBatch(batch.id)} sx={{ minHeight: 40 }}>
+                              Start
+                            </Button>
+                          )}
+                          {batch.status === 'paused' && (
+                            <Button size="small" startIcon={<PlayArrow />} onClick={() => handleResumeBatch(batch.id)} sx={{ minHeight: 40 }}>
+                              Resume
+                            </Button>
+                          )}
+                          {batch.status === 'in_progress' && (
+                            <Button size="small" startIcon={<Stop />} onClick={() => handlePauseBatch(batch.id)} sx={{ minHeight: 40 }}>
+                              Pause
+                            </Button>
+                          )}
+                          {(batch.status === 'in_progress' || batch.status === 'paused') && (
+                            <>
+                              <Button
+                                size="small"
+                                startIcon={<Assessment />}
                                 onClick={() => {
                                   setSelectedBatch(batch);
                                   setQualityTestOpen(true);
                                 }}
+                                sx={{ minHeight: 40 }}
                               >
-                                <Assessment />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Mark Complete">
-                              <IconButton aria-label="Mark batch complete" onClick={() => handleOpenComplete(batch)}>
-                                <CheckCircle />
-                              </IconButton>
-                            </Tooltip>
-                          </>
-                        )}
+                                Quality
+                              </Button>
+                              <Button size="small" startIcon={<CheckCircle />} onClick={() => handleOpenComplete(batch)} sx={{ minHeight: 40 }}>
+                                Complete
+                              </Button>
+                            </>
+                          )}
+                        </Box>
                       </TableCell>
                     </TableRow>
                   ))}

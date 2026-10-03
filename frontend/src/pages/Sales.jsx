@@ -400,14 +400,16 @@ const Sales = () => {
               <TextField
                 fullWidth
                 label="Item / variety"
+                required
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                helperText="Variety you are selling (for example Basmati Rice). Invoices, not this order, deduct product stock."
+                helperText="Variety you are selling. Invoices, not this order, deduct product stock."
               />
             </Grid>
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
+                required
                 label="Quantity (kg)"
                 type="number"
                 value={form.quantity}
@@ -419,6 +421,7 @@ const Sales = () => {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
+                required
                 label="Unit price (₹/kg)"
                 type="number"
                 value={form.unit_price}
@@ -436,7 +439,7 @@ const Sales = () => {
             onClick={handleSubmit}
             disabled={createOrderMutation.isLoading}
           >
-            {createOrderMutation.isLoading ? 'Saving...' : 'Create'}
+            {createOrderMutation.isLoading ? 'Saving…' : 'Save order'}
           </Button>
         </DialogActions>
       </Dialog>

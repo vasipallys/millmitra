@@ -639,6 +639,7 @@ const MillFlow = () => {
                   aria-label={primaryLabel()}
                   onClick={runStep}
                   disabled={busy}
+                  sx={{ minHeight: 40 }}
                 >
                   {primaryLabel()}
                 </Button>
@@ -740,13 +741,39 @@ const ReceiveStep = ({
         </FormControl>
       </Grid>
       <Grid item xs={12} sm={6}>
-        <TextField fullWidth required type="number" label="Quantity (kg)" value={paddyForm.quantity} onChange={(e) => setPaddyForm({ ...paddyForm, quantity: e.target.value })} />
+        <TextField
+          fullWidth
+          required
+          type="number"
+          label="Quantity (kg)"
+          value={paddyForm.quantity}
+          onChange={(e) => setPaddyForm({ ...paddyForm, quantity: e.target.value })}
+          helperText="Kilograms greater than 0"
+          error={missing.includes('quantity (kg > 0)')}
+        />
       </Grid>
       <Grid item xs={12} sm={6}>
-        <TextField fullWidth required type="number" label="Price (₹/kg)" value={paddyForm.purchase_price} onChange={(e) => setPaddyForm({ ...paddyForm, purchase_price: e.target.value })} />
+        <TextField
+          fullWidth
+          required
+          type="number"
+          label="Price (₹/kg)"
+          value={paddyForm.purchase_price}
+          onChange={(e) => setPaddyForm({ ...paddyForm, purchase_price: e.target.value })}
+          helperText="Rupees per kg, greater than 0"
+          error={missing.includes('price (₹/kg > 0)')}
+        />
       </Grid>
       <Grid item xs={12} sm={6}>
-        <TextField fullWidth required label="Storage location" value={paddyForm.storage_location} onChange={(e) => setPaddyForm({ ...paddyForm, storage_location: e.target.value })} />
+        <TextField
+          fullWidth
+          required
+          label="Storage location"
+          value={paddyForm.storage_location}
+          onChange={(e) => setPaddyForm({ ...paddyForm, storage_location: e.target.value })}
+          helperText="Godown or bay name"
+          error={missing.includes('storage location')}
+        />
       </Grid>
       <Grid item xs={12} sm={6}>
         <TextField fullWidth type="number" label="Moisture % (optional)" value={paddyForm.moisture_content} onChange={(e) => setPaddyForm({ ...paddyForm, moisture_content: e.target.value })} />

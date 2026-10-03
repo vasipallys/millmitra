@@ -81,11 +81,11 @@ const Sidebar = ({ open, onClose, user }) => {
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
           <AIIcon sx={{ mr: 1 }} />
           <Typography variant="h6" component="div">
-            Smart Mill
+            {t('appName')}
           </Typography>
         </Box>
         <Typography variant="body2" sx={{ opacity: 0.8 }}>
-          AI-Powered Rice Mill Management
+          {t('navMillFlow')}
         </Typography>
       </Box>
 
@@ -113,10 +113,14 @@ const Sidebar = ({ open, onClose, user }) => {
               <ListItemButton
                 onClick={() => handleNavigation(item.path)}
                 selected={isActive(item.path)}
+                aria-current={isActive(item.path) ? 'page' : undefined}
                 sx={{
                   mx: 1,
                   mb: 0.5,
                   borderRadius: 2,
+                  borderLeft: '4px solid',
+                  borderLeftColor: isActive(item.path) ? 'primary.dark' : 'transparent',
+                  minHeight: 44,
                   '&.Mui-selected': {
                     bgcolor: 'primary.main',
                     color: 'white',
@@ -168,7 +172,15 @@ const Sidebar = ({ open, onClose, user }) => {
               <ListItemButton
                 onClick={() => handleNavigation(item.path)}
                 selected={isActive(item.path)}
-                sx={{ mx: 1, mb: 0.5, borderRadius: 2 }}
+                aria-current={isActive(item.path) ? 'page' : undefined}
+                sx={{
+                  mx: 1,
+                  mb: 0.5,
+                  borderRadius: 2,
+                  borderLeft: '4px solid',
+                  borderLeftColor: isActive(item.path) ? 'primary.main' : 'transparent',
+                  minHeight: 40,
+                }}
               >
                 <ListItemIcon sx={{ minWidth: 40, color: 'text.secondary' }}>
                   {item.icon}
@@ -187,16 +199,10 @@ const Sidebar = ({ open, onClose, user }) => {
         )}
       </Box>
 
-      {/* AI Status */}
-      <Box sx={{ p: 2, bgcolor: 'success.light', color: 'success.contrastText' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-          <AIIcon sx={{ mr: 1, fontSize: 20 }} />
-          <Typography variant="subtitle2">
-            AI Assistant Active
-          </Typography>
-        </Box>
-        <Typography variant="caption" sx={{ opacity: 0.8 }}>
-          Voice commands enabled • Smart insights ready
+      <Box sx={{ p: 2, bgcolor: 'grey.50' }}>
+        <Typography variant="subtitle2">{t('appName')}</Typography>
+        <Typography variant="caption" color="text.secondary">
+          {t('sidebarHint')}
         </Typography>
       </Box>
     </Box>
