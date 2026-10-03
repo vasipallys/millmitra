@@ -18,6 +18,7 @@ from extensions import db
 _SKIP_ACCESS_LOG = frozenset({
     '/api/health',
     '/api/ready',
+    '/api/telemetry/v1/traces',
     '/favicon.ico',
 })
 
@@ -65,7 +66,11 @@ def init_observability(app):
     def _log_request(response):
         request_id = getattr(g, 'request_id', '-')
         response.headers['X-Request-ID'] = request_id
-        if request.path in _SKIP_ACCESS_LOG or request.method == 'OPTIONS':
+        if (
+            request.path in _SKIP_ACCESS_LOG
+            or request.path.startswith('/api/telemetry/')
+            or request.method == 'OPTIONS'
+        ):
             return response
         started = getattr(g, 'request_started', None)
         duration_ms = round((time.perf_counter() - started) * 1000, 1) if started else None

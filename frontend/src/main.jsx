@@ -5,7 +5,10 @@ import { QueryClient, QueryClientProvider } from 'react-query'
 import App from './App.jsx'
 import { I18nProvider } from './i18n/I18nContext.jsx'
 import { clearDevServiceWorkers } from './utils/pwaRuntime.js'
+import { initWebTelemetry } from './telemetry.js'
 import './index.css'
+
+initWebTelemetry()
 
 const queryClient = new QueryClient()
 

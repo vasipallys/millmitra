@@ -154,7 +154,7 @@ Allowed origins: `http://localhost:<any port>` and `http://127.0.0.1:<any port>`
 
 ## 6. Live API surface
 
-Prefix `/api` unless noted. JWT required except login, username suggest, OTP verify, health, and **optional** JWT on `POST /api/tenants`.
+Prefix `/api` unless noted. JWT required except login, username suggest, OTP verify, health, `POST /api/telemetry/v1/traces`, and **optional** JWT on `POST /api/tenants`.
 
 ### Auth (`/api/auth`)
 
@@ -318,6 +318,7 @@ Slug rule (`services/tenant_service.py`): normalized lower-case `[a-z0-9-]+`, mu
 | --- | --- | --- |
 | GET | `/api/health` | Liveness: process is up. Does not check the database. |
 | GET | `/api/ready` | Readiness: `SELECT 1` against the configured DB. `503` if the DB is down. |
+| POST | `/api/telemetry/v1/traces` | Browser OTLP proxy (no JWT; forwards to collector `/v1/traces`) |
 
 Requests log `method`, `path`, `status`, `duration_ms`, and `request_id` (no passwords or tokens). Unexpected 500s return `{ success: false, message, error_id }` and log the traceback.
 
@@ -404,6 +405,8 @@ python -c "from app import create_app; create_app(); print('ok')"
 
 There is no reliable `frontend` unit-test script. Many files under `toberemoved/` and `docs/toberemoved/` are not the active suite. `backend/test_models.py` assumes PostgreSQL `information_schema` and is a poor SQLite check.
 
+`.\venv\Scripts\python.exe -m unittest tests.test_telemetry -v` — tracer setup against a closed OTLP port, telemetry proxy without JWT, login still 200.
+
 ---
 
 ## 10. Known technical debt
@@ -422,7 +425,29 @@ There is no reliable `frontend` unit-test script. Many files under `toberemoved/
 
 ---
 
-## 11. Claims omitted on purpose
+## 11. OpenTelemetry
+
+`backend/telemetry.py` starts a `TracerProvider` (`service.name=millmitra-api`) with OTLP HTTP export and instruments Flask (W3C `traceparent` in). SQLAlchemy is instrumented when the package imports; otherwise Flask spans still run. After auth, spans get `tenant.id` and `enduser.id` — never passwords or `Authorization` values.
+
+Browser (`frontend/src/telemetry.js`, `service.name=millmitra-web`) starts a span per axios call and injects `traceparent` / `tracestate`. Route changes emit a short navigation span. The exporter posts to the **same axios base URL** + `/telemetry/v1/traces` (default `http://localhost:5000/api/telemetry/v1/traces`). Vite already proxies `/api` to port 5000. The proxy is public, lightly rate-limited (60/min/IP), and does not log bodies.
+
+| Env | Default |
+| --- | --- |
+| `OTEL_ENABLED` | `true` |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://127.0.0.1:6006` (Phoenix). Use `http://127.0.0.1:4318` for Jaeger/collector |
+| `OTEL_SERVICE_NAME` | `millmitra-api` |
+| `VITE_OTEL_ENABLED` | `true` |
+
+```powershell
+pip install arize-phoenix
+phoenix serve
+```
+
+UI: http://127.0.0.1:6006. Restart Flask and Vite, then log in. A login (or Mill flow save) is one trace: browser `HTTP POST /auth/login` parent → Flask `POST /api/auth/login` child. Off: `OTEL_ENABLED=false` and `VITE_OTEL_ENABLED=false`.
+
+---
+
+## 12. Claims omitted on purpose
 
 Not implemented as described in older README/API lists: JWT refresh endpoint, encryption at rest, production HTTPS, barcode scanning, FAISS-as-required, TensorFlow, working 2FA enrollment, GST filing, `npm test`. User list/create/role and the access matrix **are** implemented (`/api/users`, `/api/access`).
 

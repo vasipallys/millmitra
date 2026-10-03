@@ -155,6 +155,31 @@ Not mill-of-record: GST filing, quotations/leads, computer-vision grading, voice
 - Auth: JWT (`identity` is `str(user.id)`); `utils.current_user()`
 - Roles: stored matrix `role_permissions` (defaults if no row)
 - Cache: Redis optional
+- Tracing: OpenTelemetry → Phoenix or any OTLP HTTP collector
+
+---
+
+## Tracing (OpenTelemetry)
+
+Browser spans (`millmitra-web`) and Flask spans (`millmitra-api`) share one W3C `traceparent`. The UI does **not** call Phoenix (CORS). It posts OTLP to `POST /api/telemetry/v1/traces`; Flask forwards to the collector.
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `OTEL_ENABLED` | `true` | Backend tracing + proxy |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://127.0.0.1:6006` | Phoenix UI/OTLP HTTP (traces at `/v1/traces`) |
+| `OTEL_SERVICE_NAME` | `millmitra-api` | API resource name |
+| `VITE_OTEL_ENABLED` | `true` | Browser tracer |
+
+Jaeger / collector on the standard OTLP HTTP port: `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318`. Turn off: `OTEL_ENABLED=false` and `VITE_OTEL_ENABLED=false`.
+
+```powershell
+pip install arize-phoenix
+phoenix serve
+```
+
+Open http://127.0.0.1:6006. Restart Flask (`cd backend` then `.\venv\Scripts\python.exe app.py`) and Vite. Sign in as `admin` / `admin123`. In Phoenix look for a `millmitra-web` HTTP span for `/auth/login` whose child is `millmitra-api` `POST /api/auth/login`. Mill flow saves chain the same way (browser parent, Flask child). A down collector must not 500 login.
+
+More in [docs/TECHNICAL.md](docs/TECHNICAL.md#11-opentelemetry).
 
 ---
 

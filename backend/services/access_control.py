@@ -1,5 +1,5 @@
 """Role permission matrix. Stored rows override defaults."""
-from flask import jsonify, request
+from flask import g, jsonify, request
 from flask_jwt_extended import verify_jwt_in_request
 from extensions import db
 from models.user import RolePermission
@@ -48,6 +48,7 @@ PUBLIC_PREFIXES = (
     '/api/auth/verify-otp',
     '/api/auth/voice-login',
     '/api/auth/biometric-login',
+    '/api/telemetry',
 )
 
 SENSITIVE_READ = {
@@ -205,7 +206,7 @@ def permission_for_path(path, method):
         return 'lookups'
     if path.startswith('/api/lookups'):
         return 'lookups' if write else None
-    if path.startswith('/api/tenants'):
+    if path.startswith('/api/tenants') or path.startswith('/api/telemetry'):
         return None
     if path.startswith('/api/auth/me') or path.startswith('/api/auth/logout') or path.startswith('/api/notifications'):
         return None
@@ -247,6 +248,7 @@ def register_access_guard(app):
             return jsonify({'success': False, 'error': 'Unauthorized', 'message': 'Unauthorized'}), 401
         user = current_user()
         if user:
+            g.otel_user_id = user.id
             from services.tenant_context import bind_tenant
             bound = bind_tenant(user, path)
             if bound is not None:

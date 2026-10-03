@@ -36,6 +36,7 @@ import { permissionForPath } from './utils/permissions';
 
 // Services
 import { authService } from './services/authService';
+import { recordNavigation } from './telemetry';
 
 // Create theme
 const theme = createTheme({
@@ -142,10 +143,15 @@ function AppContent() {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [user, setUser] = useState(null);
+  const location = useLocation();
 
   useEffect(() => {
     checkAuthStatus();
   }, []);
+
+  useEffect(() => {
+    recordNavigation(location.pathname);
+  }, [location.pathname]);
 
   const checkAuthStatus = async () => {
     try {

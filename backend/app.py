@@ -84,7 +84,9 @@ def create_app(config_overrides=None):
     app.register_blueprint(lookups_bp, url_prefix='/api')
     app.register_blueprint(tenants_bp, url_prefix='/api')
 
+    from telemetry import init_telemetry
     from observability import init_observability
+    init_telemetry(app)
     init_observability(app)
     from services.access_control import register_access_guard
     from services.tenant_scope import register_tenant_flush_guard

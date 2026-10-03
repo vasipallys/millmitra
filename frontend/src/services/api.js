@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { attachApiTrace, endApiTrace } from '../telemetry';
 
 // Create axios instance with default config
 const api = axios.create({
@@ -16,6 +17,7 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    attachApiTrace(config);
     return config;
   },
   (error) => {
@@ -26,9 +28,11 @@ api.interceptors.request.use(
 // Response interceptor to handle errors
 api.interceptors.response.use(
   (response) => {
+    endApiTrace(response.config, response.status);
     return response;
   },
   (error) => {
+    endApiTrace(error.config, error.response?.status, error);
     const url = error.config?.url || '';
     const isAuthCall = /\/auth\/(login|me|logout|verify-otp|complete-login)/.test(url);
     const data = error.response?.data;

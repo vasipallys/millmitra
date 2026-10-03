@@ -70,6 +70,13 @@ class Config:
     # Logging configuration
     LOG_LEVEL = os.environ.get('LOG_LEVEL') or 'INFO'
     LOG_FILE = os.environ.get('LOG_FILE') or 'logs/app.log'
+
+    # OpenTelemetry — Phoenix default 6006; Jaeger/collector usually 4318
+    OTEL_ENABLED = os.environ.get('OTEL_ENABLED', 'true')
+    OTEL_EXPORTER_OTLP_ENDPOINT = os.environ.get(
+        'OTEL_EXPORTER_OTLP_ENDPOINT', 'http://127.0.0.1:6006'
+    )
+    OTEL_SERVICE_NAME = os.environ.get('OTEL_SERVICE_NAME', 'millmitra-api')
     
     # Security configuration
     BCRYPT_LOG_ROUNDS = 12
