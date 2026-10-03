@@ -11,7 +11,8 @@ import { useToastNotifications } from '../../hooks/useToastNotifications';
 import ValidationErrorDisplay, { useValidation } from '../common/ValidationErrorDisplay';
 import { useI18n } from '../../i18n/I18nContext';
 import LookupSelect from '../common/LookupSelect';
-import IdDocumentCapture from './IdDocumentCapture';
+import IdDocumentCapture, { mapExtractedFields } from './IdDocumentCapture';
+import { useAssistantFill } from '../../assistant/AssistantBridge';
 
 const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
   const { t } = useI18n();
@@ -232,6 +233,13 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
     },
 
   });
+
+  useAssistantFill('register-farmer', (fields) => {
+    const mapped = mapExtractedFields(fields);
+    if (fields.name) mapped.name = fields.name;
+    if (fields.father_name) mapped.father_name = fields.father_name;
+    formik.setValues({ ...formik.values, ...mapped });
+  }, open);
 
   // Run validation when form values or active step changes
   React.useEffect(() => {

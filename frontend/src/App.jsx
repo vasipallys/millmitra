@@ -7,8 +7,9 @@ import { QueryClient, QueryClientProvider } from 'react-query';
 // Components
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
-import VoiceInterface from './components/VoiceInterface';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
+import { AssistantProvider } from './assistant/AssistantBridge';
+import AssistantOverlay from './assistant/AssistantOverlay';
 import ToastProvider from './components/common/ToastProvider';
 
 // Pages
@@ -225,6 +226,7 @@ function AppContent() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      <AssistantProvider>
       <Box sx={{ display: 'flex', minHeight: '100vh' }}>
         {/* Sidebar */}
         <Sidebar
@@ -284,12 +286,10 @@ function AppContent() {
           </Box>
         </Box>
         
-        {/* Voice Interface */}
-        <VoiceInterface />
-
-        {/* PWA Install Prompt */}
+        <AssistantOverlay />
         <PWAInstallPrompt />
       </Box>
+      </AssistantProvider>
     </ThemeProvider>
   );
 }

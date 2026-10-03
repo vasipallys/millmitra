@@ -11,6 +11,7 @@ import * as Yup from 'yup';
 import { useQuery } from 'react-query';
 import { farmerService } from '../../services/farmerService';
 import { useI18n } from '../../i18n/I18nContext';
+import { useAssistantFill } from '../../assistant/AssistantBridge';
 
 const validationSchema = Yup.object({
   farmer_id: Yup.number().required('Farmer selection is required'),
@@ -127,6 +128,21 @@ const RecordProcurementDialog = ({ open, onClose, onSubmit, loading = false }) =
       }
     }
   });
+
+  useAssistantFill('record-procurement', (fields) => {
+    if (fields.quantity != null && fields.quantity !== '') {
+      formik.setFieldValue('quantity', fields.quantity);
+    }
+    if (fields.price != null && fields.price !== '') {
+      formik.setFieldValue('price_per_unit', fields.price);
+      if (!formik.values.base_price) {
+        formik.setFieldValue('base_price', fields.price);
+      }
+    }
+    if (fields.variety) {
+      formik.setFieldValue('paddy_variety', fields.variety);
+    }
+  }, open);
 
   // Reset selectedFarmerId when dialog closes
   useEffect(() => {

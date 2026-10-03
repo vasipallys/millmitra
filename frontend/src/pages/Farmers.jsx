@@ -21,6 +21,7 @@ import RecordProcurementDialog from '../components/farmer/RecordProcurementDialo
 import { getApiErrorMessage } from '../utils/apiError';
 import { PageHeader, PageShell, QueryErrorAlert } from '../components/common/PageChrome';
 import { useI18n } from '../i18n/I18nContext';
+import { useAssistantOpen } from '../assistant/AssistantBridge';
 import LookupSelect from '../components/common/LookupSelect';
 
 const Farmers = () => {
@@ -53,6 +54,8 @@ const Farmers = () => {
   const navigate = useNavigate();
   const toast = useToastNotifications();
   const { t } = useI18n();
+  useAssistantOpen('register-farmer', () => setRegisterDialogOpen(true));
+  useAssistantOpen('record-procurement', () => setProcurementDialogOpen(true));
 
   // Check if user is authenticated
   const [isAuthenticated, setIsAuthenticated] = useState(false);

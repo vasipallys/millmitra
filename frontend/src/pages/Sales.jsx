@@ -36,11 +36,13 @@ import { salesAPI } from '../services/api';
 import { getApiErrorMessage } from '../utils/apiError';
 import { PageEmpty, PageHeader, PageShell, QueryErrorAlert } from '../components/common/PageChrome';
 import { useI18n } from '../i18n/I18nContext';
+import { useAssistantOpen } from '../assistant/AssistantBridge';
 
 const Sales = () => {
   const { t } = useI18n();
   const queryClient = useQueryClient();
   const [openDialog, setOpenDialog] = useState(false);
+  useAssistantOpen('new-order', () => setOpenDialog(true));
   const [formError, setFormError] = useState('');
   const [form, setForm] = useState({
     customer_id: '',

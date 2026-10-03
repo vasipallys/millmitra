@@ -16,10 +16,12 @@ import CashFlowChart from '../components/finance/CashFlowChart';
 import { getApiErrorMessage } from '../utils/apiError';
 import { PageEmpty, PageHeader, PageShell, QueryErrorAlert } from '../components/common/PageChrome';
 import { useI18n } from '../i18n/I18nContext';
+import { useAssistantOpen } from '../assistant/AssistantBridge';
 
 const Finance = () => {
   const { t } = useI18n();
   const [createInvoiceOpen, setCreateInvoiceOpen] = useState(false);
+  useAssistantOpen('create-invoice', () => setCreateInvoiceOpen(true));
   const [recordPaymentOpen, setRecordPaymentOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const queryClient = useQueryClient();

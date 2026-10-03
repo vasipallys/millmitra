@@ -48,9 +48,15 @@ api.interceptors.response.use(
     } else if (error.response?.status === 401 && isAuthCall) {
       error.userMessage = 'Username or password is not recognized';
     } else if (!error.response) {
-      error.userMessage = 'Cannot reach the mill server. Confirm it is running on port 5000.';
+      if (error.code === 'ECONNABORTED') {
+        error.userMessage = 'The mill API timed out.';
+      } else if (error.code === 'ERR_NETWORK' || /network error/i.test(error.message || '')) {
+        error.userMessage = 'Network or CORS error reaching the mill API.';
+      } else {
+        error.userMessage = 'Cannot reach the mill server. Confirm it is running on port 5000.';
+      }
     } else {
-      error.userMessage = 'Request failed. Try again.';
+      error.userMessage = `HTTP ${error.response.status}. Try again.`;
     }
     if (error.response?.status === 401 && !isAuthCall) {
       localStorage.removeItem('token');

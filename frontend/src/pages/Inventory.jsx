@@ -21,6 +21,7 @@ import InventoryAnalytics from '../components/InventoryAnalytics';
 import StockMovementDialog from '../components/StockMovementDialog';
 import { PageHeader, PageShell, QueryErrorAlert } from '../components/common/PageChrome';
 import LookupSelect from '../components/common/LookupSelect';
+import { useAssistantFill, useAssistantOpen } from '../assistant/AssistantBridge';
 
 const normalizeStock = (stock, type) => ({
   ...stock,
@@ -40,6 +41,7 @@ const Inventory = () => {
   const { t } = useI18n();
   const [activeTab, setActiveTab] = useState(0);
   const [addStockOpen, setAddStockOpen] = useState(false);
+  useAssistantOpen('add-stock', () => setAddStockOpen(true));
   const [stockType, setStockType] = useState('paddy');
   const [movementDialogOpen, setMovementDialogOpen] = useState(false);
   const [movementStock, setMovementStock] = useState(null);
@@ -548,6 +550,15 @@ const emptyStockForm = () => ({
 const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit, loading, error }) => {
   const { t } = useI18n();
   const [formData, setFormData] = useState(emptyStockForm);
+  useAssistantFill('add-stock', (fields) => {
+    setFormData((prev) => ({
+      ...prev,
+      variety: fields.variety || fields.product || prev.variety,
+      quantity: fields.quantity != null && fields.quantity !== '' ? fields.quantity : prev.quantity,
+      purchase_price: fields.price != null && fields.price !== '' ? fields.price : prev.purchase_price,
+      storage_location: fields.location || prev.storage_location,
+    }));
+  }, open);
   const validation = useValidation();
   const validateField = (fieldName, value) => {
     switch (fieldName) {
