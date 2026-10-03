@@ -16,6 +16,8 @@ import BatchCard from '../components/BatchCard';
 import QualityTestDialog from '../components/QualityTestDialog';
 import ProductionAnalytics from '../components/ProductionAnalytics';
 import AIRecommendations from '../components/AIRecommendations';
+import { getApiErrorMessage } from '../utils/apiError';
+import { PageEmpty, PageHeader, PageShell, QueryErrorAlert } from '../components/common/PageChrome';
 
 const Production = () => {
   const [activeTab, setActiveTab] = useState(0);
@@ -33,7 +35,7 @@ const Production = () => {
   const queryClient = useQueryClient();
 
   // Fetch production data
-  const { data: batches, isLoading: batchesLoading } = useQuery(
+  const { data: batches, isLoading: batchesLoading, isError: batchesError, error: batchesErr, refetch: refetchBatches } = useQuery(
     'production-batches',
     () => productionService.getBatches(),
     { refetchInterval: 30000 }
@@ -52,42 +54,59 @@ const Production = () => {
   );
 
   // Mutations
+  const [actionError, setActionError] = useState('');
+
+  const refreshBatches = () => {
+    queryClient.invalidateQueries('production-batches');
+    queryClient.invalidateQueries('production-status');
+  };
+
   const createBatchMutation = useMutation(productionService.createBatch, {
     onSuccess: () => {
-      queryClient.invalidateQueries('production-batches');
+      refreshBatches();
       setCreateBatchOpen(false);
-    }
+      setActionError('');
+    },
+    onError: (error) => setActionError(getApiErrorMessage(error, 'Could not create batch'))
   });
 
   const startBatchMutation = useMutation(productionService.startBatch, {
     onSuccess: () => {
-      queryClient.invalidateQueries(['production-batches', 'production-status']);
-    }
+      refreshBatches();
+      setActionError('');
+    },
+    onError: (error) => setActionError(getApiErrorMessage(error, 'Could not start batch'))
   });
 
   const pauseBatchMutation = useMutation(
     ({ batchId, reason }) => productionService.pauseBatch(batchId, { reason }),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries(['production-batches', 'production-status']);
-      }
+        refreshBatches();
+        setActionError('');
+      },
+      onError: (error) => setActionError(getApiErrorMessage(error, 'Could not pause batch'))
     }
   );
 
   const resumeBatchMutation = useMutation(productionService.resumeBatch, {
     onSuccess: () => {
-      queryClient.invalidateQueries(['production-batches', 'production-status']);
-    }
+      refreshBatches();
+      setActionError('');
+    },
+    onError: (error) => setActionError(getApiErrorMessage(error, 'Could not resume batch'))
   });
 
   const completeBatchMutation = useMutation(
     ({ batchId, ...completionData }) => productionService.completeBatch(batchId, completionData),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries(['production-batches', 'production-status']);
+        refreshBatches();
         setCompleteOpen(false);
         setSelectedBatch(null);
-      }
+        setActionError('');
+      },
+      onError: (error) => setActionError(getApiErrorMessage(error, 'Could not complete batch'))
     }
   );
 
@@ -156,20 +175,19 @@ const Production = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" fontWeight="bold">
-          Production Management
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={() => setCreateBatchOpen(true)}
-        >
-          New Batch
-        </Button>
-      </Box>
+    <PageShell>
+      <PageHeader
+        title="Production Management"
+        subtitle="Create a planned batch, then Start Batch. Pause does not return paddy."
+        actions={
+          <Button variant="contained" startIcon={<Add />} onClick={() => setCreateBatchOpen(true)}>
+            New Batch
+          </Button>
+        }
+      />
+      {batchesError && <QueryErrorAlert error={batchesErr} onRetry={refetchBatches} entity="production batches" />}
+      {actionError && <QueryErrorAlert error={new Error(actionError)} entity="production action" />}
+      {batchesLoading && <LinearProgress sx={{ mb: 2 }} />}
 
       {/* AI Recommendations */}
       {recommendations?.recommendations?.length > 0 && (
@@ -242,6 +260,19 @@ const Production = () => {
       {/* Tab Content */}
       {activeTab === 0 && (
         <Grid container spacing={3}>
+          {!currentStatus?.batches?.length && (
+            <Grid item xs={12}>
+              <PageEmpty
+                title="No active batches"
+                description="Create a New Batch, then Start Batch on All Batches when paddy is ready."
+                action={
+                  <Button variant="contained" startIcon={<Add />} onClick={() => setCreateBatchOpen(true)}>
+                    New Batch
+                  </Button>
+                }
+              />
+            </Grid>
+          )}
           {currentStatus?.batches?.map((batch) => (
             <Grid item xs={12} md={6} lg={4} key={batch.id}>
               <BatchCard
@@ -302,27 +333,27 @@ const Production = () => {
                       </TableCell>
                       <TableCell>
                         <Tooltip title="View Details">
-                          <IconButton onClick={() => handleViewBatch(batch)}>
+                          <IconButton aria-label="View batch details" onClick={() => handleViewBatch(batch)}>
                             <Visibility />
                           </IconButton>
                         </Tooltip>
                         {batch.status === 'planned' && (
                           <Tooltip title="Start Batch">
-                            <IconButton onClick={() => handleStartBatch(batch.id)}>
+                            <IconButton aria-label="Start batch" onClick={() => handleStartBatch(batch.id)}>
                               <PlayArrow />
                             </IconButton>
                           </Tooltip>
                         )}
                         {batch.status === 'paused' && (
                           <Tooltip title="Resume Batch">
-                            <IconButton onClick={() => handleResumeBatch(batch.id)}>
+                            <IconButton aria-label="Resume batch" onClick={() => handleResumeBatch(batch.id)}>
                               <PlayArrow />
                             </IconButton>
                           </Tooltip>
                         )}
                         {batch.status === 'in_progress' && (
                           <Tooltip title="Pause Batch">
-                            <IconButton onClick={() => handlePauseBatch(batch.id)}>
+                            <IconButton aria-label="Pause batch" onClick={() => handlePauseBatch(batch.id)}>
                               <Stop />
                             </IconButton>
                           </Tooltip>
@@ -330,15 +361,18 @@ const Production = () => {
                         {(batch.status === 'in_progress' || batch.status === 'paused') && (
                           <>
                             <Tooltip title="Quality Test">
-                              <IconButton onClick={() => {
-                                setSelectedBatch(batch);
-                                setQualityTestOpen(true);
-                              }}>
+                              <IconButton
+                                aria-label="Open quality test"
+                                onClick={() => {
+                                  setSelectedBatch(batch);
+                                  setQualityTestOpen(true);
+                                }}
+                              >
                                 <Assessment />
                               </IconButton>
                             </Tooltip>
                             <Tooltip title="Mark Complete">
-                              <IconButton onClick={() => handleOpenComplete(batch)}>
+                              <IconButton aria-label="Mark batch complete" onClick={() => handleOpenComplete(batch)}>
                                 <CheckCircle />
                               </IconButton>
                             </Tooltip>
@@ -398,7 +432,7 @@ const Production = () => {
         onSubmit={handleCompleteBatch}
         loading={completeBatchMutation.isLoading}
       />
-    </Box>
+    </PageShell>
   );
 };
 

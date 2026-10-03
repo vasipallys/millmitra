@@ -11,11 +11,12 @@ import {
   Box,
   Typography,
   IconButton,
-  Divider
+  Divider,
+  Alert
 } from '@mui/material';
 import { Add, Remove } from '@mui/icons-material';
 
-const CreateInvoiceDialog = ({ open, onClose, onSubmit }) => {
+const CreateInvoiceDialog = ({ open, onClose, onSubmit, loading = false }) => {
   const [formData, setFormData] = useState({
     customer_id: '',
     invoice_date: new Date().toISOString().split('T')[0],
@@ -79,31 +80,27 @@ const CreateInvoiceDialog = ({ open, onClose, onSubmit }) => {
     }, 0);
   };
 
+  const [submitError, setSubmitError] = useState('');
+
   const handleSubmit = () => {
+    if (!formData.customer_id) {
+      setSubmitError('Enter a customer ID from the Customers list');
+      return;
+    }
+    const hasLine = formData.items.some((item) => item.description && Number(item.quantity) > 0 && Number(item.unit_price) > 0);
+    if (!hasLine) {
+      setSubmitError('Add at least one line with description, quantity, and unit price');
+      return;
+    }
+    setSubmitError('');
     onSubmit(formData);
-    onClose();
-    // Reset form
-    setFormData({
-      customer_id: '',
-      invoice_date: new Date().toISOString().split('T')[0],
-      due_date: '',
-      payment_terms: 'Net 30',
-      items: [
-        {
-          description: '',
-          quantity: 1,
-          unit_price: 0,
-          product_category: 'processed_rice'
-        }
-      ],
-      notes: ''
-    });
   };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>Create New Invoice</DialogTitle>
       <DialogContent>
+        {submitError && <Alert severity="error" sx={{ mt: 1 }}>{submitError}</Alert>}
         <Grid container spacing={2} sx={{ mt: 1 }}>
           {/* Customer and Date Information */}
           <Grid item xs={12} sm={6}>
@@ -113,6 +110,7 @@ const CreateInvoiceDialog = ({ open, onClose, onSubmit }) => {
               type="number"
               value={formData.customer_id}
               onChange={(e) => handleInputChange('customer_id', e.target.value)}
+              helperText="Numeric ID from the Customers list"
               required
             />
           </Grid>
@@ -269,13 +267,13 @@ const CreateInvoiceDialog = ({ open, onClose, onSubmit }) => {
         </Grid>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose} disabled={loading}>Cancel</Button>
         <Button 
           onClick={handleSubmit} 
           variant="contained"
-          disabled={!formData.customer_id || formData.items.some(item => !item.description)}
+          disabled={loading}
         >
-          Create Invoice
+          {loading ? 'Saving...' : 'Create Invoice'}
         </Button>
       </DialogActions>
     </Dialog>

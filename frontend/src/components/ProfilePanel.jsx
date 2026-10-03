@@ -22,6 +22,7 @@ const ProfilePanel = ({ open, onClose, user }) => {
   const [activeTab, setActiveTab] = useState(0);
   const [editMode, setEditMode] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
   const [profileData, setProfileData] = useState({
     first_name: '',
     last_name: '',
@@ -137,9 +138,14 @@ const ProfilePanel = ({ open, onClose, user }) => {
 
   const handleChangePassword = () => {
     if (passwordData.new_password !== passwordData.confirm_password) {
-      alert('New passwords do not match');
+      setPasswordError('New passwords do not match');
       return;
     }
+    if (!passwordData.current_password || !passwordData.new_password) {
+      setPasswordError('Current and new password are required');
+      return;
+    }
+    setPasswordError('');
     changePasswordMutation.mutate(passwordData);
   };
 
@@ -287,6 +293,7 @@ const ProfilePanel = ({ open, onClose, user }) => {
         {/* Security Tab */}
         <TabPanel value={activeTab} index={1}>
           <Typography variant="h6" gutterBottom>Change Password</Typography>
+          {passwordError && <Alert severity="error" sx={{ mb: 2 }}>{passwordError}</Alert>}
           
           <Grid container spacing={3}>
             <Grid item xs={12}>

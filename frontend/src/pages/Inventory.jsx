@@ -18,23 +18,45 @@ import StockCard from '../components/StockCard';
 import ReorderAlerts from '../components/ReorderAlerts';
 import InventoryAnalytics from '../components/InventoryAnalytics';
 import StockMovementDialog from '../components/StockMovementDialog';
+import { PageHeader, PageShell, QueryErrorAlert } from '../components/common/PageChrome';
+
+const normalizeStock = (stock, type) => ({
+  ...stock,
+  type,
+  product_name: stock.product_name || stock.variety || 'Stock',
+  current_stock: stock.remaining_quantity ?? stock.quantity ?? 0,
+  unit: stock.unit || 'kg',
+  unit_price: stock.purchase_price || stock.market_price || stock.unit_cost || 0,
+  storage_location: stock.storage_location || stock.warehouse_id || '',
+  last_updated: stock.updated_at || stock.created_at || stock.purchase_date,
+  category: stock.product_type || stock.category || type,
+  reorder_level: stock.reorder_level || 100,
+  max_stock: stock.max_stock || 10000,
+});
 
 const Inventory = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [addStockOpen, setAddStockOpen] = useState(false);
   const [stockType, setStockType] = useState('paddy');
   const [movementDialogOpen, setMovementDialogOpen] = useState(false);
+  const [movementStock, setMovementStock] = useState(null);
+  const [movementType, setMovementType] = useState('in');
+  const [selectedStock, setSelectedStock] = useState(null);
+  const [stockDetailOpen, setStockDetailOpen] = useState(false);
+  const [stockEditOpen, setStockEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({ quantity: '', storage_location: '' });
+  const [stockActionError, setStockActionError] = useState('');
   const queryClient = useQueryClient();
   const toast = useToastNotifications();
 
   // Fetch inventory data
-  const { data: paddyStock, isLoading: paddyLoading } = useQuery(
+  const { data: paddyStock, isLoading: paddyLoading, isError: paddyError, error: paddyErr, refetch: refetchPaddy } = useQuery(
     'paddy-stock',
     () => inventoryService.getPaddyStock(),
     { refetchInterval: 60000 }
   );
 
-  const { data: productStock, isLoading: productLoading } = useQuery(
+  const { data: productStock, isLoading: productLoading, isError: productError, error: productErr, refetch: refetchProduct } = useQuery(
     'product-stock',
     () => inventoryService.getProductStock(),
     { refetchInterval: 60000 }
@@ -81,7 +103,9 @@ const Inventory = () => {
       },
       onError: (error) => {
         console.error('Failed to add stock:', error);
-        toast.inventory.error('Add Stock', error.response?.data?.message || error.message);
+        const message = error.userMessage || error.response?.data?.message || error.message;
+        setStockActionError(message);
+        toast.inventory.error('Add Stock', message);
       }
     }
   );
@@ -93,20 +117,78 @@ const Inventory = () => {
       queryClient.invalidateQueries('inventory-overview');
       queryClient.invalidateQueries('stock-movements');
       setMovementDialogOpen(false);
+      setMovementStock(null);
       toast.inventory.movementRecorded('stock', 'inventory', '');
     },
     onError: (error) => {
-      toast.inventory.error('Stock Movement', error.response?.data?.message || error.message);
+      const message = error.userMessage || error.response?.data?.message || error.message;
+      setStockActionError(message);
+      toast.inventory.error('Stock Movement', message);
     }
   });
 
+  const updateStockMutation = useMutation(
+    ({ stock, data }) => (
+      stock.type === 'paddy'
+        ? inventoryService.updatePaddyStock(stock.id, data)
+        : inventoryService.updateProductStock(stock.id, data)
+    ),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries('paddy-stock');
+        queryClient.invalidateQueries('product-stock');
+        queryClient.invalidateQueries('inventory-overview');
+        setStockEditOpen(false);
+        setStockActionError('');
+      },
+      onError: (error) => {
+        setStockActionError(error.userMessage || error.response?.data?.message || error.message);
+      }
+    }
+  );
+
   const handleAddStock = (stockData) => {
+    setStockActionError('');
     addStockMutation.mutate(stockData);
   };
 
   const handleCreateMovement = (movementData) => {
+    setStockActionError('');
     createMovementMutation.mutate(movementData);
   };
+
+  const stockCardHandlers = (type) => ({
+    onAddStock: (stock) => {
+      setStockType(type);
+      setAddStockOpen(true);
+      setStockActionError('');
+    },
+    onRemoveStock: (stock) => {
+      setMovementStock(normalizeStock(stock, type));
+      setMovementType('out');
+      setMovementDialogOpen(true);
+      setStockActionError('');
+    },
+    onEditStock: (stock) => {
+      const normalized = normalizeStock(stock, type);
+      setSelectedStock(normalized);
+      setEditForm({
+        quantity: normalized.current_stock,
+        storage_location: normalized.storage_location,
+      });
+      setStockEditOpen(true);
+      setStockActionError('');
+    },
+    onViewDetails: (stock) => {
+      setSelectedStock(normalizeStock(stock, type));
+      setStockDetailOpen(true);
+    },
+    onReorder: (stock) => {
+      setStockType(type);
+      setAddStockOpen(true);
+      setStockActionError('');
+    },
+  });
 
   const getStockStatusColor = (quantity, threshold = 100) => {
     if (quantity <= threshold * 0.2) return 'error';
@@ -122,39 +204,57 @@ const Inventory = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" fontWeight="bold">
-          Inventory Management
-        </Typography>
-        <Box>
-          <Button
-            variant="outlined"
-            startIcon={<LocalShipping />}
-            onClick={() => setMovementDialogOpen(true)}
-            sx={{ mr: 2 }}
-          >
-            Stock Movement
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={() => setAddStockOpen(true)}
-          >
-            Add Stock
-          </Button>
-        </Box>
-      </Box>
+    <PageShell>
+      <PageHeader
+        title="Inventory Management"
+        subtitle="Paddy lots, milled product, and godown movements"
+        actions={
+          <>
+            <Button
+              variant="outlined"
+              startIcon={<LocalShipping />}
+              onClick={() => {
+                setMovementStock(null);
+                setMovementType('in');
+                setStockActionError('');
+                setMovementDialogOpen(true);
+              }}
+            >
+              Stock Movement
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={() => setAddStockOpen(true)}
+            >
+              Add Stock
+            </Button>
+          </>
+        }
+      />
+      {paddyError && <QueryErrorAlert error={paddyErr} onRetry={refetchPaddy} entity="paddy stock" />}
+      {productError && <QueryErrorAlert error={productErr} onRetry={refetchProduct} entity="product stock" />}
+      {stockActionError && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setStockActionError('')}>
+          {stockActionError}
+        </Alert>
+      )}
+      {(paddyLoading || productLoading) && <LinearProgress sx={{ mb: 2 }} />}
 
       {/* Reorder Alerts */}
       {reorderAlerts?.alerts?.length > 0 && (
-        <ReorderAlerts alerts={reorderAlerts.alerts} />
+        <ReorderAlerts
+          sourceAlerts={reorderAlerts.alerts}
+          onReorder={async () => {
+            setStockType('product');
+            setAddStockOpen(true);
+          }}
+        />
       )}
 
       {/* Overview Cards */}
       <Grid container spacing={3} mb={3}>
-        <Grid item xs={12} md={3}>
+        <Grid item xs={12} sm={6} md={3}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -171,7 +271,7 @@ const Inventory = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} md={3}>
+        <Grid item xs={12} sm={6} md={3}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -188,7 +288,7 @@ const Inventory = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} md={3}>
+        <Grid item xs={12} sm={6} md={3}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -205,7 +305,7 @@ const Inventory = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} md={3}>
+        <Grid item xs={12} sm={6} md={3}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -240,9 +340,10 @@ const Inventory = () => {
           {paddyStock?.stocks?.map((stock) => (
             <Grid item xs={12} md={6} lg={4} key={stock.id}>
               <StockCard
-                stock={stock}
+                stock={normalizeStock(stock, 'paddy')}
                 type="paddy"
                 onUpdate={() => queryClient.invalidateQueries('paddy-stock')}
+                {...stockCardHandlers('paddy')}
               />
             </Grid>
           ))}
@@ -275,9 +376,10 @@ const Inventory = () => {
           {productStock?.stocks?.map((stock) => (
             <Grid item xs={12} md={6} lg={4} key={stock.id}>
               <StockCard
-                stock={stock}
+                stock={normalizeStock(stock, 'product')}
                 type="product"
                 onUpdate={() => queryClient.invalidateQueries('product-stock')}
+                {...stockCardHandlers('product')}
               />
             </Grid>
           ))}
@@ -321,6 +423,7 @@ const Inventory = () => {
         onStockTypeChange={setStockType}
         onSubmit={handleAddStock}
         loading={addStockMutation.isLoading}
+        error={addStockMutation.isError ? stockActionError : ''}
       />
 
       {/* Stock Movement Dialog */}
@@ -329,8 +432,91 @@ const Inventory = () => {
         onClose={() => setMovementDialogOpen(false)}
         onSubmit={handleCreateMovement}
         loading={createMovementMutation.isLoading}
+        stockItem={movementStock}
+        movementType={movementType}
       />
-    </Box>
+
+      <Dialog open={stockDetailOpen} onClose={() => setStockDetailOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>{selectedStock?.product_name || 'Stock details'}</DialogTitle>
+        <DialogContent>
+          {selectedStock && (
+            <Box sx={{ pt: 1 }}>
+              <Typography>Quantity: {selectedStock.current_stock} {selectedStock.unit}</Typography>
+              <Typography>Location: {selectedStock.storage_location || '—'}</Typography>
+              <Typography>Grade: {selectedStock.quality_grade || selectedStock.grade || '—'}</Typography>
+              <Typography>Unit price: ₹{selectedStock.unit_price || 0}/kg</Typography>
+              <Typography>Lot ID: {selectedStock.id}</Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setStockDetailOpen(false)}>Close</Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              setStockDetailOpen(false);
+              if (selectedStock) {
+                setEditForm({
+                  quantity: selectedStock.current_stock,
+                  storage_location: selectedStock.storage_location,
+                });
+                setStockEditOpen(true);
+              }
+            }}
+          >
+            Edit
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={stockEditOpen} onClose={() => !updateStockMutation.isLoading && setStockEditOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Edit {selectedStock?.product_name || 'stock'}</DialogTitle>
+        <DialogContent>
+          {stockActionError && stockEditOpen && (
+            <Alert severity="error" sx={{ mt: 1 }}>{stockActionError}</Alert>
+          )}
+          <TextField
+            fullWidth
+            margin="normal"
+            label="Quantity (kg)"
+            type="number"
+            value={editForm.quantity}
+            onChange={(e) => setEditForm((prev) => ({ ...prev, quantity: e.target.value }))}
+          />
+          <TextField
+            fullWidth
+            margin="normal"
+            label="Storage location"
+            value={editForm.storage_location}
+            onChange={(e) => setEditForm((prev) => ({ ...prev, storage_location: e.target.value }))}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setStockEditOpen(false)} disabled={updateStockMutation.isLoading}>Cancel</Button>
+          <Button
+            variant="contained"
+            disabled={updateStockMutation.isLoading}
+            onClick={() => {
+              const quantity = parseFloat(editForm.quantity);
+              if (!Number.isFinite(quantity) || quantity < 0) {
+                setStockActionError('Quantity must be 0 or greater');
+                return;
+              }
+              setStockActionError('');
+              updateStockMutation.mutate({
+                stock: selectedStock,
+                data: {
+                  quantity,
+                  storage_location: editForm.storage_location,
+                },
+              });
+            }}
+          >
+            {updateStockMutation.isLoading ? 'Saving...' : 'Save'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </PageShell>
   );
 };
 
@@ -373,7 +559,7 @@ const emptyStockForm = () => ({
   notes: ''
 });
 
-const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit, loading }) => {
+const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit, loading, error }) => {
   const [formData, setFormData] = useState(emptyStockForm);
   const validation = useValidation();
   const varietyOptions = stockType === 'paddy' ? PADDY_VARIETIES : PRODUCT_TYPES;
@@ -483,6 +669,7 @@ const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit,
     >
       <DialogTitle>Add New Stock</DialogTitle>
       <DialogContent sx={{ overflow: 'visible' }}>
+        {error && <Alert severity="error" sx={{ mt: 1 }}>{error}</Alert>}
         <ValidationErrorDisplay
           errors={validation.errors}
           warnings={validation.warnings}

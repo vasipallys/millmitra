@@ -44,24 +44,20 @@ const InteractionDialog = ({ open, onClose, customer, onSubmit, loading }) => {
     }
   };
 
+  const [submitError, setSubmitError] = useState('');
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    const submissionData = {
+    if (!formData.subject || !formData.description) {
+      setSubmitError('Subject and notes are required');
+      return;
+    }
+    setSubmitError('');
+    onSubmit({
       customerId: customer?.id,
       ...formData,
       ai_analysis: aiAnalysis
-    };
-    onSubmit(submissionData);
-    setFormData({
-      interaction_type: 'call',
-      subject: '',
-      description: '',
-      priority: 'medium',
-      status: 'open',
-      follow_up_required: false,
-      follow_up_date: ''
     });
-    setAiAnalysis(null);
   };
 
   const getSentimentColor = (score) => {
@@ -83,6 +79,7 @@ const InteractionDialog = ({ open, onClose, customer, onSubmit, loading }) => {
       
       <form onSubmit={handleSubmit}>
         <DialogContent>
+          {submitError && <Alert severity="error">{submitError}</Alert>}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <FormControl fullWidth>
               <InputLabel>Interaction Type</InputLabel>

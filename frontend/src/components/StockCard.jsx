@@ -143,7 +143,7 @@ const StockCard = ({
               </Box>
             </Box>
           </Box>
-          <IconButton onClick={handleMenuClick} size="small">
+          <IconButton onClick={handleMenuClick} size="small" aria-label="Stock actions">
             <MoreVert />
           </IconButton>
         </Box>

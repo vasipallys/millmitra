@@ -284,7 +284,7 @@ const AIInsights = ({ refreshInterval = 300000 }) => { // 5 minutes default
                     }
                     secondary={insight.summary}
                   />
-                  <IconButton size="small">
+                  <IconButton size="small" aria-label={expandedInsight === insight.id ? 'Collapse insight' : 'Expand insight'}>
                     {expandedInsight === insight.id ? <ExpandLess /> : <ExpandMore />}
                   </IconButton>
                 </ListItem>

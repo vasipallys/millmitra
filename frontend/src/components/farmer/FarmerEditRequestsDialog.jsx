@@ -17,6 +17,7 @@ import { farmerService } from '../../services/farmerService';
 const FarmerEditRequestsDialog = ({ open, onClose, farmerId = null }) => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [reviewComments, setReviewComments] = useState('');
+  const [reviewError, setReviewError] = useState('');
   const [reviewAction, setReviewAction] = useState(null); // 'approve' or 'reject'
   
   const queryClient = useQueryClient();
@@ -108,7 +109,7 @@ const FarmerEditRequestsDialog = ({ open, onClose, farmerId = null }) => {
       });
     } else if (reviewAction === 'reject') {
       if (!reviewComments.trim()) {
-        alert('Please provide a reason for rejection');
+        setReviewError('Please provide a reason for rejection');
         return;
       }
       rejectRequestMutation.mutate({
@@ -284,9 +285,14 @@ const FarmerEditRequestsDialog = ({ open, onClose, farmerId = null }) => {
                           rows={3}
                           label="Review Comments"
                           value={reviewComments}
-                          onChange={(e) => setReviewComments(e.target.value)}
+                          onChange={(e) => {
+                            setReviewComments(e.target.value);
+                            if (reviewError) setReviewError('');
+                          }}
                           placeholder={reviewAction === 'reject' ? 'Please provide reason for rejection...' : 'Optional approval comments...'}
                           sx={{ mb: 2 }}
+                          error={Boolean(reviewError)}
+                          helperText={reviewError}
                         />
 
                         <Box sx={{ display: 'flex', gap: 1 }}>

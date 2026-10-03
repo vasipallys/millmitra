@@ -14,7 +14,11 @@ import {
   Collapse,
   Alert,
   Divider,
-  LinearProgress
+  LinearProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
 import {
   Psychology,
@@ -34,6 +38,8 @@ const AIRecommendations = ({ context = 'production', refreshInterval = 300000 })
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [expandedRec, setExpandedRec] = useState(null);
+  const [detailRec, setDetailRec] = useState(null);
+  const [implementNote, setImplementNote] = useState('');
 
   // Mock AI recommendations data
   const mockRecommendations = {
@@ -247,9 +253,7 @@ const AIRecommendations = ({ context = 'production', refreshInterval = 300000 })
   };
 
   const handleImplement = (recommendation) => {
-    // In real implementation, this would trigger implementation workflow
-    console.log('Implementing recommendation:', recommendation.title);
-    // Could open a dialog, create tasks, etc.
+    setImplementNote(`${recommendation.title} is a preview checklist, not an automated mill change. Apply the steps on Production or Quality if they match live data.`);
   };
 
   if (loading) {
@@ -347,7 +351,7 @@ const AIRecommendations = ({ context = 'production', refreshInterval = 300000 })
                       </Box>
                     }
                   />
-                  <IconButton size="small">
+                  <IconButton size="small" aria-label={expandedRec === rec.id ? 'Collapse recommendation' : 'Expand recommendation'}>
                     {expandedRec === rec.id ? <ExpandLess /> : <ExpandMore />}
                   </IconButton>
                 </ListItem>
@@ -427,7 +431,7 @@ const AIRecommendations = ({ context = 'production', refreshInterval = 300000 })
                         <Button
                           variant="outlined"
                           size="small"
-                          onClick={() => console.log('More details for:', rec.title)}
+                          onClick={() => setDetailRec(rec)}
                         >
                           More Details
                         </Button>
@@ -475,6 +479,27 @@ const AIRecommendations = ({ context = 'production', refreshInterval = 300000 })
           </Box>
         )}
       </CardContent>
+
+      <Dialog open={Boolean(detailRec)} onClose={() => setDetailRec(null)} maxWidth="sm" fullWidth>
+        <DialogTitle>{detailRec?.title}</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mt: 1 }}>{detailRec?.summary}</Typography>
+          <Typography variant="body2" sx={{ mt: 1 }}>{detailRec?.expected_benefit}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDetailRec(null)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={Boolean(implementNote)} onClose={() => setImplementNote('')} maxWidth="sm" fullWidth>
+        <DialogTitle>Preview recommendation</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mt: 1 }}>{implementNote}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setImplementNote('')}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Card>
   );
 };

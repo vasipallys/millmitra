@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import { Add, Remove, SwapHoriz } from '@mui/icons-material';
 
-const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, movementType = 'in' }) => {
+const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, movementType = 'in', loading = false }) => {
   const [formData, setFormData] = useState({
     stock_id: stockItem?.id || '',
     stock_kind: stockItem?.type || 'product',
@@ -35,6 +35,20 @@ const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, moveme
     batch_number: '',
     expiry_date: ''
   });
+  const [submitError, setSubmitError] = useState('');
+
+  useEffect(() => {
+    if (!open) return;
+    setFormData((prev) => ({
+      ...prev,
+      stock_id: stockItem?.id || '',
+      stock_kind: stockItem?.type || prev.stock_kind || 'product',
+      movement_type: movementType,
+      unit_price: stockItem?.unit_price || '',
+      location_from: stockItem?.storage_location || '',
+    }));
+    setSubmitError('');
+  }, [open, stockItem, movementType]);
 
   const movementTypes = [
     { value: 'in', label: 'Stock In', icon: <Add />, color: 'success' },
@@ -93,33 +107,23 @@ const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, moveme
   };
 
   const handleSubmit = () => {
-    const movementData = {
+    const quantity = parseFloat(formData.quantity);
+    if (!formData.stock_id) {
+      setSubmitError('Enter the lot ID from the stock card');
+      return;
+    }
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      setSubmitError('Quantity must be greater than 0');
+      return;
+    }
+    setSubmitError('');
+    onSubmit({
       ...formData,
-      quantity: parseFloat(formData.quantity),
-      unit_price: parseFloat(formData.unit_price),
+      quantity,
+      unit_price: parseFloat(formData.unit_price) || 0,
       total_value: calculateTotalValue(),
       movement_date: new Date().toISOString(),
       stock_name: stockItem?.product_name || 'Unknown'
-    };
-
-    onSubmit(movementData);
-    onClose();
-    
-    // Reset form
-    setFormData({
-      stock_id: '',
-      stock_kind: 'product',
-      movement_type: 'in',
-      quantity: '',
-      unit_price: '',
-      reference_number: '',
-      supplier_customer: '',
-      reason: '',
-      notes: '',
-      location_from: '',
-      location_to: '',
-      batch_number: '',
-      expiry_date: ''
     });
   };
 
@@ -146,6 +150,7 @@ const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, moveme
       </DialogTitle>
       
       <DialogContent>
+        {submitError && <Alert severity="error" sx={{ mt: 1 }} role="alert">{submitError}</Alert>}
         <Grid container spacing={2} sx={{ mt: 1 }}>
           {/* Movement Type Selection */}
           <Grid item xs={12}>
@@ -412,17 +417,18 @@ const StockMovementDialog = ({ open, onClose, onSubmit, stockItem = null, moveme
       
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
-        <Button 
-          onClick={handleSubmit} 
+        <Button
+          onClick={handleSubmit}
           variant="contained"
           color={currentMovementType?.color}
           disabled={
+            loading ||
             !formData.quantity || 
             !formData.reason || 
             (formData.movement_type === 'transfer' && !formData.location_to)
           }
         >
-          Record Movement
+          {loading ? 'Saving...' : 'Record Movement'}
         </Button>
       </DialogActions>
     </Dialog>

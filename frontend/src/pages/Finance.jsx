@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Grid, Card, CardContent, Typography, Box, Button,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Paper, Chip, IconButton, Dialog, DialogTitle, DialogContent
+  Paper, Chip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions
 } from '@mui/material';
 import {
   TrendingUp, TrendingDown, AccountBalance, Receipt,
@@ -13,6 +13,8 @@ import { financeService } from '../services/financeService';
 import CreateInvoiceDialog from '../components/finance/CreateInvoiceDialog';
 import RecordPaymentDialog from '../components/finance/RecordPaymentDialog';
 import CashFlowChart from '../components/finance/CashFlowChart';
+import { getApiErrorMessage } from '../utils/apiError';
+import { PageEmpty, PageHeader, PageShell, QueryErrorAlert } from '../components/common/PageChrome';
 
 const Finance = () => {
   const [createInvoiceOpen, setCreateInvoiceOpen] = useState(false);
@@ -21,10 +23,10 @@ const Finance = () => {
   const queryClient = useQueryClient();
 
   // Queries
-  const { data: summary } = useQuery(
+  const { data: summary, isError: summaryError, error: summaryErr, refetch: refetchSummary } = useQuery(
     'financial-summary',
     () => financeService.getFinancialSummary(30),
-    { refetchInterval: 300000 } // 5 minutes
+    { refetchInterval: 300000 }
   );
 
   const { data: cashFlow } = useQuery(
@@ -39,26 +41,39 @@ const Finance = () => {
     { refetchInterval: 300000 }
   );
 
-  const { data: recentInvoices } = useQuery(
+  const { data: recentInvoices, isError: invoicesError, error: invoicesErr, refetch: refetchInvoices } = useQuery(
     'recent-invoices',
     () => financeService.getInvoices({ limit: 10 })
   );
 
   // Mutations
+  const [actionError, setActionError] = useState('');
+
   const createInvoiceMutation = useMutation(financeService.createInvoice, {
     onSuccess: () => {
-      queryClient.invalidateQueries(['financial-summary', 'recent-invoices', 'accounts-receivable', 'cash-flow']);
+      queryClient.invalidateQueries('financial-summary');
+      queryClient.invalidateQueries('recent-invoices');
+      queryClient.invalidateQueries('accounts-receivable');
+      queryClient.invalidateQueries('cash-flow');
       setCreateInvoiceOpen(false);
+      setActionError('');
     },
     onError: (error) => {
-      window.alert(error.response?.data?.message || 'Could not create invoice');
+      setActionError(getApiErrorMessage(error, 'Could not create invoice'));
     }
   });
 
   const recordPaymentMutation = useMutation(financeService.recordPayment, {
     onSuccess: () => {
-      queryClient.invalidateQueries(['financial-summary', 'accounts-receivable', 'cash-flow']);
+      queryClient.invalidateQueries('financial-summary');
+      queryClient.invalidateQueries('accounts-receivable');
+      queryClient.invalidateQueries('cash-flow');
+      queryClient.invalidateQueries('recent-invoices');
       setRecordPaymentOpen(false);
+      setActionError('');
+    },
+    onError: (error) => {
+      setActionError(getApiErrorMessage(error, 'Could not record payment'));
     }
   });
 
@@ -80,29 +95,32 @@ const Finance = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h4" component="h1">
-          Financial Management
-        </Typography>
-        <Box>
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={() => setCreateInvoiceOpen(true)}
-            sx={{ mr: 2 }}
-          >
-            Create Invoice
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<Payment />}
-            onClick={() => setRecordPaymentOpen(true)}
-          >
-            Record Payment
-          </Button>
-        </Box>
-      </Box>
+    <PageShell>
+      <PageHeader
+        title="Financial Management"
+        subtitle="Invoices and payments you entered. Line descriptions must match product stock."
+        actions={
+          <>
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={() => { setActionError(''); setCreateInvoiceOpen(true); }}
+            >
+              Create Invoice
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<Payment />}
+              onClick={() => { setActionError(''); setRecordPaymentOpen(true); }}
+            >
+              Record Payment
+            </Button>
+          </>
+        }
+      />
+      {summaryError && <QueryErrorAlert error={summaryErr} onRetry={refetchSummary} entity="finance summary" />}
+      {invoicesError && <QueryErrorAlert error={invoicesErr} onRetry={refetchInvoices} entity="invoices" />}
+      {actionError && <QueryErrorAlert error={new Error(actionError)} entity="finance action" />}
 
       {/* Financial Summary Cards */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
@@ -241,6 +259,17 @@ const Finance = () => {
               <Typography variant="h6" gutterBottom>
                 Recent Invoices
               </Typography>
+              {!recentInvoices?.invoices?.length && (
+                <PageEmpty
+                  title="No invoices yet"
+                  description="Create Invoice to bill a customer. Product line wording must match Inventory."
+                  action={
+                    <Button variant="contained" startIcon={<Add />} onClick={() => setCreateInvoiceOpen(true)}>
+                      Create Invoice
+                    </Button>
+                  }
+                />
+              )}
               <TableContainer>
                 <Table>
                   <TableHead>
@@ -255,7 +284,7 @@ const Finance = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {recentInvoices?.invoices?.map((invoice) => (
+                    {(recentInvoices?.invoices || []).map((invoice) => (
                       <TableRow key={invoice.id}>
                         <TableCell>{invoice.invoice_number}</TableCell>
                         <TableCell>{invoice.customer?.name || invoice.customer_name || '—'}</TableCell>
@@ -272,6 +301,7 @@ const Finance = () => {
                         <TableCell>
                           <IconButton
                             size="small"
+                            aria-label={`View invoice ${invoice.invoice_number}`}
                             onClick={() => setSelectedInvoice(invoice)}
                           >
                             <Visibility />
@@ -295,13 +325,51 @@ const Finance = () => {
         loading={createInvoiceMutation.isLoading}
       />
 
+      <Dialog
+        open={Boolean(selectedInvoice)}
+        onClose={() => setSelectedInvoice(null)}
+        maxWidth="sm"
+        fullWidth
+        aria-labelledby="invoice-detail-title"
+      >
+        <DialogTitle id="invoice-detail-title">
+          Invoice {selectedInvoice?.invoice_number}
+        </DialogTitle>
+        <DialogContent>
+          {selectedInvoice && (
+            <Box sx={{ pt: 1 }}>
+              <Typography>Customer: {selectedInvoice.customer?.name || selectedInvoice.customer_name || selectedInvoice.customer_id || '—'}</Typography>
+              <Typography>Date: {selectedInvoice.invoice_date ? new Date(selectedInvoice.invoice_date).toLocaleDateString() : '—'}</Typography>
+              <Typography>Due: {selectedInvoice.due_date ? new Date(selectedInvoice.due_date).toLocaleDateString() : '—'}</Typography>
+              <Typography>Amount: {formatCurrency(selectedInvoice.total_amount)}</Typography>
+              <Typography>Status: {selectedInvoice.status || '—'}</Typography>
+              <Typography sx={{ mt: 1 }} variant="body2" color="text.secondary">
+                Line items must match product stock names when the invoice was created.
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSelectedInvoice(null)}>Close</Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              setRecordPaymentOpen(true);
+            }}
+          >
+            Record Payment
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <RecordPaymentDialog
         open={recordPaymentOpen}
         onClose={() => setRecordPaymentOpen(false)}
         onSubmit={(data) => recordPaymentMutation.mutate(data)}
         loading={recordPaymentMutation.isLoading}
+        invoice={selectedInvoice}
       />
-    </Box>
+    </PageShell>
   );
 };
 

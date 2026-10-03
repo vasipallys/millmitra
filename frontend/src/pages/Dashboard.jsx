@@ -1,37 +1,50 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Grid, Card, CardContent, Typography, Box, Alert,
-  CircularProgress, Chip, IconButton, Menu, MenuItem,
-  Dialog, DialogTitle, DialogContent, DialogActions, Button
+  IconButton,
+  Dialog, DialogTitle, DialogContent, DialogActions, Button,
+  FormGroup, FormControlLabel, Checkbox
 } from '@mui/material';
 import {
-  TrendingUp, TrendingDown, Warning, Info, Error,
-  Settings, Refresh, MoreVert, Insights
+  TrendingUp, TrendingDown, Warning,
+  Settings, Refresh, Insights
 } from '@mui/icons-material';
-import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { dashboardService } from '../services/dashboardService';
 import { useQuery, useQueryClient } from 'react-query';
 import SmartWidget from '../components/SmartWidget';
 import AIInsights from '../components/AIInsights';
 import AlertsPanel from '../components/AlertsPanel';
+import { PageHeader, PageLoading, PageShell, QueryErrorAlert } from '../components/common/PageChrome';
+import { getApiErrorMessage } from '../utils/apiError';
+
+const DEFAULT_WIDGETS = [
+  { id: 'production', label: 'Production snapshot' },
+  { id: 'inventory', label: 'Inventory value' },
+  { id: 'sales', label: 'Pending orders' },
+  { id: 'farmers', label: 'Active farmers' },
+  { id: 'quality', label: 'Quality score' },
+];
 
 const Dashboard = () => {
   const [timeRange, setTimeRange] = useState(7);
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [selectedWidgets, setSelectedWidgets] = useState([]);
+  const [availableWidgets, setAvailableWidgets] = useState(DEFAULT_WIDGETS);
+  const [customizeError, setCustomizeError] = useState('');
+  const [customizeSaving, setCustomizeSaving] = useState(false);
   const queryClient = useQueryClient();
 
   // Fetch dashboard data
-  const { data: overview, isLoading: overviewLoading, isError: overviewError } = useQuery(
+  const { data: overview, isLoading: overviewLoading, isError: overviewError, error: overviewErr, refetch: refetchOverview } = useQuery(
     ['dashboard-overview', timeRange],
     () => dashboardService.getOverview(timeRange),
     { refetchInterval: 30000 } // Refresh every 30 seconds
   );
 
-  const { data: widgets, isLoading: widgetsLoading } = useQuery(
+  const { data: widgets, isLoading: widgetsLoading, isError: widgetsError, error: widgetsErr, refetch: refetchWidgets } = useQuery(
     'dashboard-widgets',
     () => dashboardService.getWidgets(),
-    { refetchInterval: 60000 } // Refresh every minute
+    { refetchInterval: 60000 }
   );
 
   const { data: insights } = useQuery(
@@ -47,43 +60,62 @@ const Dashboard = () => {
   );
 
   const handleRefresh = () => {
-    queryClient.invalidateQueries('dashboard');
+    queryClient.invalidateQueries('dashboard-overview');
+    queryClient.invalidateQueries('dashboard-widgets');
+    queryClient.invalidateQueries('dashboard-insights');
+    queryClient.invalidateQueries('dashboard-alerts');
   };
 
   const handleCustomize = () => {
+    const fromApi = (widgets?.widgets || []).map((widget) => ({
+      id: widget.id,
+      label: widget.title || widget.name || widget.id,
+    }));
+    const list = fromApi.length ? fromApi : DEFAULT_WIDGETS;
+    setAvailableWidgets(list);
+    setSelectedWidgets(list.map((widget) => widget.id));
+    setCustomizeError('');
     setCustomizeOpen(true);
   };
 
-  const saveCustomization = () => {
-    dashboardService.saveCustomization({ widgets: selectedWidgets });
-    setCustomizeOpen(false);
-    queryClient.invalidateQueries('dashboard-widgets');
+  const saveCustomization = async () => {
+    setCustomizeSaving(true);
+    setCustomizeError('');
+    try {
+      await dashboardService.saveCustomization({ widgets: selectedWidgets });
+      setCustomizeOpen(false);
+      queryClient.invalidateQueries('dashboard-widgets');
+    } catch (err) {
+      setCustomizeError(getApiErrorMessage(err, 'Could not save dashboard layout'));
+    } finally {
+      setCustomizeSaving(false);
+    }
   };
 
   if (overviewLoading || widgetsLoading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-      </Box>
+      <PageShell>
+        <PageLoading label="Loading dashboard…" />
+      </PageShell>
     );
   }
 
   return (
-    <Box sx={{ p: 3 }}> {/* Add padding to dashboard content */}
-      {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" fontWeight="bold">
-          Smart Dashboard
-        </Typography>
-        <Box>
-          <IconButton onClick={handleRefresh}>
-            <Refresh />
-          </IconButton>
-          <IconButton onClick={handleCustomize}>
-            <Settings />
-          </IconButton>
-        </Box>
-      </Box>
+    <PageShell>
+      <PageHeader
+        title="Smart Dashboard"
+        subtitle="Live mill snapshot from farmers, stock, batches, orders, and invoices"
+        actions={
+          <>
+            <IconButton onClick={handleRefresh} aria-label="Refresh dashboard">
+              <Refresh />
+            </IconButton>
+            <IconButton onClick={handleCustomize} aria-label="Customize dashboard widgets">
+              <Settings />
+            </IconButton>
+          </>
+        }
+      />
 
       {/* AI Insights Banner */}
       {insights?.insights?.length > 0 && (
@@ -96,14 +128,15 @@ const Dashboard = () => {
       )}
 
       {overviewError && (
-        <Alert severity="warning" sx={{ mb: 2 }}>
-          Dashboard metrics could not be loaded. Other mill pages still work.
-        </Alert>
+        <QueryErrorAlert error={overviewErr} onRetry={refetchOverview} entity="dashboard metrics" />
+      )}
+      {widgetsError && (
+        <QueryErrorAlert error={widgetsErr} onRetry={refetchWidgets} entity="dashboard widgets" />
       )}
 
       {/* Key Metrics Summary */}
       <Grid container spacing={3} mb={3}>
-        <Grid item xs={12} sm={6} md={2.4}>
+        <Grid item xs={12} sm={6} md={4} lg={2.4}>
           <MetricCard
             title="Production"
             value={`${overview?.summary?.total_production?.toFixed(0) || 0} kg`}
@@ -112,7 +145,7 @@ const Dashboard = () => {
             color="primary"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={2.4}>
+        <Grid item xs={12} sm={6} md={4} lg={2.4}>
           <MetricCard
             title="Quality Score"
             value={`${overview?.summary?.quality_score?.toFixed(1) || 0}%`}
@@ -121,7 +154,7 @@ const Dashboard = () => {
             color="success"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={2.4}>
+        <Grid item xs={12} sm={6} md={4} lg={2.4}>
           <MetricCard
             title="Inventory Value"
             value={`₹${(overview?.summary?.inventory_value || 0).toLocaleString()}`}
@@ -130,7 +163,7 @@ const Dashboard = () => {
             color="info"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={2.4}>
+        <Grid item xs={12} sm={6} md={4} lg={2.4}>
           <MetricCard
             title="Pending Orders"
             value={overview?.summary?.pending_orders || 0}
@@ -139,7 +172,7 @@ const Dashboard = () => {
             color="warning"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={2.4}>
+        <Grid item xs={12} sm={6} md={4} lg={2.4}>
           <MetricCard
             title="Active Farmers"
             value={overview?.summary?.active_farmers || 0}
@@ -171,16 +204,37 @@ const Dashboard = () => {
         <DialogTitle>Customize Dashboard</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="textSecondary" mb={2}>
-            Select which widgets to display on your dashboard. AI will automatically prioritize them based on your role and current context.
+            Choose which metric cards to keep in view. The mill still shows live numbers from farmers, stock, batches, and invoices.
           </Typography>
-          {/* Widget selection interface would go here */}
+          {customizeError && <Alert severity="error" sx={{ mb: 2 }}>{customizeError}</Alert>}
+          <FormGroup>
+            {availableWidgets.map((widget) => (
+              <FormControlLabel
+                key={widget.id}
+                control={
+                  <Checkbox
+                    checked={selectedWidgets.includes(widget.id)}
+                    onChange={(event) => {
+                      const checked = event.target.checked;
+                      setSelectedWidgets((prev) => (
+                        checked ? [...prev, widget.id] : prev.filter((id) => id !== widget.id)
+                      ));
+                    }}
+                  />
+                }
+                label={widget.label}
+              />
+            ))}
+          </FormGroup>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCustomizeOpen(false)}>Cancel</Button>
-          <Button onClick={saveCustomization} variant="contained">Save</Button>
+          <Button onClick={() => setCustomizeOpen(false)} disabled={customizeSaving}>Cancel</Button>
+          <Button onClick={saveCustomization} variant="contained" disabled={customizeSaving}>
+            {customizeSaving ? 'Saving...' : 'Save'}
+          </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </PageShell>
   );
 };
 

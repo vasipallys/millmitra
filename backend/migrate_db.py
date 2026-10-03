@@ -18,10 +18,11 @@ from extensions import db
 # Import specific models to avoid import issues
 from models.user import User, AuthLog, UserSession
 from models.farmer import Farmer
-from models.inventory import ProductStock, PaddyStock
+from models.inventory import ProductStock, PaddyStock, StockMovement  # noqa: F401
 from models.production import ProductionBatch, QualityTest
 from models.sales import Customer, SalesOrder
 from models.finance import Payment, Expense, Budget
+from models.financial import Invoice  # noqa: F401
 
 def create_app():
     """Create Flask app for migration"""

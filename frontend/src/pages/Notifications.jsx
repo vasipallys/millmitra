@@ -181,12 +181,12 @@ const NotificationsPage = () => {
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Tooltip title="Refresh">
-            <IconButton onClick={() => notificationService.fetchNotifications()}>
+            <IconButton aria-label="Refresh notifications" onClick={() => notificationService.fetchNotifications()}>
               <Refresh />
             </IconButton>
           </Tooltip>
           <Tooltip title="Settings">
-            <IconButton onClick={() => setSettingsOpen(true)}>
+            <IconButton aria-label="Notification settings" onClick={() => setSettingsOpen(true)}>
               <SettingsIcon />
             </IconButton>
           </Tooltip>

@@ -213,10 +213,11 @@ const AlertsPanel = ({ maxAlerts = 10, autoRefresh = true }) => {
             )}
           </Box>
           <Box>
-            <IconButton onClick={loadAlerts} size="small" disabled={loading}>
+            <IconButton aria-label="Refresh alerts" onClick={loadAlerts} size="small" disabled={loading}>
               <Refresh />
             </IconButton>
-            <IconButton 
+            <IconButton
+              aria-label={expanded ? 'Collapse alerts' : 'Expand alerts'}
               onClick={() => setExpanded(!expanded)} 
               size="small"
             >
@@ -289,6 +290,7 @@ const AlertsPanel = ({ maxAlerts = 10, autoRefresh = true }) => {
                       )}
                       <IconButton
                         size="small"
+                        aria-label="Dismiss alert"
                         onClick={() => dismissAlert(alert.id)}
                       >
                         <Clear fontSize="small" />
@@ -359,11 +361,12 @@ const AlertsPanel = ({ maxAlerts = 10, autoRefresh = true }) => {
                           </Button>
                         )}
                         <IconButton
-                          size="small"
-                          onClick={() => dismissAlert(alert.id)}
-                        >
-                          <Clear fontSize="small" />
-                        </IconButton>
+                        size="small"
+                        aria-label="Dismiss alert"
+                        onClick={() => dismissAlert(alert.id)}
+                      >
+                        <Clear fontSize="small" />
+                      </IconButton>
                       </Box>
                     </ListItem>
                   ))}

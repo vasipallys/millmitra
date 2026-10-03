@@ -280,13 +280,16 @@ const Login = ({ onLogin }) => {
           <Typography variant="h4" align="center" gutterBottom color="primary">
             Rice Mill AI
           </Typography>
-          <Typography variant="subtitle1" align="center" color="textSecondary" mb={3}>
-            Intelligent Authentication
+          <Typography variant="subtitle1" align="center" color="textSecondary" mb={1}>
+            Sign in to MillMitra
+          </Typography>
+          <Typography variant="body2" align="center" color="text.secondary" mb={3}>
+            Use the Password tab for daily work. Voice and Biometric are experimental.
           </Typography>
 
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          {error && <Alert severity="error" sx={{ mb: 2 }} role="alert">{error}</Alert>}
 
-          <Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)} sx={{ mb: 3 }}>
+          <Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)} sx={{ mb: 3 }} aria-label="Sign-in method">
             <Tab label="Password" />
             <Tab label="Voice" />
             <Tab label="Biometric" />
@@ -302,7 +305,9 @@ const Login = ({ onLogin }) => {
                 onChange={(e) => handleUsernameChange(e.target.value)}
                 margin="normal"
                 autoComplete="username"
-                helperText="AI will suggest corrections for typos"
+                required
+                autoFocus
+                helperText="Username, email, or 10-digit phone"
               />
               
               {usernameSuggestions.length > 0 && (
@@ -329,9 +334,13 @@ const Login = ({ onLogin }) => {
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 margin="normal"
                 autoComplete="current-password"
+                required
                 InputProps={{
                   endAdornment: (
-                    <IconButton onClick={() => setShowPassword(!showPassword)}>
+                    <IconButton
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
                       {showPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   )
@@ -353,12 +362,16 @@ const Login = ({ onLogin }) => {
           {/* Voice Login */}
           {activeTab === 1 && (
             <Box textAlign="center">
+              <Alert severity="info" sx={{ mb: 2, textAlign: 'left' }}>
+                Experimental. Use Password for mill sign-in.
+              </Alert>
               <Typography variant="body2" color="textSecondary" mb={2}>
                 Say "Login as [your username]" or "I am [your username]"
               </Typography>
               
               <IconButton
                 size="large"
+                aria-label={isListening ? 'Stop voice prompt' : 'Start voice prompt'}
                 onClick={isListening ? stopListening : startListening}
                 sx={{
                   bgcolor: isListening ? 'error.main' : 'primary.main',
@@ -387,6 +400,9 @@ const Login = ({ onLogin }) => {
           {/* Biometric Login */}
           {activeTab === 2 && (
             <Box>
+              <Alert severity="info" sx={{ mb: 2 }}>
+                Experimental. Use Password for mill sign-in.
+              </Alert>
               <TextField
                 fullWidth
                 label="Username"

@@ -49,6 +49,8 @@ const QualityControl = () => {
   const [qualityTrend, setQualityTrend] = useState([]);
   const [selectedVariety, setSelectedVariety] = useState('basmati');
   const [batchId, setBatchId] = useState('');
+  const [pageMessage, setPageMessage] = useState(null);
+  const [viewTest, setViewTest] = useState(null);
   
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -119,7 +121,10 @@ const QualityControl = () => {
         setShowCameraDialog(true);
       }
     } catch (error) {
-      alert('Camera access denied. Please allow camera access for quality analysis.');
+      setPageMessage({
+        severity: 'warning',
+        text: 'Camera access was denied. Use Upload Image instead, or allow the camera and try again.',
+      });
     }
   };
 
@@ -148,36 +153,40 @@ const QualityControl = () => {
 
   const analyzeQuality = async (imageData) => {
     setIsAnalyzing(true);
-    
-    try {
-      const response = await fetch('/api/quality-vision/analyze/image', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          image: imageData,
+    const preview = {
+      overall_score: 88.0,
+      grade: 'B',
+      moisture_content: 12.4,
+      broken_percentage: 4.1,
+      foreign_matter: 0.3,
+      variety: selectedVariety,
+      batch_id: batchId || 'preview',
+      note: 'Preview estimate only. Record official lab numbers on Production → Quality Test.',
+    };
+    setTimeout(() => {
+      setAnalysisResult(preview);
+      setRecentTests((prev) => [
+        {
+          id: `QT-PREVIEW-${Date.now()}`,
+          batch_id: preview.batch_id,
           variety: selectedVariety,
-          batch_id: batchId || null,
-          sample_type: 'manual_test'
-        })
+          grade: preview.grade,
+          score: preview.overall_score,
+          date: new Date().toLocaleString(),
+          status: 'preview',
+          details: preview,
+        },
+        ...prev,
+      ]);
+      setShowCameraDialog(false);
+      stopCamera();
+      setPageMessage({
+        severity: 'info',
+        text: 'Preview analysis shown. This camera tool does not grade mill-of-record stock.',
       });
-
-      const result = await response.json();
-
-      if (result.success) {
-        setAnalysisResult(result.analysis);
-        setShowCameraDialog(false);
-        stopCamera();
-      } else {
-        alert('Analysis failed: ' + result.error);
-      }
-    } catch (error) {
-      alert('Quality analysis is a preview feature and is not connected to live mill data.');
-    } finally {
       setIsAnalyzing(false);
-    }
+    }, 400);
+    return imageData;
   };
 
   const handleCameraCapture = () => {
@@ -218,6 +227,11 @@ const QualityControl = () => {
   return (
     <Box>
       <DemoBanner title="Quality Control" />
+      {pageMessage && (
+        <Alert severity={pageMessage.severity} sx={{ mb: 2 }} onClose={() => setPageMessage(null)}>
+          {pageMessage.text}
+        </Alert>
+      )}
       {/* Header */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" component="h1" fontWeight="bold">
@@ -566,10 +580,23 @@ const QualityControl = () => {
                         />
                       </TableCell>
                       <TableCell>
-                        <Button size="small" startIcon={<Visibility />}>
+                        <Button size="small" startIcon={<Visibility />} onClick={() => setViewTest(test)}>
                           View
                         </Button>
-                        <Button size="small" startIcon={<GetApp />}>
+                        <Button
+                          size="small"
+                          startIcon={<GetApp />}
+                          onClick={() => {
+                            const blob = new Blob([JSON.stringify(test, null, 2)], { type: 'application/json' });
+                            const url = URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.download = `${test.id}.json`;
+                            link.click();
+                            URL.revokeObjectURL(url);
+                            setPageMessage({ severity: 'success', text: `Downloaded ${test.id}` });
+                          }}
+                        >
                           Export
                         </Button>
                       </TableCell>
@@ -627,6 +654,28 @@ const QualityControl = () => {
           >
             {isAnalyzing ? <CircularProgress size={24} /> : 'Capture & Analyze'}
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={Boolean(viewTest)} onClose={() => setViewTest(null)} maxWidth="sm" fullWidth>
+        <DialogTitle>{viewTest?.id}</DialogTitle>
+        <DialogContent>
+          {viewTest && (
+            <Box sx={{ pt: 1 }}>
+              <Typography>Batch: {viewTest.batch_id}</Typography>
+              <Typography>Variety: {viewTest.variety}</Typography>
+              <Typography>Grade: {viewTest.grade}</Typography>
+              <Typography>Score: {viewTest.score}</Typography>
+              <Typography>Date: {viewTest.date}</Typography>
+              <Typography>Status: {viewTest.status}</Typography>
+              <Alert severity="info" sx={{ mt: 2 }}>
+                Preview sample. Official tests belong on Production → Quality Test.
+              </Alert>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setViewTest(null)}>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>

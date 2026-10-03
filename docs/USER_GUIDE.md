@@ -57,7 +57,7 @@ MillMitra is **not** a replacement for statutory GST filing software, and it is 
 | Mill operator | Start and follow production batches, record quality tests, check paddy availability |
 | Mill manager | Approve farmers, watch dashboard numbers, review stock and efficiency |
 | Office / accounts staff | Register farmers, add stock, create customers, raise invoices, record payments |
-| Sales staff | Maintain customers; treat the **Sales** menu as a sample screen (see [Sales](#13-sales)) |
+| Sales staff | Maintain customers; use **Sales → New Order** for the live order book |
 | Quality staff | Record lab-style tests on a batch from **Production**; the **Quality Control** menu is demonstration-only |
 
 Anyone with a login can open every menu in the sidebar. A few manager-only actions (for example verifying a farmer) are blocked if your account is not **admin** or **manager**.
@@ -212,14 +212,14 @@ The sidebar does **not** hide items by role. Everyone with a login sees the same
 | Farmers | `/farmers` | Farmer register, contracts, procurement |
 | Inventory | `/inventory` | Paddy and product stock |
 | Production | `/production` | Milling batches |
-| Sales | `/sales` | Sample sales screen (not live mill data) |
+| Sales | `/sales` | Live order book (**New Order**) |
 | Finance | `/finance` | Invoices and payments |
 | Customers | `/customers` | Buyer records and their orders |
 | Analytics | `/analytics` | Sample business charts |
 | Quality Control | `/quality-control` | Sample camera / quality demo |
 | Financial Intelligence | `/financial-intelligence` | Sample finance insights |
 | Compliance & GST | `/compliance-gst` | Sample GST / compliance view |
-| Settings | `/settings` | On-screen mill settings (not saved to the server) |
+| Settings | `/settings` | Mill settings (this computer + server mill-settings) |
 
 The bell icon opens notifications. A full notifications page also exists at `/notifications`. A reporting page exists at `/analytics-reporting` but is **not** listed in the sidebar.
 
@@ -731,7 +731,7 @@ The bell lists in-app notices. You can open the full **Notifications** page from
 1. Confirm paddy of that variety on **Inventory** → **Paddy Stock**.
 2. **Production** → **New Batch** → variety, input kg, grade → **Create Batch**.
 3. **All Batches** → play icon **Start Batch** on the **planned** row.
-4. When the run is underway, use **Quality Test** if the lab checks a sample. Pause or Stop from the batch card menu if needed.
+4. When the run is underway, use **Quality Test** if the lab checks a sample. **Pause Batch** / **Resume Batch** from **All Batches** if the line stops.
 5. When milling is finished, **Mark Complete** and enter rice / by-product kg. Rice output is added to product stock.
 
 ### Bill a customer
@@ -846,8 +846,8 @@ Add paddy of the **same variety** with remaining kg ≥ input quantity. Varietie
 **Invoice saved but dashboard finance cards look unchanged**  
 Expected. Use the invoices table.
 
-**Customer saved but Sales page still shows ABC Traders**  
-Expected. Sales is sample data. Open **Customers**.
+**Customer saved but Sales still looks empty**
+Open **Sales → New Order** and pick that customer. Sales lists live orders, not a sample buyer list.
 
 **Numbers look stuck at zero**  
 Enter at least one farmer, one paddy lot, and one batch, then refresh. Empty mill = zeros.
@@ -885,7 +885,7 @@ Refresh the browser. If you still see login, sign in again.
 | **Invoice** | Bill to a customer (`INV000001` style) |
 | **Payment** | Money recorded against a customer or invoice (`PAY…` style) |
 | **Net 30** | Pay within 30 days of invoice date |
-| **Outstanding receivables** | Unpaid customer bills (card may be sample on Finance) |
+| **Outstanding receivables** | Unpaid customer bills from invoices you created |
 | **GST number** | Customer or mill GSTIN, for your records |
 | **Aadhar / PAN / IFSC** | Farmer KYC and bank identifiers |
 | **Advance** | Money paid to a farmer on a contract |

@@ -244,7 +244,7 @@ Statuses: `planned`, `in_progress`, `paused`, `completed` (also `started` accept
 | GET | `/analytics` | Revenue / order counts |
 | GET | `/dashboard` | Sales dashboard |
 
-`GET/POST /quotations` and `/leads` return **not implemented** (501-style). The Sales page does not offer them.
+`GET /quotations` and `GET /leads` return empty lists. `POST` and status updates return **501** (`not enabled`). The Sales page does not offer them.
 
 ### Customers (`/api/customers`)
 
@@ -281,7 +281,12 @@ Blueprint has **no** `/api` prefix on the blueprint; paths are absolute:
 
 ### Health
 
-`GET /api/health` — process up (does not prove every table).
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/api/health` | Liveness: process is up. Does not check the database. |
+| GET | `/api/ready` | Readiness: `SELECT 1` against the configured DB. `503` if the DB is down. |
+
+Requests log `method`, `path`, `status`, `duration_ms`, and `request_id` (no passwords or tokens). Unexpected 500s return `{ success: false, message, error_id }` and log the traceback.
 
 Registered but **not** mill-of-record: biometric, quality-vision, financial-intelligence, compliance/gst, analytics/reporting, supply-chain, logistics, compliance, quality (standards), session extras. Preview UI may call them; they must not be treated as source of truth.
 

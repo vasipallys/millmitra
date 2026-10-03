@@ -31,6 +31,7 @@ import {
 } from '@mui/icons-material';
 import { useQuery } from 'react-query';
 import { usePWA } from '../../hooks/usePWA';
+import { downloadText } from '../../utils/downloadFile';
 
 const AdvancedAnalytics = () => {
   const [activeTab, setActiveTab] = useState(0);
@@ -220,10 +221,18 @@ const AdvancedAnalytics = () => {
               <MenuItem value="1y">Last year</MenuItem>
             </Select>
           </FormControl>
-          <IconButton onClick={refetch} disabled={isLoading}>
+          <IconButton onClick={refetch} disabled={isLoading} aria-label="Refresh analytics">
             <Refresh />
           </IconButton>
-          <Button startIcon={<Download />} variant="outlined">
+          <Button
+            startIcon={<Download />}
+            variant="outlined"
+            onClick={() => downloadText(
+              `millmitra-analytics-${timeRange}.json`,
+              JSON.stringify(analyticsData || { note: 'No analytics snapshot yet' }, null, 2),
+              'application/json'
+            )}
+          >
             Export
           </Button>
         </Box>

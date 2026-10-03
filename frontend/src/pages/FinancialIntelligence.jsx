@@ -57,6 +57,10 @@ const FinancialIntelligence = () => {
     amount: '',
     payment_type: 'procurement'
   });
+  const [pageMessage, setPageMessage] = useState(null);
+  const [paymentError, setPaymentError] = useState('');
+  const [alertItem, setAlertItem] = useState(null);
+  const [scheduledPayments, setScheduledPayments] = useState([]);
 
   // Mock data for demonstration
   const mockCashFlowTrend = [
@@ -164,29 +168,32 @@ const FinancialIntelligence = () => {
     }
   };
 
-  const handleSmartPaymentScheduling = async () => {
-    try {
-      const response = await fetch('/api/financial-intelligence/payment/schedule', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(paymentForm)
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        alert('Payment scheduled successfully!');
-        setShowPaymentDialog(false);
-        setPaymentForm({ farmer_id: '', amount: '', payment_type: 'procurement' });
-      } else {
-        alert('Payment scheduling failed: ' + result.error);
-      }
-    } catch (error) {
-      alert('Payment scheduling is a preview feature and is not connected to live mill data.');
+  const handleSmartPaymentScheduling = () => {
+    const amount = Number(paymentForm.amount);
+    if (!paymentForm.farmer_id) {
+      setPaymentError('Farmer ID is required');
+      return;
     }
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setPaymentError('Amount must be greater than 0');
+      return;
+    }
+    setPaymentError('');
+    setScheduledPayments((prev) => [
+      {
+        id: Date.now(),
+        ...paymentForm,
+        amount,
+        created_at: new Date().toISOString(),
+      },
+      ...prev,
+    ]);
+    setShowPaymentDialog(false);
+    setPaymentForm({ farmer_id: '', amount: '', payment_type: 'procurement' });
+    setPageMessage({
+      severity: 'success',
+      text: `Preview payment of ₹${amount.toLocaleString('en-IN')} stored on this screen only. Use Finance → Record Payment for mill-of-record money.`,
+    });
   };
 
   const getInsightIcon = (type) => {
@@ -227,6 +234,11 @@ const FinancialIntelligence = () => {
   return (
     <Box>
       <DemoBanner title="Financial Intelligence" />
+      {pageMessage && (
+        <Alert severity={pageMessage.severity} sx={{ mb: 2 }} onClose={() => setPageMessage(null)}>
+          {pageMessage.text}
+        </Alert>
+      )}
       {/* Header */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" component="h1" fontWeight="bold">
@@ -247,7 +259,7 @@ const FinancialIntelligence = () => {
               sx={{ mb: 1 }}
               action={
                 alert.action_required && (
-                  <Button color="inherit" size="small">
+                  <Button color="inherit" size="small" onClick={() => setAlertItem(alert)}>
                     Action Required
                   </Button>
                 )
@@ -630,6 +642,7 @@ const FinancialIntelligence = () => {
       <Dialog open={showPaymentDialog} onClose={() => setShowPaymentDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Schedule Smart Payment</DialogTitle>
         <DialogContent>
+          {paymentError && <Alert severity="error" sx={{ mt: 1 }}>{paymentError}</Alert>}
           <TextField
             fullWidth
             label="Farmer ID"
@@ -663,6 +676,28 @@ const FinancialIntelligence = () => {
           <Button onClick={() => setShowPaymentDialog(false)}>Cancel</Button>
           <Button onClick={handleSmartPaymentScheduling} variant="contained">
             Schedule Payment
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={Boolean(alertItem)} onClose={() => setAlertItem(null)} maxWidth="sm" fullWidth>
+        <DialogTitle>{alertItem?.title}</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mt: 1 }}>{alertItem?.message}</Typography>
+          <Alert severity="info" sx={{ mt: 2 }}>
+            Preview reminder. Record real collections on Finance → Record Payment.
+          </Alert>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAlertItem(null)}>Close</Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              setAlertItem(null);
+              setActiveTab(4);
+            }}
+          >
+            Open Smart Payments
           </Button>
         </DialogActions>
       </Dialog>

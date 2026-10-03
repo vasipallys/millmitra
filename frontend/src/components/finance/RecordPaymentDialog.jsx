@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -16,7 +16,7 @@ import {
   Chip
 } from '@mui/material';
 
-const RecordPaymentDialog = ({ open, onClose, onSubmit, invoice = null }) => {
+const RecordPaymentDialog = ({ open, onClose, onSubmit, invoice = null, loading = false }) => {
   const [formData, setFormData] = useState({
     invoice_id: invoice?.id || '',
     amount: invoice?.total_amount || '',
@@ -26,6 +26,17 @@ const RecordPaymentDialog = ({ open, onClose, onSubmit, invoice = null }) => {
     notes: '',
     payment_type: 'full' // full, partial
   });
+  const [submitError, setSubmitError] = useState('');
+
+  useEffect(() => {
+    if (!open) return;
+    setFormData((prev) => ({
+      ...prev,
+      invoice_id: invoice?.id || prev.invoice_id || '',
+      amount: invoice?.total_amount || invoice?.outstanding_amount || prev.amount,
+    }));
+    setSubmitError('');
+  }, [open, invoice]);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -35,17 +46,15 @@ const RecordPaymentDialog = ({ open, onClose, onSubmit, invoice = null }) => {
   };
 
   const handleSubmit = () => {
-    onSubmit(formData);
-    onClose();
-    // Reset form
-    setFormData({
-      invoice_id: '',
-      amount: '',
-      payment_method: 'cash',
-      payment_date: new Date().toISOString().split('T')[0],
-      reference_number: '',
-      notes: '',
-      payment_type: 'full'
+    const amount = parseFloat(formData.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setSubmitError('Amount must be greater than 0');
+      return;
+    }
+    setSubmitError('');
+    onSubmit({
+      ...formData,
+      amount,
     });
   };
 
@@ -74,6 +83,11 @@ const RecordPaymentDialog = ({ open, onClose, onSubmit, invoice = null }) => {
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Record Payment</DialogTitle>
       <DialogContent>
+        {submitError && (
+          <Box sx={{ mt: 1, mb: 1 }}>
+            <Typography color="error" variant="body2" role="alert">{submitError}</Typography>
+          </Box>
+        )}
         <Grid container spacing={2} sx={{ mt: 1 }}>
           {/* Invoice Information */}
           {invoice && (
@@ -239,9 +253,9 @@ const RecordPaymentDialog = ({ open, onClose, onSubmit, invoice = null }) => {
         <Button 
           onClick={handleSubmit} 
           variant="contained"
-          disabled={!formData.amount || !formData.invoice_id}
+          disabled={loading || !formData.amount}
         >
-          Record Payment
+          {loading ? 'Saving...' : 'Record Payment'}
         </Button>
       </DialogActions>
     </Dialog>

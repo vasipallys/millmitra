@@ -71,6 +71,9 @@ const AnalyticsReporting = () => {
     analysis_type: 'production_forecast',
     forecast_period: 30
   });
+  const [pageMessage, setPageMessage] = useState(null);
+  const [insightItem, setInsightItem] = useState(null);
+  const [viewReport, setViewReport] = useState(null);
 
   // Mock data for demonstration
   const mockDashboardData = {
@@ -189,62 +192,46 @@ const AnalyticsReporting = () => {
     }
   };
 
-  const generateReport = async () => {
-    try {
-      const response = await fetch('/api/analytics/reports/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          report_type: reportForm.report_type,
-          period: {
-            start_date: reportForm.start_date,
-            end_date: reportForm.end_date
-          },
-          language: reportForm.language
-        })
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        alert('Report generated successfully!');
-        setShowReportDialog(false);
-        // Add to reports list
-        setReports(prev => [result.report, ...prev]);
-      } else {
-        alert('Report generation failed: ' + result.error);
-      }
-    } catch (error) {
-      alert('Report generation is a preview feature and is not connected to live mill data.');
-    }
+  const downloadJson = (filename, payload) => {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
-  const runPredictiveAnalysis = async () => {
-    try {
-      const response = await fetch('/api/analytics/predictive/analyze', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(predictiveForm)
-      });
+  const generateReport = () => {
+    const report = {
+      report_id: `RPT-${Date.now()}`,
+      title: reportForm.report_type.replace(/_/g, ' '),
+      generated_at: new Date().toISOString(),
+      language: reportForm.language,
+      confidence_score: 80,
+      period: { start_date: reportForm.start_date, end_date: reportForm.end_date },
+      kpis: mockKPIs,
+      note: 'Preview report from sample figures. Use Dashboard, Inventory, Production, Sales, and Finance for live mill numbers.',
+    };
+    setReports((prev) => [report, ...prev]);
+    downloadJson(`${report.report_id}.json`, report);
+    setShowReportDialog(false);
+    setPageMessage({ severity: 'success', text: `Downloaded ${report.report_id}. This is a preview, not a live mill report.` });
+  };
 
-      const result = await response.json();
-
-      if (result.success) {
-        alert('Predictive analysis completed successfully!');
-        setShowPredictiveDialog(false);
-        console.log('Predictive analysis result:', result);
-      } else {
-        alert('Predictive analysis failed: ' + result.error);
-      }
-    } catch (error) {
-      alert('Predictive analysis is a preview feature and is not connected to live mill data.');
-    }
+  const runPredictiveAnalysis = () => {
+    const result = {
+      analysis_type: predictiveForm.analysis_type,
+      forecast_period: predictiveForm.forecast_period,
+      summary: 'Preview forecast only. MillMitra does not run a production ML model here.',
+      sample_outlook: mockTrendData,
+    };
+    downloadJson(`predictive-${predictiveForm.analysis_type}.json`, result);
+    setShowPredictiveDialog(false);
+    setPageMessage({
+      severity: 'info',
+      text: `Preview ${predictiveForm.analysis_type.replace(/_/g, ' ')} for ${predictiveForm.forecast_period} days downloaded.`,
+    });
   };
 
   const getInsightIcon = (category) => {
@@ -285,6 +272,11 @@ const AnalyticsReporting = () => {
   return (
     <Box>
       <DemoBanner title="Analytics & Reporting" />
+      {pageMessage && (
+        <Alert severity={pageMessage.severity} sx={{ mb: 2 }} onClose={() => setPageMessage(null)}>
+          {pageMessage.text}
+        </Alert>
+      )}
       {/* Header */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" component="h1" fontWeight="bold">
@@ -316,6 +308,7 @@ const AnalyticsReporting = () => {
         <Button
           variant="outlined"
           startIcon={<SmartToy />}
+          onClick={() => setActiveTab(3)}
         >
           AI Insights
         </Button>
@@ -604,7 +597,7 @@ const AnalyticsReporting = () => {
                     {insight.insight}
                   </Typography>
                   
-                  <Button size="small" variant="outlined">
+                  <Button size="small" variant="outlined" onClick={() => setInsightItem(insight)}>
                     View Details
                   </Button>
                 </CardContent>
@@ -653,10 +646,17 @@ const AnalyticsReporting = () => {
                             <TableCell>{report.language}</TableCell>
                             <TableCell>{report.confidence_score}%</TableCell>
                             <TableCell>
-                              <Button size="small" startIcon={<Visibility />} sx={{ mr: 1 }}>
+                              <Button size="small" startIcon={<Visibility />} sx={{ mr: 1 }} onClick={() => setViewReport(report)}>
                                 View
                               </Button>
-                              <Button size="small" startIcon={<GetApp />}>
+                              <Button
+                                size="small"
+                                startIcon={<GetApp />}
+                                onClick={() => {
+                                  downloadJson(`${report.report_id}.json`, report);
+                                  setPageMessage({ severity: 'success', text: `Downloaded ${report.report_id}` });
+                                }}
+                              >
                                 Download
                               </Button>
                             </TableCell>
@@ -765,6 +765,31 @@ const AnalyticsReporting = () => {
           <Button onClick={runPredictiveAnalysis} variant="contained">
             Run Analysis
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={Boolean(insightItem)} onClose={() => setInsightItem(null)} maxWidth="sm" fullWidth>
+        <DialogTitle>{insightItem?.category?.replace(/_/g, ' ')}</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mt: 1 }}>{insightItem?.insight}</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Priority: {insightItem?.priority_level} · Confidence: {insightItem ? Math.round(insightItem.confidence * 100) : 0}%
+          </Typography>
+          <Alert severity="info" sx={{ mt: 2 }}>Sample insight. Live mill figures are on Dashboard and Finance.</Alert>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setInsightItem(null)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={Boolean(viewReport)} onClose={() => setViewReport(null)} maxWidth="sm" fullWidth>
+        <DialogTitle>{viewReport?.title}</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mt: 1 }}>{viewReport?.report_id}</Typography>
+          <Typography variant="body2">{viewReport?.note}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setViewReport(null)}>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>

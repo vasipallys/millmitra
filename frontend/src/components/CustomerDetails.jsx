@@ -3,7 +3,7 @@ import {
   Card, CardContent, Typography, Box, Grid, Chip, Button,
   Tabs, Tab, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, Avatar, Divider, IconButton,
-  Tooltip, LinearProgress, Alert
+  Tooltip, LinearProgress, Alert, Dialog, DialogTitle, DialogContent, DialogActions
 } from '@mui/material';
 import {
   Person, Business, Phone, Email, LocationOn, CreditCard,
@@ -13,8 +13,25 @@ import {
 import { useQuery } from 'react-query';
 import { customerService } from '../services/customerService';
 
+const PeekButton = ({ title, children, label = 'View' }) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button size="small" onClick={() => setOpen(true)}>{label}</Button>
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>{title}</DialogTitle>
+        <DialogContent>{children}</DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+    </>
+  );
+};
+
 const CustomerDetails = ({ customerId, onInteraction }) => {
   const [activeTab, setActiveTab] = useState(0);
+  const [editOpen, setEditOpen] = useState(false);
 
   const { data: customer, isLoading } = useQuery(
     ['customer-details', customerId],
@@ -91,7 +108,7 @@ const CustomerDetails = ({ customerId, onInteraction }) => {
                 </Box>
                 <Box>
                   <Tooltip title="Edit Customer">
-                    <IconButton>
+                    <IconButton aria-label="Edit customer" onClick={() => setEditOpen(true)}>
                       <Edit />
                     </IconButton>
                   </Tooltip>
@@ -305,6 +322,24 @@ const CustomerDetails = ({ customerId, onInteraction }) => {
           </CardContent>
         </Card>
       )}
+
+      <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Customer record</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mt: 1 }}>{customer.name}</Typography>
+          <Typography variant="body2">Phone: {customer.phone || '—'}</Typography>
+          <Typography variant="body2">Email: {customer.email || '—'}</Typography>
+          <Typography variant="body2" sx={{ mt: 2 }}>
+            Change contact details from this mill’s customer list is not a separate editor. Use Add Interaction to log a call or visit.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditOpen(false)}>Close</Button>
+          <Button variant="contained" onClick={() => { setEditOpen(false); onInteraction?.(); }}>
+            Add Interaction
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
@@ -345,7 +380,12 @@ const RecentOrdersTab = ({ orders }) => (
               />
             </TableCell>
             <TableCell>
-              <Button size="small">View</Button>
+              <PeekButton title={order.order_number || `Order ${order.id}`}>
+                <Typography sx={{ mt: 1 }}>Date: {order.order_date ? new Date(order.order_date).toLocaleDateString() : '—'}</Typography>
+                <Typography>Amount: {order.final_amount}</Typography>
+                <Typography>Status: {order.status || '—'}</Typography>
+                <Typography>Payment: {order.payment_status || '—'}</Typography>
+              </PeekButton>
             </TableCell>
           </TableRow>
         ))}
@@ -389,7 +429,12 @@ const InteractionsTab = ({ interactions }) => (
               )}
             </TableCell>
             <TableCell>
-              <Button size="small">View</Button>
+              <PeekButton title={interaction.subject || 'Interaction'}>
+                <Typography sx={{ mt: 1 }}>Type: {interaction.interaction_type || '—'}</Typography>
+                <Typography>Status: {interaction.status || '—'}</Typography>
+                <Typography>Date: {interaction.created_at ? new Date(interaction.created_at).toLocaleDateString() : '—'}</Typography>
+                <Typography sx={{ mt: 1 }}>{interaction.notes || interaction.summary || 'No notes on this preview record.'}</Typography>
+              </PeekButton>
             </TableCell>
           </TableRow>
         ))}
@@ -476,7 +521,11 @@ const CommunicationsTab = ({ customerId }) => {
                 }
               </TableCell>
               <TableCell>
-                <Button size="small">View</Button>
+                <PeekButton title={comm.subject || 'Communication'}>
+                  <Typography sx={{ mt: 1 }}>Type: {comm.communication_type || '—'}</Typography>
+                  <Typography>Status: {comm.status || '—'}</Typography>
+                  <Typography>Sent: {comm.sent_at ? new Date(comm.sent_at).toLocaleDateString() : '—'}</Typography>
+                </PeekButton>
               </TableCell>
             </TableRow>
           ))}

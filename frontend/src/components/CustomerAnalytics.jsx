@@ -4,7 +4,7 @@ import {
   Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, LinearProgress,
   Alert, Button, FormControl, InputLabel, Select,
-  MenuItem, Tabs, Tab
+  MenuItem, Tabs, Tab, Dialog, DialogTitle, DialogContent, DialogActions
 } from '@mui/material';
 import {
   TrendingUp, TrendingDown, People, MonetizationOn,
@@ -282,6 +282,7 @@ const SegmentAnalysis = ({ segments }) => {
 
 // Churn Analysis Component
 const ChurnAnalysis = ({ churnData }) => {
+  const [actionCustomer, setActionCustomer] = useState(null);
   return (
     <Grid container spacing={3}>
       <Grid item xs={12} md={8}>
@@ -324,7 +325,7 @@ const ChurnAnalysis = ({ churnData }) => {
                         }
                       </TableCell>
                       <TableCell>
-                        <Button size="small" variant="outlined">
+                        <Button size="small" variant="outlined" onClick={() => setActionCustomer(customer)}>
                           Take Action
                         </Button>
                       </TableCell>
@@ -335,6 +336,17 @@ const ChurnAnalysis = ({ churnData }) => {
             </TableContainer>
           </CardContent>
         </Card>
+        <Dialog open={Boolean(actionCustomer)} onClose={() => setActionCustomer(null)} maxWidth="sm" fullWidth>
+          <DialogTitle>{actionCustomer?.name || 'Customer'}</DialogTitle>
+          <DialogContent>
+            <Typography sx={{ mt: 1 }}>
+              Open Customers → that buyer → Add Interaction, or create a follow-up order on Sales. This screen does not auto-call or send mail.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setActionCustomer(null)}>Close</Button>
+          </DialogActions>
+        </Dialog>
       </Grid>
 
       <Grid item xs={12} md={4}>

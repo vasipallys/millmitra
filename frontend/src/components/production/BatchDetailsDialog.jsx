@@ -21,6 +21,8 @@ const BatchDetailsDialog = ({ open, onClose, batch, onUpdate }) => {
   const [loading, setLoading] = useState(false);
   const [addStepOpen, setAddStepOpen] = useState(false);
   const [qualityTestOpen, setQualityTestOpen] = useState(false);
+  const [viewStep, setViewStep] = useState(null);
+  const [viewTest, setViewTest] = useState(null);
 
   useEffect(() => {
     if (open && batch) {
@@ -267,7 +269,7 @@ const BatchDetailsDialog = ({ open, onClose, batch, onUpdate }) => {
                   {step.step_efficiency ? `${step.step_efficiency}%` : 'N/A'}
                 </TableCell>
                 <TableCell>
-                  <IconButton size="small">
+                  <IconButton size="small" aria-label="View production step" onClick={() => setViewStep(step)}>
                     <Edit />
                   </IconButton>
                 </TableCell>
@@ -333,7 +335,7 @@ const BatchDetailsDialog = ({ open, onClose, batch, onUpdate }) => {
                   {new Date(test.test_date).toLocaleDateString()}
                 </TableCell>
                 <TableCell>
-                  <IconButton size="small">
+                  <IconButton size="small" aria-label="View quality test" onClick={() => setViewTest(test)}>
                     <Assessment />
                   </IconButton>
                 </TableCell>
@@ -439,6 +441,31 @@ const BatchDetailsDialog = ({ open, onClose, batch, onUpdate }) => {
           loadBatchDetails();
         }}
       />
+
+      <Dialog open={Boolean(viewStep)} onClose={() => setViewStep(null)} maxWidth="sm" fullWidth>
+        <DialogTitle>{viewStep?.step_name || 'Production step'}</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mt: 1 }}>Status: {viewStep?.status || '—'}</Typography>
+          <Typography>Order: {viewStep?.step_order ?? '—'}</Typography>
+          <Typography>Input: {viewStep?.input_quantity || '—'}</Typography>
+          <Typography>Output: {viewStep?.output_quantity || '—'}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setViewStep(null)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={Boolean(viewTest)} onClose={() => setViewTest(null)} maxWidth="sm" fullWidth>
+        <DialogTitle>{viewTest?.test_number || 'Quality test'}</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mt: 1 }}>Type: {viewTest?.test_type || '—'}</Typography>
+          <Typography>Grade: {viewTest?.overall_grade || '—'}</Typography>
+          <Typography>Score: {viewTest?.quality_score ?? '—'}%</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setViewTest(null)}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Dialog>
   );
 };

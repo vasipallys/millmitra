@@ -159,12 +159,12 @@ const NotificationsPanel = ({ anchorEl, open, onClose }) => {
             </Typography>
             <Box>
               <Tooltip title="Notification Settings">
-                <IconButton size="small" onClick={() => setSettingsOpen(true)}>
+                <IconButton size="small" aria-label="Notification settings" onClick={() => setSettingsOpen(true)}>
                   <SettingsIcon />
                 </IconButton>
               </Tooltip>
               <Tooltip title="Mark All Read">
-                <IconButton size="small" onClick={handleMarkAllRead}>
+                <IconButton size="small" aria-label="Mark all notifications read" onClick={handleMarkAllRead}>
                   <MarkEmailRead />
                 </IconButton>
               </Tooltip>

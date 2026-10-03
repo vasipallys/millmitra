@@ -30,9 +30,10 @@ import {
   Schedule
 } from '@mui/icons-material';
 
-const ReorderAlerts = ({ onReorder, autoRefresh = true }) => {
+const ReorderAlerts = ({ onReorder, autoRefresh = true, sourceAlerts }) => {
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   const [reorderDialog, setReorderDialog] = useState({ open: false, item: null });
   const [reorderForm, setReorderForm] = useState({
     quantity: '',
@@ -91,13 +92,31 @@ const ReorderAlerts = ({ onReorder, autoRefresh = true }) => {
   ];
 
   useEffect(() => {
+    if (sourceAlerts?.length) {
+      setAlerts(sourceAlerts.map((item) => ({
+        id: item.id || item.stock_id || item.name,
+        product_name: item.product_name || item.name || 'Stock',
+        category: item.category || item.type || 'inventory',
+        current_stock: item.current_stock ?? item.quantity ?? 0,
+        reorder_level: item.reorder_level || 100,
+        max_stock: item.max_stock || 1000,
+        unit: item.unit || 'kg',
+        last_reorder: item.last_reorder,
+        consumption_rate: item.consumption_rate || 10,
+        days_remaining: item.days_remaining,
+        priority: item.priority || 'medium',
+        supplier: item.supplier || 'Mill supplier',
+        unit_cost: item.unit_cost || item.unit_price || 0,
+      })));
+      return undefined;
+    }
     loadReorderAlerts();
-    
     if (autoRefresh) {
-      const interval = setInterval(loadReorderAlerts, 300000); // 5 minutes
+      const interval = setInterval(loadReorderAlerts, 300000);
       return () => clearInterval(interval);
     }
-  }, [autoRefresh]);
+    return undefined;
+  }, [autoRefresh, sourceAlerts]);
 
   const loadReorderAlerts = async () => {
     try {
@@ -155,24 +174,27 @@ const ReorderAlerts = ({ onReorder, autoRefresh = true }) => {
   };
 
   const handleReorderSubmit = async () => {
+    const quantity = parseInt(reorderForm.quantity, 10);
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      setSubmitError('Quantity must be greater than 0');
+      return;
+    }
     try {
+      setSubmitError('');
       const reorderData = {
         product_id: reorderDialog.item.id,
-        quantity: parseInt(reorderForm.quantity),
+        quantity,
         supplier: reorderForm.supplier,
         expected_delivery: reorderForm.expected_delivery,
         notes: reorderForm.notes,
-        estimated_cost: parseInt(reorderForm.quantity) * reorderDialog.item.unit_cost
+        estimated_cost: quantity * (reorderDialog.item.unit_cost || 0)
       };
 
-      // Call parent callback
       if (onReorder) {
         await onReorder(reorderData);
       }
 
-      // Remove from alerts list
       setAlerts(prev => prev.filter(alert => alert.id !== reorderDialog.item.id));
-      
       setReorderDialog({ open: false, item: null });
       setReorderForm({
         quantity: '',
@@ -180,12 +202,8 @@ const ReorderAlerts = ({ onReorder, autoRefresh = true }) => {
         expected_delivery: '',
         notes: ''
       });
-
-      // Show success message (in real app, use snackbar)
-      console.log('Reorder submitted successfully');
-      
     } catch (error) {
-      console.error('Failed to submit reorder:', error);
+      setSubmitError(error.message || 'Could not submit reorder');
     }
   };
 
@@ -411,6 +429,7 @@ const ReorderAlerts = ({ onReorder, autoRefresh = true }) => {
               />
             </Grid>
           </Grid>
+          {submitError && <Alert severity="error" sx={{ mt: 2 }}>{submitError}</Alert>}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setReorderDialog({ open: false, item: null })}>

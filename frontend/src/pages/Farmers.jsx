@@ -18,6 +18,8 @@ import RegisterFarmerDialog from '../components/farmer/RegisterFarmerDialog';
 import FarmerEditRequestsDialog from '../components/farmer/FarmerEditRequestsDialog';
 import CreateContractDialog from '../components/farmer/CreateContractDialog';
 import RecordProcurementDialog from '../components/farmer/RecordProcurementDialog';
+import { getApiErrorMessage } from '../utils/apiError';
+import { PageHeader, PageShell, QueryErrorAlert } from '../components/common/PageChrome';
 
 const Farmers = () => {
   const [tabValue, setTabValue] = useState(0);
@@ -35,6 +37,15 @@ const Farmers = () => {
   const [contractStatusDialogOpen, setContractStatusDialogOpen] = useState(false);
   const [selectedContract, setSelectedContract] = useState(null);
   const [editRequestsDialogOpen, setEditRequestsDialogOpen] = useState(false);
+  const [contractEditForm, setContractEditForm] = useState({
+    quantity_committed: '',
+    base_price: '',
+    quality_bonus: '',
+    advance_amount: '',
+    terms_conditions: '',
+    special_instructions: '',
+  });
+  const [contractEditError, setContractEditError] = useState('');
   const [selectedFarmerForRequests, setSelectedFarmerForRequests] = useState(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -223,6 +234,10 @@ const Farmers = () => {
         queryClient.invalidateQueries(['all-contracts']);
         setContractEditDialogOpen(false);
         setContractStatusDialogOpen(false);
+        setContractEditError('');
+      },
+      onError: (error) => {
+        setContractEditError(getApiErrorMessage(error, 'Could not update contract'));
       }
     }
   );
@@ -315,6 +330,15 @@ const Farmers = () => {
 
   const handleEditContract = (contract) => {
     setSelectedContract(contract);
+    setContractEditError('');
+    setContractEditForm({
+      quantity_committed: contract.quantity_committed || '',
+      base_price: contract.base_price || '',
+      quality_bonus: contract.quality_bonus || '',
+      advance_amount: contract.advance_amount || '',
+      terms_conditions: contract.terms_conditions || '',
+      special_instructions: contract.special_instructions || '',
+    });
     setContractEditDialogOpen(true);
   };
 
@@ -359,46 +383,28 @@ const Farmers = () => {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h4" component="h1">
-          Farmer Management
-        </Typography>
-        <Box>
-          <Button
-            variant="contained"
-            startIcon={<PersonAdd />}
-            onClick={() => setRegisterDialogOpen(true)}
-            sx={{ mr: 2 }}
-          >
-            Register Farmer
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<Assignment />}
-            onClick={() => setContractDialogOpen(true)}
-            sx={{ mr: 2 }}
-          >
-            Create Contract
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<Agriculture />}
-            onClick={() => setProcurementDialogOpen(true)}
-            sx={{ mr: 2 }}
-          >
-            Record Procurement
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<PendingActions />}
-            onClick={() => setEditRequestsDialogOpen(true)}
-            color="warning"
-          >
-            Edit Requests
-          </Button>
-        </Box>
-      </Box>
+    <PageShell>
+      <PageHeader
+        title="Farmer Management"
+        subtitle="Register suppliers, contracts, and paddy purchases"
+        actions={
+          <>
+            <Button variant="contained" startIcon={<PersonAdd />} onClick={() => setRegisterDialogOpen(true)}>
+              Register Farmer
+            </Button>
+            <Button variant="outlined" startIcon={<Assignment />} onClick={() => setContractDialogOpen(true)}>
+              Create Contract
+            </Button>
+            <Button variant="outlined" startIcon={<Agriculture />} onClick={() => setProcurementDialogOpen(true)}>
+              Record Procurement
+            </Button>
+            <Button variant="outlined" startIcon={<PendingActions />} onClick={() => setEditRequestsDialogOpen(true)} color="warning">
+              Edit Requests
+            </Button>
+          </>
+        }
+      />
+      {farmersError && <QueryErrorAlert error={farmersError} entity="farmers" />}
 
       {/* Analytics Cards */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
@@ -517,7 +523,7 @@ const Farmers = () => {
             ) : farmersError ? (
               <Box sx={{ textAlign: 'center', py: 4 }}>
                 <Typography variant="body2" color="error">
-                  Error loading farmers: {farmersError.message}
+                  {getApiErrorMessage(farmersError, 'Could not load farmers')}
                 </Typography>
               </Box>
             ) : farmersData?.farmers?.length > 0 ? (
@@ -1568,6 +1574,7 @@ const Farmers = () => {
       >
         <DialogTitle>Edit Contract</DialogTitle>
         <DialogContent>
+          {contractEditError && <Alert severity="error" sx={{ mt: 1 }}>{contractEditError}</Alert>}
           {selectedContract && (
             <Box sx={{ mt: 2 }}>
               <Grid container spacing={2}>
@@ -1576,7 +1583,8 @@ const Farmers = () => {
                     fullWidth
                     label="Quantity Committed (kg)"
                     type="number"
-                    defaultValue={selectedContract.quantity_committed || ''}
+                    value={contractEditForm.quantity_committed}
+                    onChange={(e) => setContractEditForm({ ...contractEditForm, quantity_committed: e.target.value })}
                     margin="normal"
                   />
                 </Grid>
@@ -1585,7 +1593,8 @@ const Farmers = () => {
                     fullWidth
                     label="Base Price (₹/kg)"
                     type="number"
-                    defaultValue={selectedContract.base_price || ''}
+                    value={contractEditForm.base_price}
+                    onChange={(e) => setContractEditForm({ ...contractEditForm, base_price: e.target.value })}
                     margin="normal"
                   />
                 </Grid>
@@ -1594,7 +1603,8 @@ const Farmers = () => {
                     fullWidth
                     label="Quality Bonus (₹)"
                     type="number"
-                    defaultValue={selectedContract.quality_bonus || ''}
+                    value={contractEditForm.quality_bonus}
+                    onChange={(e) => setContractEditForm({ ...contractEditForm, quality_bonus: e.target.value })}
                     margin="normal"
                   />
                 </Grid>
@@ -1603,7 +1613,8 @@ const Farmers = () => {
                     fullWidth
                     label="Advance Amount (₹)"
                     type="number"
-                    defaultValue={selectedContract.advance_amount || ''}
+                    value={contractEditForm.advance_amount}
+                    onChange={(e) => setContractEditForm({ ...contractEditForm, advance_amount: e.target.value })}
                     margin="normal"
                   />
                 </Grid>
@@ -1613,7 +1624,8 @@ const Farmers = () => {
                     label="Terms & Conditions"
                     multiline
                     rows={3}
-                    defaultValue={selectedContract.terms_conditions || ''}
+                    value={contractEditForm.terms_conditions}
+                    onChange={(e) => setContractEditForm({ ...contractEditForm, terms_conditions: e.target.value })}
                     margin="normal"
                   />
                 </Grid>
@@ -1623,7 +1635,8 @@ const Farmers = () => {
                     label="Special Instructions"
                     multiline
                     rows={2}
-                    defaultValue={selectedContract.special_instructions || ''}
+                    value={contractEditForm.special_instructions}
+                    onChange={(e) => setContractEditForm({ ...contractEditForm, special_instructions: e.target.value })}
                     margin="normal"
                   />
                 </Grid>
@@ -1636,9 +1649,24 @@ const Farmers = () => {
           <Button
             variant="contained"
             onClick={() => {
-              // TODO: Implement actual contract edit functionality
-              console.log('Save contract changes');
-              setContractEditDialogOpen(false);
+              const qty = parseFloat(contractEditForm.quantity_committed);
+              const price = parseFloat(contractEditForm.base_price);
+              if (!Number.isFinite(qty) || qty <= 0 || !Number.isFinite(price) || price <= 0) {
+                setContractEditError('Quantity and base price must be greater than 0');
+                return;
+              }
+              setContractEditError('');
+              updateContractMutation.mutate({
+                contractId: selectedContract.id,
+                updateData: {
+                  quantity_committed: qty,
+                  base_price: price,
+                  quality_bonus: parseFloat(contractEditForm.quality_bonus) || 0,
+                  advance_amount: parseFloat(contractEditForm.advance_amount) || 0,
+                  terms_conditions: contractEditForm.terms_conditions,
+                  special_instructions: contractEditForm.special_instructions,
+                }
+              });
             }}
             disabled={updateContractMutation.isLoading}
           >
@@ -1721,7 +1749,7 @@ const Farmers = () => {
         onClose={() => setEditRequestsDialogOpen(false)}
         farmerId={selectedFarmerForRequests?.id}
       />
-    </Box>
+    </PageShell>
   );
 };
 

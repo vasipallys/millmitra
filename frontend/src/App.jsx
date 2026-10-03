@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { CssBaseline, Box } from '@mui/material';
+import { CssBaseline, Box, CircularProgress, Typography } from '@mui/material';
 import { QueryClient, QueryClientProvider } from 'react-query';
 
 // Components
@@ -74,6 +74,29 @@ const theme = createTheme({
           textTransform: 'none',
           fontWeight: 500,
         },
+      },
+      defaultProps: {
+        disableElevation: true,
+      },
+    },
+    MuiIconButton: {
+      styleOverrides: {
+        root: {
+          '&:focus-visible': {
+            outline: '2px solid #2E7D32',
+            outlineOffset: 2,
+          },
+        },
+      },
+    },
+    MuiDialog: {
+      defaultProps: {
+        fullWidth: true,
+      },
+    },
+    MuiTooltip: {
+      defaultProps: {
+        enterDelay: 400,
       },
     },
   },
@@ -151,12 +174,19 @@ function AppContent() {
         <CssBaseline />
         <Box
           display="flex"
+          flexDirection="column"
           justifyContent="center"
           alignItems="center"
           minHeight="100vh"
           bgcolor="background.default"
+          gap={2}
+          role="status"
+          aria-live="polite"
         >
-          <div>Loading...</div>
+          <CircularProgress />
+          <Typography variant="body2" color="text.secondary">
+            Opening MillMitra…
+          </Typography>
         </Box>
       </ThemeProvider>
     );
@@ -202,9 +232,10 @@ function AppContent() {
           {/* Page Content */}
           <Box sx={{
             flexGrow: 1,
-            p: 0, // Remove padding to eliminate gaps
+            p: 0,
             bgcolor: 'background.default',
-            overflow: 'auto'
+            overflow: 'auto',
+            minWidth: 0
           }}>
             <Routes>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />

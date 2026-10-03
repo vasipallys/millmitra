@@ -59,6 +59,9 @@ import {
   Business as BusinessIcon,
 } from '@mui/icons-material';
 import api from '../services/api';
+import { getApiErrorMessage } from '../utils/apiError';
+import { downloadText } from '../utils/downloadFile';
+import { PageHeader, PageShell } from '../components/common/PageChrome';
 
 const SETTINGS_STORAGE_KEY = 'millmitra_settings';
 
@@ -94,9 +97,9 @@ const defaultSettings = {
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState(0);
-  const [openDialog, setOpenDialog] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [saveError, setSaveError] = useState('');
+  const [opsNote, setOpsNote] = useState(null);
   const [settings, setSettings] = useState(defaultSettings);
 
   useEffect(() => {
@@ -115,7 +118,7 @@ const Settings = () => {
           setSettings((prev) => ({ ...prev, ...response.data.settings }));
         }
       } catch (err) {
-        // Keep local copy if the mill server is unavailable
+        setSaveError(getApiErrorMessage(err, 'Could not load mill settings from the server. Using this computer’s copy.'));
       }
     };
     loadSettings();
@@ -148,7 +151,7 @@ const Settings = () => {
       await api.put('/user/mill-settings', { settings });
       setSaveMessage('Settings saved');
     } catch (err) {
-      setSaveMessage('Saved on this computer. Sign in again to store them on the mill server.');
+      setSaveError(getApiErrorMessage(err, 'Saved on this computer. Could not store them on the mill server.'));
     }
   };
 
@@ -159,18 +162,13 @@ const Settings = () => {
   );
 
   return (
-    <Box>
-      {/* Header */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" fontWeight="bold">
-          System Settings
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Configure your rice mill management system
-        </Typography>
-        {saveMessage && <Alert severity="success" sx={{ mt: 2 }}>{saveMessage}</Alert>}
-        {saveError && <Alert severity="error" sx={{ mt: 2 }}>{saveError}</Alert>}
-      </Box>
+    <PageShell>
+      <PageHeader
+        title="System Settings"
+        subtitle="Business info is stored on this computer and on the mill server when you are signed in"
+      />
+      {saveMessage && <Alert severity="success" sx={{ mb: 2 }} role="status">{saveMessage}</Alert>}
+      {saveError && <Alert severity="error" sx={{ mb: 2 }} role="alert">{saveError}</Alert>}
 
       {/* Settings Tabs */}
       <Paper sx={{ mb: 3 }}>
@@ -548,19 +546,56 @@ const Settings = () => {
                 <List>
                   <ListItem>
                     <ListItemText primary="Auto Backup" secondary="Daily at 2:00 AM" />
-                    <Button variant="outlined" size="small">Configure</Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => setOpsNote({
+                        title: 'Auto backup',
+                        text: 'Scheduled cloud backup is not connected. Use Create Backup Now to download a settings copy on this computer.',
+                      })}
+                    >
+                      Configure
+                    </Button>
                   </ListItem>
                   <ListItem>
-                    <ListItemText primary="Backup Location" secondary="Cloud Storage" />
-                    <Button variant="outlined" size="small">Change</Button>
+                    <ListItemText primary="Backup Location" secondary="This computer (download)" />
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => setOpsNote({
+                        title: 'Backup location',
+                        text: 'Backups download as millmitra-settings.json. There is no remote vault in this build.',
+                      })}
+                    >
+                      Change
+                    </Button>
                   </ListItem>
                   <ListItem>
-                    <ListItemText primary="Retention Period" secondary="30 days" />
-                    <Button variant="outlined" size="small">Modify</Button>
+                    <ListItemText primary="Retention Period" secondary="Keep local copies you download" />
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => setOpsNote({
+                        title: 'Retention',
+                        text: 'MillMitra does not delete or rotate downloaded backups. Keep or discard the JSON files yourself.',
+                      })}
+                    >
+                      Modify
+                    </Button>
                   </ListItem>
                 </List>
                 <Box sx={{ mt: 2 }}>
-                  <Button variant="contained" fullWidth>
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    onClick={() => {
+                      downloadText('millmitra-settings.json', JSON.stringify(settings, null, 2), 'application/json');
+                      setOpsNote({
+                        title: 'Backup created',
+                        text: 'Settings were downloaded to this computer. Database backup is not wired.',
+                      });
+                    }}
+                  >
                     Create Backup Now
                   </Button>
                 </Box>
@@ -584,7 +619,16 @@ const Settings = () => {
                   </ListItem>
                   <ListItem>
                     <ListItemText primary="Last Cleanup" secondary="3 days ago" />
-                    <Button variant="outlined" size="small">Run Now</Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => setOpsNote({
+                        title: 'Cleanup',
+                        text: 'No server cleanup job is connected. Unused demo records stay until you delete them on the mill pages.',
+                      })}
+                    >
+                      Run Now
+                    </Button>
                   </ListItem>
                 </List>
               </CardContent>
@@ -599,7 +643,17 @@ const Settings = () => {
           Save Settings
         </Button>
       </Box>
-    </Box>
+
+      <Dialog open={Boolean(opsNote)} onClose={() => setOpsNote(null)} maxWidth="sm" fullWidth>
+        <DialogTitle>{opsNote?.title}</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mt: 1 }}>{opsNote?.text}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpsNote(null)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+    </PageShell>
   );
 };
 

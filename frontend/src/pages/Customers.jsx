@@ -18,6 +18,8 @@ import CustomerDetails from '../components/CustomerDetails';
 import OrderHistory from '../components/OrderHistory';
 import CustomerAnalytics from '../components/CustomerAnalytics';
 import InteractionDialog from '../components/InteractionDialog';
+import { getApiErrorMessage } from '../utils/apiError';
+import { PageHeader, PageShell, QueryErrorAlert } from '../components/common/PageChrome';
 
 const Customers = () => {
   const [activeTab, setActiveTab] = useState(0);
@@ -30,7 +32,7 @@ const Customers = () => {
   const queryClient = useQueryClient();
 
   // Fetch customers data
-  const { data: customersData, isLoading: customersLoading } = useQuery(
+  const { data: customersData, isLoading: customersLoading, isError: customersError, error: customersErr, refetch: refetchCustomers } = useQuery(
     ['customers', searchTerm, segmentFilter, statusFilter],
     () => customerService.getCustomers({ search: searchTerm, segment: segmentFilter, status: statusFilter }),
     { refetchInterval: 60000 }
@@ -49,21 +51,28 @@ const Customers = () => {
   );
 
   // Mutations
+  const [actionError, setActionError] = useState('');
+
   const createCustomerMutation = useMutation(customerService.createCustomer, {
     onSuccess: () => {
       queryClient.invalidateQueries('customers');
       setAddCustomerOpen(false);
-    }
+      setActionError('');
+    },
+    onError: (error) => setActionError(getApiErrorMessage(error, 'Could not add customer'))
   });
 
   const createInteractionMutation = useMutation(customerService.createInteraction, {
     onSuccess: () => {
       queryClient.invalidateQueries(['customer-details', selectedCustomer?.id]);
       setInteractionOpen(false);
-    }
+      setActionError('');
+    },
+    onError: (error) => setActionError(getApiErrorMessage(error, 'Could not save interaction')),
   });
 
   const handleCreateCustomer = (customerData) => {
+    setActionError('');
     createCustomerMutation.mutate(customerData);
   };
 
@@ -91,30 +100,24 @@ const Customers = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" fontWeight="bold">
-          Customer Management
-        </Typography>
-        <Box>
-          <Button
-            variant="outlined"
-            startIcon={<Analytics />}
-            sx={{ mr: 2 }}
-            onClick={() => setActiveTab(3)}
-          >
-            Analytics
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={() => setAddCustomerOpen(true)}
-          >
-            Add Customer
-          </Button>
-        </Box>
-      </Box>
+    <PageShell>
+      <PageHeader
+        title="Customer Management"
+        subtitle="Buyers used on Sales orders and Finance invoices"
+        actions={
+          <>
+            <Button variant="outlined" startIcon={<Analytics />} onClick={() => setActiveTab(3)}>
+              Analytics
+            </Button>
+            <Button variant="contained" startIcon={<Add />} onClick={() => setAddCustomerOpen(true)}>
+              Add Customer
+            </Button>
+          </>
+        }
+      />
+      {customersError && <QueryErrorAlert error={customersErr} onRetry={refetchCustomers} entity="customers" />}
+      {actionError && <QueryErrorAlert error={new Error(actionError)} entity="customer action" />}
+      {customersLoading && <LinearProgress sx={{ mb: 2 }} />}
 
       {/* Quick Stats */}
       <Grid container spacing={3} mb={3}>
@@ -274,6 +277,10 @@ const Customers = () => {
                   setSelectedCustomer(customer);
                   setInteractionOpen(true);
                 }}
+                onViewOrders={() => {
+                  setSelectedCustomer(customer);
+                  setActiveTab(2);
+                }}
               />
             </Grid>
           ))}
@@ -325,9 +332,11 @@ const Customers = () => {
       >
         <DialogTitle>Add New Customer</DialogTitle>
         <DialogContent>
+          {actionError && <Alert severity="error" sx={{ mt: 1 }}>{actionError}</Alert>}
           <AddCustomerForm
             onSubmit={handleCreateCustomer}
             loading={createCustomerMutation.isLoading}
+            onCancel={() => setAddCustomerOpen(false)}
           />
         </DialogContent>
       </Dialog>
@@ -360,27 +369,29 @@ const Customers = () => {
           </CardContent>
         </Card>
       )}
-    </Box>
+    </PageShell>
   );
 };
 
 // Add Customer Form Component
-const AddCustomerForm = ({ onSubmit, loading }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    company_name: '',
-    customer_type: 'individual',
-    phone: '',
-    email: '',
-    address: '',
-    city: '',
-    state: '',
-    pincode: '',
-    gst_number: '',
-    credit_limit: 0,
-    payment_terms: 'cash',
-    preferred_products: []
-  });
+const emptyCustomerForm = () => ({
+  name: '',
+  company_name: '',
+  customer_type: 'individual',
+  phone: '',
+  email: '',
+  address: '',
+  city: '',
+  state: '',
+  pincode: '',
+  gst_number: '',
+  credit_limit: 0,
+  payment_terms: 'cash',
+  preferred_products: []
+});
+
+const AddCustomerForm = ({ onSubmit, loading, onCancel }) => {
+  const [formData, setFormData] = useState(emptyCustomerForm);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -511,7 +522,10 @@ const AddCustomerForm = ({ onSubmit, loading }) => {
         </Grid>
       </Grid>
       <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-        <Button type="button" onClick={() => setFormData({})}>
+        <Button type="button" onClick={onCancel} disabled={loading}>
+          Cancel
+        </Button>
+        <Button type="button" onClick={() => setFormData(emptyCustomerForm())} disabled={loading}>
           Reset
         </Button>
         <Button

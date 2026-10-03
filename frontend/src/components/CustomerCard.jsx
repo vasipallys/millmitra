@@ -7,7 +7,7 @@ import {
   Chat, ShoppingCart, Star, LocationOn
 } from '@mui/icons-material';
 
-const CustomerCard = ({ customer, onSelect, onInteraction }) => {
+const CustomerCard = ({ customer, onSelect, onInteraction, onViewOrders }) => {
   const getSegmentColor = (segment) => {
     const colors = {
       premium: 'success',
@@ -168,12 +168,12 @@ const CustomerCard = ({ customer, onSelect, onInteraction }) => {
       <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2 }}>
         <Box>
           <Tooltip title="Add Interaction">
-            <IconButton size="small" onClick={onInteraction}>
+            <IconButton size="small" aria-label="Add interaction" onClick={onInteraction}>
               <Chat />
             </IconButton>
           </Tooltip>
           <Tooltip title="View Orders">
-            <IconButton size="small">
+            <IconButton size="small" aria-label="View orders" onClick={onViewOrders || onSelect}>
               <ShoppingCart />
             </IconButton>
           </Tooltip>

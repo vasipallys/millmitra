@@ -33,6 +33,8 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { salesAPI } from '../services/api';
+import { getApiErrorMessage } from '../utils/apiError';
+import { PageEmpty, PageHeader, PageShell, QueryErrorAlert } from '../components/common/PageChrome';
 
 const Sales = () => {
   const queryClient = useQueryClient();
@@ -46,7 +48,7 @@ const Sales = () => {
     unit_price: '',
   });
 
-  const { data: ordersPayload, isLoading } = useQuery(
+  const { data: ordersPayload, isLoading, isError, error, refetch } = useQuery(
     'sales-orders',
     async () => (await salesAPI.getOrders({ per_page: 50 })).data,
     { refetchInterval: 60000 }
@@ -92,12 +94,13 @@ const Sales = () => {
     async (payload) => (await salesAPI.createOrder(payload)).data,
     {
       onSuccess: () => {
-        queryClient.invalidateQueries(['sales-orders', 'sales-analytics']);
+        queryClient.invalidateQueries('sales-orders');
+        queryClient.invalidateQueries('sales-analytics');
         setOpenDialog(false);
         setFormError('');
       },
-      onError: (error) => {
-        setFormError(error.response?.data?.message || 'Could not create order');
+      onError: (err) => {
+        setFormError(getApiErrorMessage(err, 'Could not create order'));
       }
     }
   );
@@ -154,23 +157,24 @@ const Sales = () => {
   };
 
   return (
-    <Box>
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h4" component="h1" fontWeight="bold">
-          Sales Management
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => {
-            setFormError('');
-            setOpenDialog(true);
-          }}
-          size="large"
-        >
-          New Order
-        </Button>
-      </Box>
+    <PageShell>
+      <PageHeader
+        title="Sales Management"
+        subtitle="Live order book. New Order saves a customer, variety, quantity, and price."
+        actions={
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => {
+              setFormError('');
+              setOpenDialog(true);
+            }}
+          >
+            New Order
+          </Button>
+        }
+      />
+      {isError && <QueryErrorAlert error={error} onRetry={refetch} entity="sales orders" />}
 
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6} md={3}>
@@ -293,8 +297,16 @@ const Sales = () => {
             Recent Orders
           </Typography>
           {isLoading && <LinearProgress />}
-          {!isLoading && orders.length === 0 && (
-            <Alert severity="info">No sales orders yet. Use New Order to create one.</Alert>
+          {!isLoading && !isError && orders.length === 0 && (
+            <PageEmpty
+              title="No sales orders yet"
+              description="Use New Order to record a customer, variety, quantity, and price."
+              action={
+                <Button variant="contained" startIcon={<AddIcon />} onClick={() => setOpenDialog(true)}>
+                  New Order
+                </Button>
+              }
+            />
           )}
           <TableContainer component={Paper} elevation={0}>
             <Table>
@@ -341,10 +353,21 @@ const Sales = () => {
         </CardContent>
       </Card>
 
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Create New Order</DialogTitle>
+      <Dialog
+        open={openDialog}
+        onClose={() => setOpenDialog(false)}
+        maxWidth="md"
+        fullWidth
+        aria-labelledby="new-order-title"
+      >
+        <DialogTitle id="new-order-title">Create New Order</DialogTitle>
         <DialogContent>
-          {formError && <Alert severity="error" sx={{ mt: 2 }}>{formError}</Alert>}
+          {formError && <Alert severity="error" sx={{ mt: 2 }} role="alert">{formError}</Alert>}
+          {openDialog && customers.length === 0 && (
+            <Alert severity="info" sx={{ mt: 2 }}>
+              No customers yet. Add one under Customers, then return here.
+            </Alert>
+          )}
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12} md={6}>
               <TextField
@@ -354,6 +377,7 @@ const Sales = () => {
                 value={form.customer_id}
                 onChange={(e) => setForm({ ...form, customer_id: e.target.value })}
                 required
+                helperText="Required. Pick a buyer already on Customers."
               >
                 {customers.map((customer) => (
                   <MenuItem key={customer.id} value={customer.id}>
@@ -378,7 +402,7 @@ const Sales = () => {
                 label="Item / variety"
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                    helperText="Match a product name/variety in Inventory so stock is deducted"
+                helperText="Variety you are selling (for example Basmati Rice). Invoices, not this order, deduct product stock."
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -388,6 +412,8 @@ const Sales = () => {
                 type="number"
                 value={form.quantity}
                 onChange={(e) => setForm({ ...form, quantity: e.target.value })}
+                inputProps={{ min: 0, step: 'any' }}
+                helperText="Must be greater than 0"
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -397,6 +423,8 @@ const Sales = () => {
                 type="number"
                 value={form.unit_price}
                 onChange={(e) => setForm({ ...form, unit_price: e.target.value })}
+                inputProps={{ min: 0, step: 'any' }}
+                helperText="Must be greater than 0"
               />
             </Grid>
           </Grid>
@@ -412,7 +440,7 @@ const Sales = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </PageShell>
   );
 };
 

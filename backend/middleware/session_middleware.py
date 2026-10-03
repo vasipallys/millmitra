@@ -49,8 +49,11 @@ class SessionMiddleware:
                 user_id = get_jwt_identity()
 
                 if user_id:
-                    # Get user and validate
-                    user = User.query.get(user_id)
+                    try:
+                        user_pk = int(user_id)
+                    except (TypeError, ValueError):
+                        user_pk = None
+                    user = User.query.get(user_pk) if user_pk else None
                     if user and user.is_active:
                         g.current_user = user
                         g.user_id = user_id
@@ -98,6 +101,7 @@ class SessionMiddleware:
         # Skip for specific paths
         skip_paths = [
             '/api/health',
+            '/api/ready',
             '/api/auth/login',
             '/api/auth/register',
             '/api/auth/voice-login',

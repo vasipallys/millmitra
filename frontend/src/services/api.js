@@ -31,6 +31,16 @@ api.interceptors.response.use(
   (error) => {
     const url = error.config?.url || '';
     const isAuthCall = /\/auth\/(login|me|logout|verify-otp|complete-login)/.test(url);
+    const data = error.response?.data;
+    if (typeof data?.message === 'string' && data.message.trim()) {
+      error.userMessage = data.error_id
+        ? `${data.message} (ref ${data.error_id})`
+        : data.message;
+    } else if (!error.response) {
+      error.userMessage = 'Cannot reach the mill server. Confirm it is running on port 5000.';
+    } else {
+      error.userMessage = 'Request failed. Try again.';
+    }
     if (error.response?.status === 401 && !isAuthCall) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');

@@ -1,5 +1,5 @@
 import re
-from flask import Flask, jsonify
+from flask import Flask
 from flask_cors import CORS
 from extensions import db, jwt, init_extensions
 from config import Config
@@ -70,21 +70,8 @@ def create_app():
     app.register_blueprint(compliance_bp, url_prefix='/api/compliance')
     app.register_blueprint(quality_bp, url_prefix='/api/quality')
 
-    # Health check endpoint
-    @app.route('/api/health', methods=['GET'])
-    def health_check():
-        from datetime import datetime
-        return jsonify({
-            'status': 'healthy',
-            'timestamp': datetime.utcnow().isoformat(),
-            'version': '1.0.0',
-            'services': {
-                'database': 'connected',
-                'ai_services': 'active',
-                'compliance': 'active',
-                'analytics': 'active'
-            }
-        }), 200
+    from observability import init_observability
+    init_observability(app)
 
     return app
 

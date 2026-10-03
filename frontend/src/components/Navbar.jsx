@@ -11,6 +11,11 @@ import {
   Box,
   Tooltip,
   Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -31,7 +36,8 @@ const Navbar = ({ onMenuClick, onLogout, user }) => {
   const [notificationAnchor, setNotificationAnchor] = useState(null);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [voiceNoteOpen, setVoiceNoteOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const navigate = useNavigate();
 
@@ -74,8 +80,8 @@ const Navbar = ({ onMenuClick, onLogout, user }) => {
   };
 
   const toggleVoice = () => {
-    setIsVoiceActive(!isVoiceActive);
-    // Voice interface logic will be handled by VoiceInterface component
+    setVoiceNoteOpen(true);
+    setIsVoiceActive(false);
   };
 
 
@@ -113,7 +119,8 @@ const Navbar = ({ onMenuClick, onLogout, user }) => {
           label="AI Active"
           color="success"
           size="small"
-          sx={{ mr: 2 }}
+          sx={{ mr: 2, cursor: 'pointer' }}
+          onClick={() => setInfoOpen(true)}
         />
 
         {/* Voice Control Button */}
@@ -122,6 +129,7 @@ const Navbar = ({ onMenuClick, onLogout, user }) => {
             color={isVoiceActive ? "primary" : "default"}
             onClick={toggleVoice}
             sx={{ mr: 1 }}
+            aria-label={isVoiceActive ? 'Disable voice commands' : 'Voice commands (experimental)'}
           >
             {isVoiceActive ? <Mic /> : <MicOff />}
           </IconButton>
@@ -133,6 +141,7 @@ const Navbar = ({ onMenuClick, onLogout, user }) => {
             color="inherit"
             onClick={handleNotificationMenuOpen}
             sx={{ mr: 1 }}
+            aria-label="Notifications"
           >
             <Badge badgeContent={unreadCount} color="error">
               <NotificationsIcon />
@@ -146,6 +155,7 @@ const Navbar = ({ onMenuClick, onLogout, user }) => {
             edge="end"
             color="inherit"
             onClick={handleProfileMenuOpen}
+            aria-label="Account menu"
           >
             <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
               {user?.username?.charAt(0).toUpperCase() || 'U'}
@@ -200,6 +210,30 @@ const Navbar = ({ onMenuClick, onLogout, user }) => {
           onClose={() => setProfileOpen(false)}
           user={user}
         />
+
+        <Dialog open={infoOpen} onClose={() => setInfoOpen(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>Optional AI banners</DialogTitle>
+          <DialogContent>
+            <Typography variant="body2">
+              Insight chips on mill pages are optional. Empty or wrong suggestions do not block saving farmers, stock, batches, orders, or invoices.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setInfoOpen(false)}>Close</Button>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog open={voiceNoteOpen} onClose={() => setVoiceNoteOpen(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>Voice commands</DialogTitle>
+          <DialogContent>
+            <Typography variant="body2">
+              Voice control is experimental and is not required for mill work. Use the Password login and the sidebar menus.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setVoiceNoteOpen(false)}>Close</Button>
+          </DialogActions>
+        </Dialog>
       </Toolbar>
     </AppBar>
   );

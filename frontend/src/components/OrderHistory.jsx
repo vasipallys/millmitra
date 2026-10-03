@@ -4,7 +4,7 @@ import {
   TableCell, TableContainer, TableHead, TableRow,
   Paper, Chip, Button, Box, TextField, FormControl,
   InputLabel, Select, MenuItem, IconButton, Tooltip,
-  Dialog, DialogTitle, DialogContent, LinearProgress,
+  Dialog, DialogTitle, DialogContent, DialogActions, LinearProgress,
   Grid, Alert
 } from '@mui/material';
 import {
@@ -13,6 +13,7 @@ import {
 } from '@mui/icons-material';
 import { useQuery } from 'react-query';
 import { customerService } from '../services/customerService';
+import { downloadText, toCsv } from '../utils/downloadFile';
 
 const OrderHistory = ({ customerId, showAllOrders = false }) => {
   const [filters, setFilters] = useState({
@@ -23,6 +24,8 @@ const OrderHistory = ({ customerId, showAllOrders = false }) => {
   });
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [orderDetailsOpen, setOrderDetailsOpen] = useState(false);
+  const [analyticsOpen, setAnalyticsOpen] = useState(false);
+  const [actionNote, setActionNote] = useState(null);
 
   const { data: orders, isLoading } = useQuery(
     ['orders', customerId, filters],
@@ -156,14 +159,24 @@ const OrderHistory = ({ customerId, showAllOrders = false }) => {
                 <Button
                   variant="outlined"
                   startIcon={<GetApp />}
-                  onClick={() => {/* Export functionality */}}
+                  onClick={() => {
+                    const rows = (orders?.orders || []).map((order) => ({
+                      order_number: order.order_number || order.id,
+                      date: order.order_date || '',
+                      amount: order.final_amount || order.total_amount || 0,
+                      status: order.status || '',
+                    }));
+                    downloadText('customer-orders.csv', toCsv(rows) || 'order_number,date,amount,status', 'text/csv');
+                  }}
                 >
                   Export
                 </Button>
                 <Button
                   variant="outlined"
                   startIcon={<Analytics />}
-                  onClick={() => {/* Analytics functionality */}}
+                  onClick={() => {
+                    setAnalyticsOpen(true);
+                  }}
                 >
                   Analytics
                 </Button>
@@ -295,6 +308,7 @@ const OrderHistory = ({ customerId, showAllOrders = false }) => {
                     <Tooltip title="View Details">
                       <IconButton
                         size="small"
+                        aria-label="View order details"
                         onClick={() => handleViewOrder(order)}
                       >
                         <Visibility />
@@ -302,14 +316,28 @@ const OrderHistory = ({ customerId, showAllOrders = false }) => {
                     </Tooltip>
                     {order.tracking_number && (
                       <Tooltip title="Track Shipment">
-                        <IconButton size="small">
+                        <IconButton
+                          size="small"
+                          aria-label="Track shipment"
+                          onClick={() => setActionNote({
+                            title: 'Track shipment',
+                            text: `Tracking ${order.tracking_number} is not connected to a live carrier. Confirm delivery with the mill office.`,
+                          })}
+                        >
                           <LocalShipping />
                         </IconButton>
                       </Tooltip>
                     )}
                     {order.payment_status !== 'paid' && (
                       <Tooltip title="Payment">
-                        <IconButton size="small">
+                        <IconButton
+                          size="small"
+                          aria-label="Record payment"
+                          onClick={() => setActionNote({
+                            title: 'Payment',
+                            text: `Record money for order ${order.order_number || order.id} on Finance → Record Payment.`,
+                          })}
+                        >
                           <Payment />
                         </IconButton>
                       </Tooltip>
@@ -339,6 +367,28 @@ const OrderHistory = ({ customerId, showAllOrders = false }) => {
             <LinearProgress />
           )}
         </DialogContent>
+      </Dialog>
+
+      <Dialog open={analyticsOpen} onClose={() => setAnalyticsOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Order analytics</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mt: 1 }}>
+            {orders?.orders?.length || 0} orders in this filter. Live sales totals are on Sales and Finance.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAnalyticsOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={Boolean(actionNote)} onClose={() => setActionNote(null)} maxWidth="sm" fullWidth>
+        <DialogTitle>{actionNote?.title}</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mt: 1 }}>{actionNote?.text}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setActionNote(null)}>Close</Button>
+        </DialogActions>
       </Dialog>
 
       {/* Summary Stats */}
