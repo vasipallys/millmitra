@@ -206,7 +206,7 @@ def permission_for_path(path, method):
         return 'lookups'
     if path.startswith('/api/lookups'):
         return 'lookups' if write else None
-    if path.startswith('/api/tenants') or path.startswith('/api/telemetry'):
+    if path.startswith('/api/tenants') or path.startswith('/api/telemetry') or path.startswith('/api/ai'):
         return None
     if path.startswith('/api/auth/me') or path.startswith('/api/auth/logout') or path.startswith('/api/notifications'):
         return None

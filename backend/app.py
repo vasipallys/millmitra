@@ -39,6 +39,7 @@ from routes.quality import quality_bp
 from routes.users_admin import users_admin_bp
 from routes.lookups import lookups_bp
 from routes.tenants import tenants_bp
+from routes.grok import grok_bp
 
 def create_app(config_overrides=None):
     app = Flask(__name__)
@@ -83,6 +84,7 @@ def create_app(config_overrides=None):
     app.register_blueprint(users_admin_bp, url_prefix='/api')
     app.register_blueprint(lookups_bp, url_prefix='/api')
     app.register_blueprint(tenants_bp, url_prefix='/api')
+    app.register_blueprint(grok_bp, url_prefix='/api/ai')
 
     from telemetry import init_telemetry
     from observability import init_observability

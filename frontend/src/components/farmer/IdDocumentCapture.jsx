@@ -106,7 +106,8 @@ export default function IdDocumentCapture({ onExtracted }) {
         return;
       }
       setSeverity('success');
-      setMessage(result?.notes || t('idExtractReady'));
+      const engineNote = result?.engine === 'grok' ? t('idExtractGrok') : t('idExtractTesseract');
+      setMessage(engineNote);
       onExtracted?.(mapped, result?.notes || '');
     } catch (error) {
       setSeverity('warning');

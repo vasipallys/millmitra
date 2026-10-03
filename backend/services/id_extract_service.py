@@ -233,7 +233,31 @@ def _ocr_image(image_bytes):
         return None, OCR_HELP
 
 
-def extract_id_document(image_bytes, filename=''):
+def _try_grok_extract(image_bytes, mime):
+    """Use Grok vision when a key is set. Failures fall through to Tesseract."""
+    try:
+        from services.grok_client import (
+            ID_EXTRACT_PROMPT,
+            has_grok_key,
+            grok_vision,
+            parse_grok_fields,
+        )
+    except ImportError:
+        return None
+    if not has_grok_key():
+        return None
+    try:
+        text = grok_vision(image_bytes, mime, ID_EXTRACT_PROMPT)
+    except Exception:
+        logger.info('id_extract_grok_failed')
+        return None
+    fields = parse_grok_fields(text)
+    if not fields:
+        return None
+    return fields
+
+
+def extract_id_document(image_bytes, filename='', mime=''):
     """OCR then parse. Missing OCR is a 200 with empty fields, not a startup error."""
     if not image_bytes:
         return {
@@ -241,6 +265,7 @@ def extract_id_document(image_bytes, filename=''):
             'fields': {},
             'extracted': {},
             'notes': 'No image was received.',
+            'engine': None,
         }
     if len(image_bytes) > MAX_IMAGE_BYTES:
         return {
@@ -249,6 +274,20 @@ def extract_id_document(image_bytes, filename=''):
             'extracted': {},
             'notes': 'Image must be 8 MB or smaller.',
             'error': 'Image must be 8 MB or smaller.',
+            'engine': None,
+        }
+
+    grok_fields = _try_grok_extract(image_bytes, mime)
+    if grok_fields:
+        return {
+            'success': True,
+            'fields': grok_fields,
+            'extracted': grok_fields,
+            'notes': (
+                'Some details were filled from the document. '
+                'Check them, then continue. The picture was not saved.'
+            ),
+            'engine': 'grok',
         }
 
     text, ocr_note = _ocr_image(image_bytes)
@@ -258,6 +297,7 @@ def extract_id_document(image_bytes, filename=''):
             'fields': {},
             'extracted': {},
             'notes': ocr_note or OCR_HELP,
+            'engine': 'tesseract',
         }
 
     fields = parse_id_text(text)
@@ -273,6 +313,7 @@ def extract_id_document(image_bytes, filename=''):
         'fields': fields,
         'extracted': fields,
         'notes': notes,
+        'engine': 'tesseract',
     }
 
 

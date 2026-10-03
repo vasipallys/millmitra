@@ -6,6 +6,7 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from services.grok_client import GrokConfigError, grok_chat, parse_grok_fields
 from services.id_extract_service import parse_id_text
 
 AADHAAR_SAMPLE = """
@@ -57,6 +58,45 @@ class IdExtractParserTests(unittest.TestCase):
         self.assertEqual(fields.get('surveyNumber'), '12/4')
         self.assertEqual(fields.get('bankAccount'), '12345678901234')
         self.assertEqual(fields.get('bankIfsc'), 'SBIN0001234')
+
+    def test_grok_json_does_not_use_aadhaar_as_phone(self):
+        fields = parse_grok_fields(
+            '{"fullName":"RAMESH KUMAR","fatherName":"SURESH KUMAR",'
+            '"phone":"123456789012","email":"","village":"Nandipet",'
+            '"district":"Nizamabad","state":"Telangana","landAcres":"2.5",'
+            '"surveyNumber":"12/4","bankAccount":"12345678901234",'
+            '"ifsc":"SBIN0001234","bankName":"State Bank"}'
+        )
+        self.assertEqual(fields.get('fullName'), 'RAMESH KUMAR')
+        self.assertEqual(fields.get('fatherName'), 'SURESH KUMAR')
+        self.assertNotEqual(fields.get('phone'), '123456789012')
+        self.assertTrue(not fields.get('phone') or len(fields.get('phone')) == 10)
+        self.assertEqual(fields.get('totalLandArea'), 2.5)
+        self.assertEqual(fields.get('surveyNumber'), '12/4')
+        self.assertEqual(fields.get('bankIfsc'), 'SBIN0001234')
+        self.assertEqual(fields.get('village'), 'Nandipet')
+
+    def test_grok_json_keeps_ten_digit_mobile(self):
+        fields = parse_grok_fields(
+            '```json\n{"fullName":"ANITA REDDY","phone":"9876543210",'
+            '"landAcres":"","bankAccount":"","ifsc":"","bankName":""}\n```'
+        )
+        self.assertEqual(fields.get('fullName'), 'ANITA REDDY')
+        self.assertEqual(fields.get('phone'), '9876543210')
+
+    def test_grok_chat_without_key_raises_clear_error(self):
+        previous = {
+            'XAI_API_KEY': os.environ.pop('XAI_API_KEY', None),
+            'GROK_API_KEY': os.environ.pop('GROK_API_KEY', None),
+        }
+        try:
+            with self.assertRaises(GrokConfigError) as raised:
+                grok_chat([{'role': 'user', 'content': 'ping'}])
+            self.assertEqual(str(raised.exception), 'XAI_API_KEY is not set')
+        finally:
+            for name, value in previous.items():
+                if value is not None:
+                    os.environ[name] = value
 
 
 if __name__ == '__main__':

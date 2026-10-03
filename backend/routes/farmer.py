@@ -50,7 +50,11 @@ def extract_farmer_id():
             'message': 'Use a JPG, PNG, or WebP image.',
         }), 400
     payload = upload.read(MAX_IMAGE_BYTES + 1)
-    result = extract_id_document(payload, filename=upload.filename or '')
+    result = extract_id_document(
+        payload,
+        filename=upload.filename or '',
+        mime=upload.mimetype or '',
+    )
     status = 200 if result.get('success', True) else 400
     return jsonify(result), status
 
