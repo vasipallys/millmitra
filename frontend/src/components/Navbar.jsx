@@ -42,11 +42,19 @@ const accountInitial = (account) => (
   (accountLabel(account)[0] || 'A').toUpperCase()
 );
 
+const focusFirstIn = (node, selector) => {
+  const target = node?.querySelector?.(selector);
+  if (target && typeof target.focus === 'function') {
+    target.focus();
+  }
+};
+
 const Navbar = ({ onMenuClick, onLogout, user }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [notificationAnchor, setNotificationAnchor] = useState(null);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [openProfileAfterMenu, setOpenProfileAfterMenu] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
   const [voiceNoteOpen, setVoiceNoteOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -86,6 +94,7 @@ const Navbar = ({ onMenuClick, onLogout, user }) => {
   }, [user]);
 
   const handleProfileMenuOpen = (event) => {
+    setOpenProfileAfterMenu(false);
     setAnchorEl(event.currentTarget);
   };
 
@@ -102,13 +111,14 @@ const Navbar = ({ onMenuClick, onLogout, user }) => {
   };
 
   const handleProfileClick = () => {
-    setProfileOpen(true);
+    setOpenProfileAfterMenu(true);
     handleProfileMenuClose();
   };
 
   const handleSettingsClick = () => {
-    navigate('/settings');
+    setOpenProfileAfterMenu(false);
     handleProfileMenuClose();
+    navigate('/settings');
   };
 
   const toggleVoice = () => {
@@ -211,7 +221,16 @@ const Navbar = ({ onMenuClick, onLogout, user }) => {
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
           onClose={handleProfileMenuClose}
-          onClick={handleProfileMenuClose}
+          MenuListProps={{ autoFocusItem: true }}
+          TransitionProps={{
+            onEntering: (node) => focusFirstIn(node, '[role="menuitem"]'),
+            onExited: () => {
+              if (openProfileAfterMenu) {
+                setOpenProfileAfterMenu(false);
+                setProfileOpen(true);
+              }
+            },
+          }}
           PaperProps={{
             elevation: 3,
             sx: {
@@ -226,7 +245,7 @@ const Navbar = ({ onMenuClick, onLogout, user }) => {
               {user?.role || 'Operator'}
             </Typography>
           </Box>
-          <MenuItem onClick={handleProfileClick}>
+          <MenuItem autoFocus onClick={handleProfileClick}>
             <AccountCircle sx={{ mr: 1 }} />
             {t('profile')}
           </MenuItem>
@@ -234,7 +253,7 @@ const Navbar = ({ onMenuClick, onLogout, user }) => {
             <Settings sx={{ mr: 1 }} />
             {t('settings')}
           </MenuItem>
-          <MenuItem onClick={onLogout}>
+          <MenuItem onClick={() => { handleProfileMenuClose(); onLogout(); }}>
             <Logout sx={{ mr: 1 }} />
             {t('logout')}
           </MenuItem>

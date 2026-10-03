@@ -28,6 +28,7 @@ import { productionService } from '../services/productionService';
 import { salesAPI } from '../services/api';
 import { financeService } from '../services/financeService';
 import { getApiErrorMessage } from '../utils/apiError';
+import { can, storedUser } from '../utils/permissions';
 import { PageHeader, PageLoading, PageShell } from '../components/common/PageChrome';
 import { useI18n } from '../i18n/I18nContext';
 import {
@@ -97,6 +98,10 @@ function receiveMissingFields({ farmerMode, newFarmer, paddyForm }) {
 
 const MillFlow = () => {
   const { t } = useI18n();
+  const user = storedUser();
+  const canFinance = can(user, 'finance');
+  const canSales = can(user, 'sales');
+  const canCustomers = can(user, 'customers') || canSales;
   const stepLabels = STEP_KEYS.map((key) => t(key));
   const [phase, setPhase] = useState('home');
   const [activeStep, setActiveStep] = useState(0);
@@ -137,11 +142,15 @@ const MillFlow = () => {
   const paddyQuery = useQuery('mill-flow-paddy', () => inventoryService.getPaddyStock(), { retry: false });
   const productQuery = useQuery('mill-flow-products', () => inventoryService.getProductStock(), { retry: false });
   const batchesQuery = useQuery('mill-flow-batches', () => productionService.getBatches(), { retry: false });
-  const invoicesQuery = useQuery('mill-flow-invoices', () => financeService.getInvoices({ limit: 50 }), { retry: false });
+  const invoicesQuery = useQuery(
+    'mill-flow-invoices',
+    () => financeService.getInvoices({ limit: 50 }),
+    { retry: false, enabled: canFinance },
+  );
   const customersQuery = useQuery(
     'mill-flow-customers',
     async () => (await salesAPI.getCustomers({ per_page: 100 })).data,
-    { retry: false }
+    { retry: false, enabled: canCustomers },
   );
 
   const farmers = unwrapList(farmersQuery.data, ['farmers', 'items']);
@@ -154,10 +163,17 @@ const MillFlow = () => {
   const snapshotLoading = farmersQuery.isLoading || paddyQuery.isLoading || batchesQuery.isLoading
     || productQuery.isLoading || invoicesQuery.isLoading;
 
-  const suggestion = useMemo(
-    () => suggestMillStep({ paddyLots, batches, products, invoices }),
-    [paddyLots, batches, products, invoices]
-  );
+  const suggestion = useMemo(() => {
+    const next = suggestMillStep({ paddyLots, batches, products, invoices });
+    if (next.step >= 3 && !canSales && !canFinance) {
+      return {
+        step: 2,
+        title: 'Finish mill-floor work',
+        reason: 'Orders, invoices, and payments need a sales or finance login. Continue with paddy and batches here.',
+      };
+    }
+    return next;
+  }, [paddyLots, batches, products, invoices, canSales, canFinance]);
 
   const availableLots = paddyLots.filter((lot) => lotRemaining(lot) > 0);
   const unpaidInvoices = invoices.filter(isUnpaidInvoice);
@@ -197,14 +213,15 @@ const MillFlow = () => {
   }, [context.paddy, context.batch, paddyForm.variety, completeForm.rice_output]);
 
   const refreshLists = async () => {
-    await Promise.all([
+    const tasks = [
       farmersQuery.refetch(),
       paddyQuery.refetch(),
       productQuery.refetch(),
       batchesQuery.refetch(),
-      invoicesQuery.refetch(),
-      customersQuery.refetch(),
-    ]);
+    ];
+    if (canFinance) tasks.push(invoicesQuery.refetch());
+    if (canCustomers) tasks.push(customersQuery.refetch());
+    await Promise.all(tasks);
   };
 
   const beginWizard = (step = suggestion.step) => {
@@ -253,11 +270,25 @@ const MillFlow = () => {
       if (activeStep === 0) await savePaddy();
       else if (activeStep === 1) await saveBatch();
       else if (activeStep === 2) await saveQualityAndComplete();
-      else if (activeStep === 3) await saveSale();
-      else if (activeStep === 4) await saveInvoiceAndPay();
+      else if (activeStep === 3) {
+        if (!canSales) {
+          throw new Error('Creating orders needs a sales role.');
+        }
+        await saveSale();
+      } else if (activeStep === 4) {
+        if (!canFinance) {
+          throw new Error('Invoices and payments need a finance role.');
+        }
+        await saveInvoiceAndPay();
+      }
       await refreshLists();
       if (activeStep < STEP_KEYS.length - 1) {
-        setActiveStep((step) => step + 1);
+        const next = activeStep + 1;
+        if (next >= 3 && !canSales && !canFinance) {
+          setPhase('home');
+          return;
+        }
+        setActiveStep(next);
       }
     } catch (err) {
       setError(getApiErrorMessage(err, 'Could not save this step. Fix the fields and try again.'));
@@ -503,7 +534,7 @@ const MillFlow = () => {
             <SummaryCard label="Product stock" value={`${productStockKg(products).toLocaleString('en-IN')} kg`} />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <SummaryCard label="Unpaid invoices" value={unpaidInvoices.length} />
+            <SummaryCard label="Unpaid invoices" value={canFinance ? unpaidInvoices.length : '—'} />
           </Grid>
         </Grid>
       )}

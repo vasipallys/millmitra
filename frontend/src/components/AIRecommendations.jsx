@@ -34,20 +34,39 @@ import {
   Refresh
 } from '@mui/icons-material';
 
-const normalizeRec = (item, index) => ({
-  id: item.id || item.title || index,
-  category: item.category || item.type || 'mill',
-  title: item.title || 'Mill suggestion',
-  summary: item.summary || item.description || item.recommendation || '',
-  priority: item.priority || 'medium',
-  confidence: item.confidence,
-  impact: item.impact || 'medium',
-  implementation_time: item.implementation_time,
-  expected_benefit: item.expected_benefit,
-  details: item.details || [],
-  steps: item.steps || (item.recommendation ? [item.recommendation] : []),
-  metrics: item.metrics || item.data || {},
-});
+const normalizeRec = (item, index) => {
+  if (typeof item === 'string') {
+    return {
+      id: index,
+      category: 'mill',
+      title: item,
+      summary: item,
+      priority: 'medium',
+      confidence: 0,
+      impact: 'medium',
+      implementation_time: '',
+      expected_benefit: '',
+      details: [],
+      steps: [item],
+      metrics: {},
+    };
+  }
+  const rec = item && typeof item === 'object' ? item : {};
+  return {
+    id: rec.id || rec.title || index,
+    category: rec.category || rec.type || 'mill',
+    title: rec.title || rec.message || rec.recommendation || 'Mill suggestion',
+    summary: rec.summary || rec.description || rec.recommendation || rec.message || '',
+    priority: rec.priority || 'medium',
+    confidence: Number(rec.confidence) || 0,
+    impact: rec.impact || 'medium',
+    implementation_time: rec.implementation_time || rec.implementation_timeline || '',
+    expected_benefit: rec.expected_benefit || '',
+    details: Array.isArray(rec.details) ? rec.details : [],
+    steps: Array.isArray(rec.steps) ? rec.steps : (rec.recommendation ? [rec.recommendation] : []),
+    metrics: rec.metrics || rec.data || {},
+  };
+};
 
 const AIRecommendations = ({ recommendations: incoming, context = 'production', refreshInterval = 300000 }) => {
   const [recommendations, setRecommendations] = useState([]);
@@ -338,7 +357,7 @@ const AIRecommendations = ({ recommendations: incoming, context = 'production', 
                   Quick Wins
                 </Typography>
                 <Typography variant="h6" color="success.main">
-                  {recommendations.filter(r => r.implementation_time.includes('hour')).length}
+                  {recommendations.filter((r) => String(r?.implementation_time || '').toLowerCase().includes('hour')).length}
                 </Typography>
               </Box>
             </Box>

@@ -19,6 +19,13 @@ import {
 import { useNavigate } from 'react-router-dom';
 import notificationService from '../services/notificationService';
 
+const focusFirstIn = (node, selector) => {
+  const target = node?.querySelector?.(selector);
+  if (target && typeof target.focus === 'function') {
+    target.focus();
+  }
+};
+
 const NotificationsPanel = ({ anchorEl, open, onClose }) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -26,6 +33,7 @@ const NotificationsPanel = ({ anchorEl, open, onClose }) => {
   const [filterCategory, setFilterCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [openSettingsAfterMenu, setOpenSettingsAfterMenu] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -132,6 +140,17 @@ const NotificationsPanel = ({ anchorEl, open, onClose }) => {
         anchorEl={anchorEl}
         open={open}
         onClose={onClose}
+        disableAutoFocusItem
+        MenuListProps={{ autoFocusItem: false }}
+        TransitionProps={{
+          onEntering: (node) => focusFirstIn(node, 'input, button, [tabindex]:not([tabindex="-1"])'),
+          onExited: () => {
+            if (openSettingsAfterMenu) {
+              setOpenSettingsAfterMenu(false);
+              setSettingsOpen(true);
+            }
+          },
+        }}
         PaperProps={{
           elevation: 3,
           sx: {
@@ -152,7 +171,14 @@ const NotificationsPanel = ({ anchorEl, open, onClose }) => {
             </Typography>
             <Box>
               <Tooltip title="Notification Settings">
-                <IconButton size="small" aria-label="Notification settings" onClick={() => setSettingsOpen(true)}>
+                <IconButton
+                  size="small"
+                  aria-label="Notification settings"
+                  onClick={() => {
+                    setOpenSettingsAfterMenu(true);
+                    onClose();
+                  }}
+                >
                   <SettingsIcon />
                 </IconButton>
               </Tooltip>

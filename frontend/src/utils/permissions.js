@@ -1,3 +1,11 @@
+export function storedUser() {
+  try {
+    return JSON.parse(localStorage.getItem('user') || 'null');
+  } catch {
+    return null;
+  }
+}
+
 export function userPermissions(user) {
   if (Array.isArray(user?.permissions)) return user.permissions;
   return [];

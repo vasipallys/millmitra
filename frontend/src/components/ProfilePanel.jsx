@@ -199,7 +199,18 @@ const ProfilePanel = ({ open, onClose, user }) => {
   );
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="md"
+      fullWidth
+      TransitionProps={{
+        onEntering: (node) => {
+          const target = node.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+          if (target && typeof target.focus === 'function') target.focus();
+        },
+      }}
+    >
       <DialogTitle>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Avatar sx={{ width: 56, height: 56, bgcolor: 'primary.main' }}>
