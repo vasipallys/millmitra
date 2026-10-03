@@ -62,6 +62,21 @@ class User(db.Model):
     def set_preferences(self, prefs):
         self.preferences = json.dumps(prefs)
 
+    def get_notification_settings(self):
+        if self.notification_settings:
+            try:
+                parsed = json.loads(self.notification_settings)
+                if isinstance(parsed, dict):
+                    return parsed
+            except (TypeError, ValueError):
+                pass
+        prefs = self.get_preferences() or {}
+        notes = prefs.get('notifications')
+        return notes if isinstance(notes, dict) else {}
+
+    def set_notification_settings(self, settings):
+        self.notification_settings = json.dumps(settings or {})
+
     def get_dashboard_layout(self):
         if self.dashboard_layout:
             try:
@@ -213,3 +228,15 @@ class UserPreference(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
+
+
+class RolePermission(db.Model):
+    """Stored access matrix. Missing rows fall back to DEFAULT_MATRIX."""
+    __tablename__ = 'role_permissions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    role = db.Column(db.String(50), nullable=False, index=True)
+    permission = db.Column(db.String(50), nullable=False)
+    allowed = db.Column(db.Boolean, default=True, nullable=False)
+
+    __table_args__ = (db.UniqueConstraint('role', 'permission', name='uq_role_permission'),)

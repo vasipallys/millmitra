@@ -43,6 +43,7 @@ import DemoBanner from '../components/DemoBanner';
 import PreviewModeToggle from '../components/PreviewModeToggle';
 import { usePreviewMode } from '../hooks/usePreviewMode';
 import { financeService } from '../services/financeService';
+import api from '../services/api';
 import { farmerService } from '../services/farmerService';
 import { getApiErrorMessage } from '../utils/apiError';
 import {
@@ -169,14 +170,32 @@ const ComplianceGST = () => {
       }
       setLoading(true);
       try {
-        const data = await financeService.getInvoices({ limit: 50 });
+        const [data, filingsRes] = await Promise.all([
+          financeService.getInvoices({ limit: 50 }),
+          api.get('/compliance/gst/filings').catch(() => ({ data: { filings: [] } })),
+        ]);
         if (cancelled) return;
         const invoices = unwrapList(data, ['invoices', 'items']);
+        const filings = filingsRes?.data?.filings || [];
         setInvoiceRows(invoicesToGstr1Rows(invoices));
         setDashboardData(gstDashboardFromInvoices(invoices));
         setComplianceStatus(actualComplianceStatus(invoices));
-        setActivityRows(gstActivitiesFromInvoices(invoices));
-        setCalendarRows(statutoryGstCalendar());
+        setActivityRows([
+          ...filings.map((row) => ({
+            date: row.date || (row.recorded_at || '').slice(0, 10),
+            activity: row.activity || `${row.form} recorded in MillMitra`,
+            status: 'Recorded locally',
+            amount: row.amount,
+            form: row.form,
+          })),
+          ...gstActivitiesFromInvoices(invoices),
+        ]);
+        const recordedForms = new Set(filings.map((row) => row.form));
+        setCalendarRows(statutoryGstCalendar().map((item) => (
+          recordedForms.has(item.task) || recordedForms.has(CALENDAR_TASKS[item.task]?.form)
+            ? { ...item, status: 'recorded' }
+            : item
+        )));
       } catch (error) {
         if (!cancelled) {
           setInvoiceRows([]);
@@ -914,6 +933,39 @@ const ComplianceGST = () => {
           )}
         </DialogContent>
         <DialogActions>
+          {!isSample && (
+            <Button
+              disabled={busyAction === 'record-filing'}
+              onClick={async () => {
+                setBusyAction('record-filing');
+                try {
+                  await api.post('/compliance/gst/filings', {
+                    form: calendarItem.task,
+                    due_date: calendarItem.date,
+                    notes: 'Recorded in MillMitra. Not a GSTN filing receipt.',
+                  });
+                  setCalendarRows((prev) => prev.map((row) => (
+                    row.task === calendarItem.task ? { ...row, status: 'recorded' } : row
+                  )));
+                  setActivityRows((prev) => [{
+                    date: new Date().toISOString().slice(0, 10),
+                    activity: `${calendarItem.task} recorded in MillMitra`,
+                    status: 'Recorded locally',
+                    amount: 0,
+                    form: calendarItem.task,
+                  }, ...prev]);
+                  showMessage('success', 'Saved on this mill. This is not a government filing.');
+                  setCalendarItem(null);
+                } catch (error) {
+                  showMessage('error', getApiErrorMessage(error, 'Could not save the checklist row'));
+                } finally {
+                  setBusyAction('');
+                }
+              }}
+            >
+              Record in MillMitra
+            </Button>
+          )}
           <Button onClick={() => setCalendarItem(null)}>Close</Button>
         </DialogActions>
       </Dialog>

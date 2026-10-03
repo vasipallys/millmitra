@@ -1,4 +1,5 @@
 import api from './api';
+import { getApiErrorMessage } from '../utils/apiError';
 
 const API_BASE = '/auth';
 
@@ -31,8 +32,11 @@ class AuthService {
 
       throw new Error('No access token received');
     } catch (error) {
-      console.error('Login error:', error);
-      throw error;
+      const status = error.response?.status;
+      throw new Error(getApiErrorMessage(
+        error,
+        status === 401 ? 'Username or password is not recognized' : 'Login failed'
+      ));
     }
   }
 

@@ -15,6 +15,7 @@ This guide is for mill operators, managers, and office staff. It describes MillM
 5. [Finding your way around](#5-finding-your-way-around)
 6. [Roles and permissions](#6-roles-and-permissions)
 7. [Dashboard](#7-dashboard)
+7a. [Mill flow](#7a-mill-flow)
 8. [Farmers](#8-farmers)
 9. [Inventory](#9-inventory)
 10. [Production batches](#10-production-batches)
@@ -60,7 +61,7 @@ MillMitra is **not** a replacement for statutory GST filing software, and it is 
 | Sales staff | Maintain customers; use **Sales → New Order** for the live order book |
 | Quality staff | Record lab-style tests on a batch from **Production**; the **Quality Control** menu is demonstration-only |
 
-Anyone with a login can open every menu in the sidebar. A few manager-only actions (for example verifying a farmer) are blocked if your account is not **admin** or **manager**.
+The sidebar only shows modules your role may use. The mill server also blocks forbidden saves. Farmer **Approve/Verify** still needs **admin** or **manager**.
 
 ---
 
@@ -98,16 +99,18 @@ Do this once on the mill PC, or whenever you set up a new machine.
 4. Create tables and the first users:
 
    ```powershell
-   python migrate_db.py
+   .\venv\Scripts\python.exe migrate_db.py
    ```
 
-5. Start the server:
+   App startup also creates any **missing** demo users (including quality, sales, accountant) without resetting existing passwords.
+
+5. Start the server **with the millmitra venv**, not system Python:
 
    ```powershell
-   python app.py
+   .\venv\Scripts\python.exe app.py
    ```
 
-   Leave this window open. The server listens on port **5000**.
+   Leave this window open. The server listens on port **5000**. If something else already answers on 5000 (especially `C:\Python313\python.exe app.py`), stop that window first — it serves old code. Confirm liveness at [http://localhost:5000/api/health](http://localhost:5000/api/health).
 
 **B. Office app (frontend)**
 
@@ -124,9 +127,9 @@ Do this once on the mill PC, or whenever you set up a new machine.
 
 ### 3.2 Daily start (already installed)
 
-1. Start the mill server: in `backend`, activate `venv`, then `python app.py`.
-2. Start the office app: in `frontend`, run `npm run dev`.
-3. Open the URL Vite printed and log in.
+1. Start the mill server: `cd D:\GenAi\millmitra\backend` then `.\venv\Scripts\python.exe app.py`.
+2. Start the office app: `cd D:\GenAi\millmitra\frontend` then `npm run dev`.
+3. Open the URL Vite printed and log in on the **Password** tab. Pick English, Hindi, or Telugu on the login card if you want.
 
 ### 3.3 Docker (optional)
 
@@ -141,10 +144,28 @@ If the database was initialized with the bundled setup script, these accounts ex
 | `admin` | `admin123` | admin |
 | `manager` | `manager123` | manager |
 | `operator` | `operator123` | operator |
-| `quality` | `quality123` | quality_controller |
+| `quality` | `quality123` | quality_control |
 | `sales` | `sales123` | sales |
+| `accountant` | `accountant123` | accountant |
 
 You can also log in with the matching email (for example `admin@ricemill.com`). **Change these passwords** after first login if this mill is in real use. If login fails with these names, ask whoever set up the mill PC which accounts were created.
+
+### 3.5 Roles, access, and language
+
+Each person has **one role**. The mill server checks that role on save and on finance/user reads — hiding a sidebar item is not the only lock.
+
+| Persona | Username | Can open | Cannot |
+| --- | --- | --- | --- |
+| Mill owner | `admin` | All modules, **Users**, **Access** | — |
+| Mill manager | `manager` | Operations and finance | Users / Access |
+| Floor operator | `operator` | Dashboard, Mill flow, farmers, inventory, production, own settings | Finance, sales, user admin |
+| Quality | `quality` | Dashboard, production (view + quality tests), Quality Control | Sales, finance, user admin, starting unrelated writes |
+| Sales | `sales` | Customers, sales orders, invoices | Production start, user admin |
+| Accountant | `accountant` | Finance, invoices, payments, dashboard; customers read | Batch start, user admin |
+
+**Users** (`/users`) and **Access** (`/access`) are admin-only. Access shows a permission grid (dashboard, mill_flow, farmers, inventory, production, quality, sales, customers, finance, settings, users, preview). Toggles save to the mill database and apply on the next API call.
+
+**Language:** English, Hindi, and Telugu. Use the language control on the login card and in the top bar. The choice is stored in this browser (`localStorage`) and updates login, sidebar, Mill flow steps/buttons, dashboard title, Users, Access, and common actions (Save, Cancel, Back).
 
 ---
 
@@ -152,12 +173,12 @@ You can also log in with the matching email (for example `admin@ricemill.com`). 
 
 ### 4.1 Sign in with password (use this)
 
-1. Open the office app. You should see **Rice Mill AI** and the subtitle **Intelligent Authentication**.
-2. Stay on the **Password** tab.
+1. Open the office app. You should see **Rice Mill AI** and **Sign in to MillMitra**.
+2. Stay on the **Password** tab. The login card lists the real demo accounts (admin, manager, operator, quality, sales, accountant). It does **not** invent extra usernames from a suggestion API.
 3. Enter **Username / Email / Phone** and **Password**.
-4. Click **Login**.
+4. Click **Login**. A wrong pair shows **Username or password is not recognized**.
 
-On success you land on **Smart Dashboard**. Your name and role appear in the top-right avatar menu and in the sidebar.
+On success you land on **Smart Dashboard**. Your name and **role** appear in the top bar and in the sidebar. The language control is on the login card and in the navbar (`localStorage` key `millmitra.language`).
 
 ### 4.2 Other login tabs (not reliable)
 
@@ -201,25 +222,28 @@ The app clears the saved session and sends you to login when the server says you
 After login you have:
 
 - **Left sidebar** branded **Smart Mill** — main modules
-- **Top bar** titled **Rice Mill Management System** — menu button, microphone, notifications bell, avatar
+- **Top bar** titled **Rice Mill Management System** — menu button, **role** chip, **language**, microphone, notifications bell, avatar
 - **Main area** — the page for the module you selected
 
-The sidebar does **not** hide items by role. Everyone with a login sees the same list.
+The sidebar **hides** items your role cannot use. Opening a hidden path shows **You don’t have access**. The mill server also rejects forbidden saves (for example an operator creating a finance invoice).
 
-| Sidebar label | Opens | What it is for |
-| --- | --- | --- |
-| Dashboard | `/dashboard` | Live mill snapshot |
-| Farmers | `/farmers` | Farmer register, contracts, procurement |
-| Inventory | `/inventory` | Paddy and product stock |
-| Production | `/production` | Milling batches |
-| Sales | `/sales` | Live order book (**New Order**) |
-| Finance | `/finance` | Invoices and payments |
-| Customers | `/customers` | Buyer records and their orders |
-| Analytics | `/analytics` | Sample business charts |
-| Quality Control | `/quality-control` | Sample camera / quality demo |
-| Financial Intelligence | `/financial-intelligence` | Sample finance insights |
-| Compliance & GST | `/compliance-gst` | Sample GST / compliance view |
-| Settings | `/settings` | Mill settings (this computer + server mill-settings) |
+| Sidebar label | Opens | What it is for | Who typically sees it |
+| --- | --- | --- | --- |
+| Dashboard | `/dashboard` | Live mill snapshot | Most roles |
+| Mill flow | `/mill-flow` | Guided receive → mill → sell → pay | admin, manager, operator |
+| Farmers | `/farmers` | Farmer register, contracts, procurement | admin, manager, operator |
+| Inventory | `/inventory` | Paddy and product stock | admin, manager, operator |
+| Production | `/production` | Milling batches | admin, manager, operator, quality |
+| Sales | `/sales` | Live order book (**New Order**) | admin, manager, sales |
+| Finance | `/finance` | Invoices and payments | admin, manager, sales, accountant |
+| Customers | `/customers` | Buyer records and their orders | admin, manager, sales, accountant (read) |
+| Settings | `/settings` | Mill / own profile settings | Most roles |
+| Users | `/users` | Create accounts, change role, activate | admin only |
+| Access | `/access` | Permission matrix per role | admin only |
+| Analytics | `/analytics` | Preview group — mill records by default | roles with `preview` |
+| Quality Control | `/quality-control` | Camera / tests page (live records default) | roles with `quality` |
+| Financial Intelligence | `/financial-intelligence` | Preview finance view | roles with `preview` |
+| Compliance & GST | `/compliance-gst` | Preview GST view; does not file | roles with `preview` |
 
 The bell icon opens notifications. A full notifications page also exists at `/notifications`. A reporting page exists at `/analytics-reporting` but is **not** listed in the sidebar.
 
@@ -233,15 +257,16 @@ A voice microphone in the top bar and a floating voice control may appear. They 
 
 Your role is shown under your username in the sidebar and in the avatar menu.
 
-| Role | Intended use | What is enforced today |
+| Role | Intended use | Enforced today |
 | --- | --- | --- |
-| **admin** | Full mill administration | Can verify farmers; sees all menus |
-| **manager** | Day-to-day mill management | Can verify farmers; sees all menus |
-| **operator** | Floor / mill operations | Menus are visible; farmer verification is blocked |
-| **quality_controller** | Quality recording | Menus are visible; use **Production** for real tests |
-| **sales** | Customer-facing office work | Menus are visible; use **Customers** and **Finance** for live records |
+| **admin** | Mill owner | All modules; **Users** and **Access**; farmer verify |
+| **manager** | Operations + finance | All except user admin; farmer verify |
+| **operator** | Floor | Mill flow, farmers, inventory, production; no finance / sales / users |
+| **quality_control** | Lab | Production view + quality tests, Quality Control page; no sales/finance/users |
+| **sales** | Office sales | Customers, orders, invoices; no production start / users |
+| **accountant** | Books | Finance and dashboard; customers read; no batch start / users |
 
-Most screens do **not** hide buttons by role. If you click a manager-only action (farmer **Approve/Verify**), you may see a permission error such as **Insufficient permissions to verify farmers**. Use an admin or manager account for that step.
+Admin **Users** (`/users`): list, create (username, password, role), change role, activate/deactivate (not yourself). Admin **Access** (`/access`): toggle permissions; saved in `role_permissions`. Farmer **Approve/Verify** still needs admin or manager.
 
 ---
 
@@ -259,6 +284,32 @@ Most screens do **not** hide buttons by role. If you click a manager-only action
 Numbers refresh on their own every few seconds to a few minutes. If a card shows `0`, that module may still be empty (no batches, no stock, no farmers yet).
 
 Insights or “AI” banners only appear when the server actually returns them. If you see none, daily work is unaffected.
+
+---
+
+## 7a. Mill flow
+
+**Mill flow** (sidebar: **Mill flow** / **Run the mill**) is a guided path at `/mill-flow`. Use it when you want the main mill chain on fewer screens, especially on an empty mill.
+
+The start page is labeled **Suggested next step** and **Guided from your mill records**. It is not an AI model. It reads live paddy, batches, product stock, and invoices, then picks one step:
+
+| Mill records | Suggested step |
+| --- | --- |
+| No paddy and no open batch | Receive paddy |
+| Paddy on hand, or a planned batch, and nothing in progress | Start a batch |
+| Batch in progress or paused | Quality & complete |
+| Product stock and no unpaid invoice | Sell |
+| Unpaid invoice | Invoice & pay |
+
+Five steps, one at a time, with **Back** and a save button. If the server rejects a save, you stay on that step and see an inline error.
+
+1. **Receive paddy** — **Existing farmer** with **Walk-in / later** (no farmer id; the mill walk-in farmer is used), a listed farmer, or **New farmer** (name, phone, village, district, state). Then variety, kg > 0, ₹/kg > 0, storage location. Saves through Inventory paddy stock.
+2. **Start batch** — pick the lot (prefilled) and kg. Creates the batch and starts it, which deducts paddy.
+3. **Quality & complete** — optional moisture / broken / foreign matter (**Skip quality test** is allowed). Rice output kg is required and increases product stock.
+4. **Sell** — select or create a customer (name + phone), then a sales order.
+5. **Invoice & pay** — invoice lines from the order; then a payment amount. Invoice wording must still match product stock.
+
+You can still use Farmers, Inventory, Production, Sales, and Finance for the same work. Mill flow does not replace those pages.
 
 ---
 
@@ -716,6 +767,12 @@ The bell lists in-app notices. You can open the full **Notifications** page from
 
 ## 17. Common tasks
 
+### Run the mill from one screen
+
+1. Sidebar **Mill flow**.
+2. Read **Suggested next step**, or click **Start from receive paddy**.
+3. Complete the five steps (receive → start batch → quality/complete → sell → invoice & pay). Quality can be skipped; stock deduction cannot.
+
 ### Add paddy stock (godown receipt)
 
 1. **Inventory** → **Add Stock**.
@@ -805,7 +862,7 @@ A practical sequence that matches the live screens:
 6. Office: **Add Customer** if needed → **Create Invoice** → **Record Payment** when money comes in.
 7. **Logout** on the shared PC.
 
-Skip **Quality Control**, **Financial Intelligence**, and **Compliance & GST** for operational data entry.
+For official numbers stay on Dashboard, Mill flow, Inventory, Production, Sales, and Finance. Preview pages default to **mill records**; use **View sample** only when you want a demonstration.
 
 ---
 
@@ -816,13 +873,13 @@ These are current product limits, written the way office staff will meet them.
 | Area | What you will notice | What to do |
 | --- | --- | --- |
 | **Quotations / leads** | Not offered as working screens. | Ignore; they are not enabled. |
-| **Quality Control menu** | Camera demo and sample test history. | Record real tests from **Production** → **Quality Test**. |
-| **Analytics menu**, **Financial Intelligence**, **Compliance & GST** | Sample / illustration numbers. | Use Dashboard, Inventory, Production, Sales, and Finance lists for live figures. |
+| **Quality Control menu** | Camera / test page; mill records by default, **View sample** optional. | Record official lab tests from **Production** → **Quality Test**. |
+| **Analytics**, **Financial Intelligence**, **Compliance & GST** | Preview group; **live mill records by default**. **View sample** is demonstration only. Compliance does not file GST. | Use Dashboard, Inventory, Production, Sales, and Finance for operational work. |
 | **Pause / Stop batch** | Pause saves. Stop also pauses the batch (it does not cancel or reverse paddy already deducted). | Resume from the batch card or All Batches. |
 | **Invoice stock** | Invoice lines deduct matching **product** stock. If the description does not match a product lot, the invoice is rejected. | Use the Inventory product name/variety on the line. |
 | **Voice / Biometric login** | Often fails or is incomplete. | Use the **Password** tab. |
 | **Older mill database** | Opening some farmer details or contracts can fail if extra columns were never added. | Lists and new registers often still work; ask for a database update if contract/advance fields error. |
-| **AI suggestions** | Login “typo suggestions”, contract “optimization”, dashboard insights, voice mill control. | Optional; ignore if empty or wrong. Day-to-day save/load does not depend on them. |
+| **Voice / experimental extras** | Voice login and biometric return “not implemented” / 501. Contract “optimization” and dashboard insights may be empty. | Use **Password**. Day-to-day save/load does not depend on insights. |
 
 ---
 
@@ -832,7 +889,7 @@ These are current product limits, written the way office staff will meet them.
 Port 3000 is the preferred office-app port. Another program on this PC may already be using it (that is not MillMitra). Start the frontend anyway (`npm run dev` in `frontend`); Vite will move to the next free port and print the URL. Use that address — do not stop the other program unless you know it is an old MillMitra window.
 
 **Login never succeeds / “Network Error”**  
-Start the backend (`python app.py` in `backend`). Confirm nothing else is using port 5000.
+Start the backend (`.\venv\Scripts\python.exe app.py` in `backend`). If login still fails against old behaviour, stop the process on port 5000 and start again with that venv command. Confirm [http://localhost:5000/api/health](http://localhost:5000/api/health).
 
 **Kicked to login in the middle of work**  
 Session expired. Log in again. Avoid two different accounts in the same browser.

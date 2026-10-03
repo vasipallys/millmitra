@@ -138,6 +138,8 @@ class SalesService:
         order.total_amount = order.subtotal + order.tax_amount - order.discount_amount
         
         db.session.commit()
+        from services.notification_service import sales_order_created
+        sales_order_created(order, Customer.query.get(order.customer_id))
         
         # Update customer metrics
         self.update_customer_metrics(order.customer_id)

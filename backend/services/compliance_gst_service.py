@@ -1277,32 +1277,17 @@ class ComplianceGSTService:
             current_date = datetime.utcnow()
             calendar = self.get_compliance_calendar(current_date.year)
 
-            # Get recent compliance activities
-            recent_activities = [
-                {
-                    'date': '15-01-2024',
-                    'activity': 'GSTR-1 Filed',
-                    'status': 'completed'
-                },
-                {
-                    'date': '20-01-2024',
-                    'activity': 'GSTR-3B Filed',
-                    'status': 'completed'
-                },
-                {
-                    'date': '25-01-2024',
-                    'activity': 'TDS Return Filed',
-                    'status': 'completed'
-                }
-            ]
-
-            # Get compliance metrics
+            from models.gst_filing import GstFilingRecord
+            from models.financial import Invoice
+            filings = GstFilingRecord.query.order_by(GstFilingRecord.recorded_at.desc()).limit(20).all()
+            recent_activities = [row.to_dict() for row in filings]
+            gst_collected = 0.0
+            for invoice in Invoice.query.all():
+                gst_collected += float(getattr(invoice, 'gst_amount', 0) or getattr(invoice, 'tax_amount', 0) or 0)
             metrics = {
-                'gst_compliance_rate': 95.5,
-                'on_time_filing_rate': 98.2,
-                'penalty_amount_ytd': 0,
-                'total_tax_collected_ytd': 1250000,
-                'total_tax_paid_ytd': 1180000
+                'recorded_checklist_rows': len(filings),
+                'total_tax_on_invoices': gst_collected,
+                'note': 'Checklist rows are recorded in MillMitra only. They are not GSTN filings.',
             }
 
             dashboard_data = {

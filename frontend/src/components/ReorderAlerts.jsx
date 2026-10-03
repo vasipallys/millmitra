@@ -42,55 +42,6 @@ const ReorderAlerts = ({ onReorder, autoRefresh = true, sourceAlerts }) => {
     notes: ''
   });
 
-  // Mock reorder alerts data
-  const mockAlerts = [
-    {
-      id: 1,
-      product_name: 'Broken Rice',
-      category: 'broken_rice',
-      current_stock: 150,
-      reorder_level: 200,
-      max_stock: 1000,
-      unit: 'kg',
-      last_reorder: '2024-01-10',
-      consumption_rate: 25, // kg per day
-      days_remaining: 6,
-      priority: 'high',
-      supplier: 'Local Supplier A',
-      unit_cost: 35
-    },
-    {
-      id: 2,
-      product_name: 'Rice Bran',
-      category: 'rice_bran',
-      current_stock: 95,
-      reorder_level: 100,
-      max_stock: 500,
-      unit: 'kg',
-      last_reorder: '2024-01-08',
-      consumption_rate: 8,
-      days_remaining: 12,
-      priority: 'medium',
-      supplier: 'Supplier B',
-      unit_cost: 15
-    },
-    {
-      id: 3,
-      product_name: 'Packaging Material',
-      category: 'packaging',
-      current_stock: 480,
-      reorder_level: 500,
-      max_stock: 2000,
-      unit: 'pieces',
-      last_reorder: '2024-01-12',
-      consumption_rate: 50,
-      days_remaining: 10,
-      priority: 'low',
-      supplier: 'Packaging Co.',
-      unit_cost: 2.5
-    }
-  ];
-
   useEffect(() => {
     if (sourceAlerts?.length) {
       setAlerts(sourceAlerts.map((item) => ({
@@ -121,17 +72,26 @@ const ReorderAlerts = ({ onReorder, autoRefresh = true, sourceAlerts }) => {
   const loadReorderAlerts = async () => {
     try {
       setLoading(true);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // In real implementation, fetch from API
-      // const response = await api.get('/inventory/reorder-alerts');
-      // setAlerts(response.data.alerts);
-      
-      setAlerts(mockAlerts);
+      const { default: inventoryService } = await import('../services/inventoryService');
+      const payload = await inventoryService.getReorderAlerts();
+      const rows = payload?.alerts || [];
+      setAlerts(rows.map((item) => ({
+        id: item.id || item.stock_id || item.name,
+        product_name: item.product_name || item.name || 'Stock',
+        category: item.category || item.type || 'inventory',
+        current_stock: item.current_stock ?? item.quantity ?? 0,
+        reorder_level: item.reorder_level || item.threshold || 100,
+        max_stock: item.max_stock || 0,
+        unit: item.unit || 'kg',
+        last_reorder: item.last_reorder,
+        consumption_rate: item.consumption_rate,
+        days_remaining: item.days_remaining,
+        priority: item.priority || 'medium',
+        supplier: item.supplier,
+        unit_cost: item.unit_cost || item.unit_price || 0,
+      })));
     } catch (error) {
-      console.error('Failed to load reorder alerts:', error);
+      setAlerts([]);
     } finally {
       setLoading(false);
     }

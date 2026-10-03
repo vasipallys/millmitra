@@ -34,184 +34,48 @@ import {
   Refresh
 } from '@mui/icons-material';
 
-const AIRecommendations = ({ context = 'production', refreshInterval = 300000 }) => {
+const normalizeRec = (item, index) => ({
+  id: item.id || item.title || index,
+  category: item.category || item.type || 'mill',
+  title: item.title || 'Mill suggestion',
+  summary: item.summary || item.description || item.recommendation || '',
+  priority: item.priority || 'medium',
+  confidence: item.confidence,
+  impact: item.impact || 'medium',
+  implementation_time: item.implementation_time,
+  expected_benefit: item.expected_benefit,
+  details: item.details || [],
+  steps: item.steps || (item.recommendation ? [item.recommendation] : []),
+  metrics: item.metrics || item.data || {},
+});
+
+const AIRecommendations = ({ recommendations: incoming, context = 'production', refreshInterval = 300000 }) => {
   const [recommendations, setRecommendations] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(!incoming);
   const [expandedRec, setExpandedRec] = useState(null);
   const [detailRec, setDetailRec] = useState(null);
   const [implementNote, setImplementNote] = useState('');
 
-  // Mock AI recommendations data
-  const mockRecommendations = {
-    production: [
-      {
-        id: 1,
-        category: 'efficiency',
-        title: 'Optimize Batch Processing Schedule',
-        summary: 'AI suggests adjusting batch processing times to increase efficiency by 12%',
-        priority: 'high',
-        confidence: 0.89,
-        impact: 'high',
-        implementation_time: '2 hours',
-        expected_benefit: '12% efficiency increase, ₹15,000/month savings',
-        details: [
-          'Peak efficiency detected between 10 AM - 2 PM',
-          'Current batch size of 2,000 kg is suboptimal',
-          'Recommended batch size: 2,500 kg',
-          'Moisture content should be maintained at 12.5%'
-        ],
-        steps: [
-          'Adjust production schedule to peak hours',
-          'Increase batch size to 2,500 kg',
-          'Monitor moisture content closely',
-          'Track efficiency improvements'
-        ],
-        metrics: {
-          current_efficiency: 78,
-          projected_efficiency: 87,
-          cost_savings: 15000
-        }
-      },
-      {
-        id: 2,
-        category: 'quality',
-        title: 'Implement Predictive Quality Control',
-        summary: 'AI model can predict quality issues 2 hours before they occur',
-        priority: 'medium',
-        confidence: 0.92,
-        impact: 'medium',
-        implementation_time: '1 day',
-        expected_benefit: '25% reduction in quality defects',
-        details: [
-          'Pattern analysis shows quality degradation predictors',
-          'Temperature and humidity correlation identified',
-          'Early warning system can prevent defects',
-          'Real-time monitoring recommended'
-        ],
-        steps: [
-          'Install additional sensors',
-          'Configure AI monitoring system',
-          'Set up alert thresholds',
-          'Train operators on new system'
-        ],
-        metrics: {
-          current_defect_rate: 8,
-          projected_defect_rate: 6,
-          quality_improvement: 25
-        }
-      },
-      {
-        id: 3,
-        category: 'maintenance',
-        title: 'Predictive Equipment Maintenance',
-        summary: 'Schedule maintenance based on AI-predicted equipment wear patterns',
-        priority: 'low',
-        confidence: 0.76,
-        impact: 'medium',
-        implementation_time: '4 hours',
-        expected_benefit: '30% reduction in unplanned downtime',
-        details: [
-          'Vibration patterns indicate bearing wear',
-          'Temperature trends suggest lubrication needs',
-          'Usage patterns predict optimal maintenance windows',
-          'Cost-effective maintenance scheduling possible'
-        ],
-        steps: [
-          'Install vibration sensors',
-          'Set up monitoring dashboard',
-          'Create maintenance schedule',
-          'Train maintenance team'
-        ],
-        metrics: {
-          current_downtime: 12,
-          projected_downtime: 8,
-          maintenance_savings: 8000
-        }
-      }
-    ],
-    inventory: [
-      {
-        id: 4,
-        category: 'optimization',
-        title: 'Smart Inventory Reordering',
-        summary: 'AI-driven reorder points can reduce carrying costs by 18%',
-        priority: 'high',
-        confidence: 0.85,
-        impact: 'high',
-        implementation_time: '1 hour',
-        expected_benefit: '18% reduction in carrying costs',
-        details: [
-          'Demand patterns show seasonal variations',
-          'Current reorder levels are too conservative',
-          'Lead time optimization opportunities identified',
-          'Supplier performance data available'
-        ],
-        steps: [
-          'Update reorder point calculations',
-          'Implement dynamic safety stock',
-          'Set up automated ordering',
-          'Monitor performance metrics'
-        ],
-        metrics: {
-          current_carrying_cost: 45000,
-          projected_carrying_cost: 37000,
-          cost_reduction: 18
-        }
-      }
-    ],
-    quality: [
-      {
-        id: 5,
-        category: 'automation',
-        title: 'Automated Quality Grading',
-        summary: 'Computer vision can automate 80% of quality grading tasks',
-        priority: 'medium',
-        confidence: 0.88,
-        impact: 'high',
-        implementation_time: '3 days',
-        expected_benefit: '80% automation, 95% accuracy',
-        details: [
-          'Image recognition model trained on 10,000+ samples',
-          'Consistent grading reduces human error',
-          'Real-time quality assessment possible',
-          'Integration with existing systems feasible'
-        ],
-        steps: [
-          'Install camera systems',
-          'Deploy AI grading model',
-          'Train operators on new system',
-          'Validate accuracy against manual grading'
-        ],
-        metrics: {
-          current_accuracy: 85,
-          projected_accuracy: 95,
-          automation_level: 80
-        }
-      }
-    ]
-  };
-
   useEffect(() => {
+    if (Array.isArray(incoming)) {
+      setRecommendations(incoming.map(normalizeRec));
+      setLoading(false);
+      return undefined;
+    }
     loadRecommendations();
-    
     const interval = setInterval(loadRecommendations, refreshInterval);
     return () => clearInterval(interval);
-  }, [context, refreshInterval]);
+  }, [incoming, context, refreshInterval]);
 
   const loadRecommendations = async () => {
     try {
       setLoading(true);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // In real implementation, fetch from API
-      // const response = await api.get(`/ai/recommendations?context=${context}`);
-      // setRecommendations(response.data.recommendations);
-      
-      setRecommendations(mockRecommendations[context] || []);
+      const { productionService } = await import('../services/productionService');
+      const payload = await productionService.getRecommendations();
+      const rows = payload?.recommendations || [];
+      setRecommendations(rows.map(normalizeRec));
     } catch (error) {
-      console.error('Failed to load AI recommendations:', error);
+      setRecommendations([]);
     } finally {
       setLoading(false);
     }

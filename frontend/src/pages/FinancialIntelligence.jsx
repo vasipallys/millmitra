@@ -152,13 +152,15 @@ const FinancialIntelligence = () => {
       }
       setLoading(true);
       try {
-        const [summary, cashFlow, receivables, invoicesPayload] = await Promise.all([
+        const [summary, cashFlow, receivables, invoicesPayload, schedulesPayload] = await Promise.all([
           financeService.getFinancialSummary(30),
           financeService.getCashFlow('monthly'),
           financeService.getAccountsReceivable(),
           financeService.getInvoices({ limit: 50 }),
+          financeService.getPaymentSchedules(),
         ]);
         if (cancelled) return;
+        setScheduledPayments(schedulesPayload?.schedules || []);
         const invoices = unwrapList(invoicesPayload, ['invoices', 'items']);
         const revenue = Number(summary?.total_revenue || 0);
         const expenses = Number(summary?.total_expenses || 0);
@@ -216,7 +218,7 @@ const FinancialIntelligence = () => {
     };
   }, [isSample]);
 
-  const handleSmartPaymentScheduling = () => {
+  const handleSmartPaymentScheduling = async () => {
     const amount = Number(paymentForm.amount);
     if (!paymentForm.farmer_id) {
       setPaymentError('Farmer ID is required');
@@ -227,21 +229,41 @@ const FinancialIntelligence = () => {
       return;
     }
     setPaymentError('');
-    setScheduledPayments((prev) => [
-      {
-        id: Date.now(),
-        ...paymentForm,
+    if (isSample) {
+      setScheduledPayments((prev) => [
+        {
+          id: Date.now(),
+          ...paymentForm,
+          amount,
+          created_at: new Date().toISOString(),
+        },
+        ...prev,
+      ]);
+      setShowPaymentDialog(false);
+      setPaymentForm({ farmer_id: '', amount: '', payment_type: 'procurement' });
+      setPageMessage({
+        severity: 'info',
+        text: `Sample schedule of ₹${amount.toLocaleString('en-IN')} stays on this preview only.`,
+      });
+      return;
+    }
+    try {
+      const saved = await financeService.createPaymentSchedule({
+        farmer_id: Number(paymentForm.farmer_id),
         amount,
-        created_at: new Date().toISOString(),
-      },
-      ...prev,
-    ]);
-    setShowPaymentDialog(false);
-    setPaymentForm({ farmer_id: '', amount: '', payment_type: 'procurement' });
-    setPageMessage({
-      severity: 'success',
-      text: `Preview payment of ₹${amount.toLocaleString('en-IN')} stored on this screen only. Use Finance → Record Payment for mill-of-record money.`,
-    });
+        payment_type: paymentForm.payment_type,
+      });
+      const row = saved?.schedule || { ...paymentForm, amount, created_at: new Date().toISOString() };
+      setScheduledPayments((prev) => [row, ...prev]);
+      setShowPaymentDialog(false);
+      setPaymentForm({ farmer_id: '', amount: '', payment_type: 'procurement' });
+      setPageMessage({
+        severity: 'success',
+        text: `Saved schedule ${row.schedule_id || ''} for ₹${amount.toLocaleString('en-IN')}. This is a planned payment, not a bank transfer.`,
+      });
+    } catch (error) {
+      setPaymentError(error?.userMessage || error?.response?.data?.message || 'Could not save the schedule');
+    }
   };
 
   const getInsightIcon = (type) => {
@@ -604,6 +626,11 @@ const FinancialIntelligence = () => {
       {/* AI Insights Tab */}
       <TabPanel value={activeTab} index={3}>
         <Grid container spacing={3}>
+          {insights.length === 0 && (
+            <Grid item xs={12}>
+              <Typography color="text.secondary">No records yet</Typography>
+            </Grid>
+          )}
           {insights.map((insight, index) => (
             <Grid item xs={12} md={6} key={index}>
               <Card>
@@ -649,7 +676,7 @@ const FinancialIntelligence = () => {
                   Smart Payment Scheduling
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                  AI-powered payment optimization based on risk analysis and cash flow predictions
+                  Save a planned farmer payment on this mill. This is not an automatic bank transfer.
                 </Typography>
                 
                 <Button
@@ -668,33 +695,42 @@ const FinancialIntelligence = () => {
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
+                  Saved payment schedules
+                </Typography>
+                {scheduledPayments.length === 0 ? (
+                  <Typography color="text.secondary">No records yet</Typography>
+                ) : (
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Schedule</TableCell>
+                        <TableCell>Farmer</TableCell>
+                        <TableCell>Amount</TableCell>
+                        <TableCell>Type</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {scheduledPayments.map((row) => (
+                        <TableRow key={row.id || row.schedule_id}>
+                          <TableCell>{row.schedule_id || row.id}</TableCell>
+                          <TableCell>{row.farmer_id || '—'}</TableCell>
+                          <TableCell>₹{Number(row.amount || 0).toLocaleString('en-IN')}</TableCell>
+                          <TableCell>{row.payment_type || '—'}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+                <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
                   Payment Optimization Benefits
                 </Typography>
                 
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="subtitle2" color="primary.main">
-                    • Risk-Based Scheduling
+                    • Planned only
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    AI analyzes farmer payment history to optimize terms
-                  </Typography>
-                </Box>
-                
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="subtitle2" color="primary.main">
-                    • Cash Flow Prediction
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Predicts impact on cash flow before scheduling
-                  </Typography>
-                </Box>
-                
-                <Box>
-                  <Typography variant="subtitle2" color="primary.main">
-                    • Automated Recommendations
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Suggests optimal payment terms and timing
+                    A saved schedule does not mark a farmer paid. Use Finance → Record Payment for money.
                   </Typography>
                 </Box>
               </CardContent>

@@ -107,6 +107,8 @@ class ProductionService:
         
         db.session.add(initial_step)
         db.session.commit()
+        from services.notification_service import batch_started
+        batch_started(batch)
         
         return {
             'success': True,
@@ -148,6 +150,8 @@ class ProductionService:
         self._update_inventory_after_completion(batch, completion_data)
         
         db.session.commit()
+        from services.notification_service import batch_completed
+        batch_completed(batch)
         
         return {
             'success': True,

@@ -423,3 +423,34 @@ def get_compliance_requirements():
         
     except Exception as e:
         return jsonify({'error': f'Failed to get compliance requirements: {str(e)}'}), 500
+
+
+@compliance_gst_bp.route('/filings', methods=['GET'])
+@jwt_required()
+def list_gst_filings():
+    from models.gst_filing import GstFilingRecord
+    rows = GstFilingRecord.query.order_by(GstFilingRecord.recorded_at.desc()).all()
+    return jsonify({'success': True, 'filings': [row.to_dict() for row in rows]})
+
+
+@compliance_gst_bp.route('/filings', methods=['POST'])
+@jwt_required()
+def record_gst_filing():
+    from models.gst_filing import GstFilingRecord
+    from utils import current_user as load_user
+    user = load_user()
+    data = request.get_json() or {}
+    form = (data.get('form') or data.get('task') or '').strip()
+    if not form:
+        return jsonify({'success': False, 'message': 'form is required'}), 400
+    row = GstFilingRecord(
+        form=form[:40],
+        due_date=(data.get('due_date') or data.get('date') or '')[:20],
+        amount=float(data.get('amount') or 0),
+        notes=data.get('notes') or 'Recorded in MillMitra. Not a GSTN filing receipt.',
+        status='recorded',
+        created_by=user.id if user else None,
+    )
+    db.session.add(row)
+    db.session.commit()
+    return jsonify({'success': True, 'filing': row.to_dict()}), 201

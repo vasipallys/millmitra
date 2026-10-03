@@ -27,126 +27,47 @@ import {
   Refresh
 } from '@mui/icons-material';
 
-const AIInsights = ({ refreshInterval = 300000 }) => { // 5 minutes default
+const normalizeInsight = (item, index) => ({
+  id: item.id || item.title || index,
+  category: item.category || item.type || 'operational',
+  title: item.title || 'Mill note',
+  summary: item.summary || item.description || item.insight || '',
+  confidence: item.confidence,
+  impact: item.impact || item.priority || 'medium',
+  priority: item.priority || 'medium',
+  details: item.details || (item.data ? Object.entries(item.data).map(([key, value]) => `${key}: ${value}`) : []),
+  recommendations: item.recommendations || (item.recommendation ? [item.recommendation] : []),
+  timestamp: item.timestamp || item.created_at,
+});
+
+const AIInsights = ({ insights: incoming, refreshInterval = 300000 }) => {
   const [insights, setInsights] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!incoming);
   const [error, setError] = useState(null);
   const [expandedInsight, setExpandedInsight] = useState(null);
 
-  // Mock AI insights data
-  const mockInsights = [
-    {
-      id: 1,
-      category: 'production_efficiency',
-      title: 'Production Optimization Opportunity',
-      summary: 'AI detected 15% efficiency improvement potential in milling process',
-      confidence: 0.89,
-      impact: 'high',
-      priority: 'high',
-      details: [
-        'Peak efficiency hours: 10 AM - 2 PM',
-        'Recommended batch size: 2,500 kg',
-        'Optimal moisture content: 12.5%',
-        'Expected cost savings: ₹25,000/month'
-      ],
-      recommendations: [
-        'Adjust production schedule to peak hours',
-        'Implement automated moisture monitoring',
-        'Optimize batch processing workflow'
-      ],
-      timestamp: new Date().toISOString()
-    },
-    {
-      id: 2,
-      category: 'quality_prediction',
-      title: 'Quality Trend Analysis',
-      summary: 'Quality scores trending upward with new sorting equipment',
-      confidence: 0.92,
-      impact: 'medium',
-      priority: 'medium',
-      details: [
-        'Average quality score: 87.5%',
-        'Improvement rate: +3.2% this week',
-        'Grade A percentage: 78%',
-        'Defect reduction: 45%'
-      ],
-      recommendations: [
-        'Continue current quality protocols',
-        'Monitor equipment calibration',
-        'Train staff on new procedures'
-      ],
-      timestamp: new Date(Date.now() - 3600000).toISOString()
-    },
-    {
-      id: 3,
-      category: 'demand_forecast',
-      title: 'Demand Surge Prediction',
-      summary: 'AI predicts 25% demand increase in next 2 weeks',
-      confidence: 0.85,
-      impact: 'high',
-      priority: 'urgent',
-      details: [
-        'Predicted demand: 3,125 kg/day',
-        'Current capacity: 2,500 kg/day',
-        'Capacity gap: 625 kg/day',
-        'Revenue opportunity: ₹1.2L additional'
-      ],
-      recommendations: [
-        'Increase production shifts',
-        'Secure additional raw materials',
-        'Optimize inventory levels',
-        'Consider temporary capacity expansion'
-      ],
-      timestamp: new Date(Date.now() - 7200000).toISOString()
-    },
-    {
-      id: 4,
-      category: 'cost_optimization',
-      title: 'Energy Cost Reduction',
-      summary: 'AI identified energy optimization opportunities',
-      confidence: 0.78,
-      impact: 'medium',
-      priority: 'low',
-      details: [
-        'Current energy cost: ₹45,000/month',
-        'Potential savings: ₹8,500/month',
-        'Peak usage hours: 2 PM - 6 PM',
-        'Efficiency rating: 72%'
-      ],
-      recommendations: [
-        'Shift high-energy operations to off-peak hours',
-        'Implement smart power management',
-        'Regular equipment maintenance',
-        'Consider solar power integration'
-      ],
-      timestamp: new Date(Date.now() - 10800000).toISOString()
-    }
-  ];
-
   useEffect(() => {
+    if (Array.isArray(incoming)) {
+      setInsights(incoming.map(normalizeInsight));
+      setLoading(false);
+      return undefined;
+    }
     loadInsights();
-    
-    // Set up auto-refresh
     const interval = setInterval(loadInsights, refreshInterval);
     return () => clearInterval(interval);
-  }, [refreshInterval]);
+  }, [incoming, refreshInterval]);
 
   const loadInsights = async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // In real implementation, fetch from API
-      // const response = await api.get('/ai/insights/generate');
-      // setInsights(response.data.insights);
-      
-      setInsights(mockInsights);
+      const { dashboardService } = await import('../services/dashboardService');
+      const payload = await dashboardService.getInsights();
+      const rows = Array.isArray(payload) ? payload : (payload?.insights || []);
+      setInsights(rows.map(normalizeInsight));
     } catch (err) {
-      setError('Failed to load AI insights');
-      console.error('Error loading insights:', err);
+      setError('Could not load mill insights');
+      setInsights([]);
     } finally {
       setLoading(false);
     }

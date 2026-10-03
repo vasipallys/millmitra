@@ -8,14 +8,14 @@ import {
   Container, Typography, Box, Card, CardContent, Grid, Tabs, Tab,
   List, ListItem, ListItemText, ListItemAvatar, ListItemSecondaryAction,
   Avatar, IconButton, Chip, Button, TextField, FormControl, InputLabel,
-  Select, MenuItem, Divider, Alert, Badge, Tooltip, Dialog, DialogTitle,
+  Select, MenuItem, Divider, Badge, Tooltip, Dialog, DialogTitle,
   DialogContent, DialogActions, Checkbox, FormControlLabel
 } from '@mui/material';
 import {
-  Notifications, NotificationsActive, MarkEmailRead, Delete, Search,
-  FilterList, Settings as SettingsIcon, Warning, Info, CheckCircle,
-  Error, PersonAdd, Payment, Science, Inventory2, Factory, SystemUpdate,
-  Refresh, DeleteSweep, Archive, Unarchive
+  Notifications, MarkEmailRead, Delete, Search,
+  Settings as SettingsIcon, Info,
+  PersonAdd, Payment, Science, Inventory2, Factory, SystemUpdate,
+  Refresh
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import notificationService from '../services/notificationService';
@@ -29,20 +29,16 @@ const NotificationsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedNotifications, setSelectedNotifications] = useState([]);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Subscribe to notification updates
-    const unsubscribe = notificationService.subscribe(({ notifications, unreadCount }) => {
-      setNotifications(notifications);
-      setUnreadCount(unreadCount);
+    notificationService.start();
+    const unsubscribe = notificationService.subscribe(({ notifications: next, unreadCount: nextCount }) => {
+      setNotifications(next);
+      setUnreadCount(nextCount);
     });
-
-    // Initial load
     setNotifications(notificationService.getNotifications());
     setUnreadCount(notificationService.getUnreadCount());
-
     return unsubscribe;
   }, []);
 
@@ -61,6 +57,7 @@ const NotificationsPage = () => {
       case 'production': return <Factory />;
       case 'inventory': return <Inventory2 />;
       case 'quality': return <Science />;
+      case 'sales': return <Payment />;
       case 'finance': return <Payment />;
       case 'system': return <SystemUpdate />;
       default: return <Info />;
@@ -84,14 +81,14 @@ const NotificationsPage = () => {
 
     // Filter by priority
     if (filterPriority !== 'all') {
-      filtered = filtered.filter(n => n.priority === filterPriority);
+      filtered = filtered.filter((n) => (n.severity || n.priority) === filterPriority);
     }
 
-    // Filter by search term
     if (searchTerm) {
-      filtered = filtered.filter(n => 
-        n.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        n.message.toLowerCase().includes(searchTerm.toLowerCase())
+      const needle = searchTerm.toLowerCase();
+      filtered = filtered.filter((n) =>
+        (n.title || '').toLowerCase().includes(needle)
+        || (n.message || n.body || '').toLowerCase().includes(needle)
       );
     }
 
@@ -105,8 +102,9 @@ const NotificationsPage = () => {
     }
 
     // Navigate to relevant page
-    if (notification.action_url) {
-      navigate(notification.action_url);
+    const target = notification.link || notification.action_url;
+    if (target) {
+      navigate(target);
     }
   };
 
@@ -235,6 +233,7 @@ const NotificationsPage = () => {
                   <MenuItem value="production">Production</MenuItem>
                   <MenuItem value="inventory">Inventory</MenuItem>
                   <MenuItem value="quality">Quality Control</MenuItem>
+                  <MenuItem value="sales">Sales</MenuItem>
                   <MenuItem value="finance">Finance</MenuItem>
                   <MenuItem value="system">System</MenuItem>
                 </Select>
@@ -303,13 +302,12 @@ const NotificationsPage = () => {
             <Box sx={{ p: 4, textAlign: 'center' }}>
               <Notifications sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
               <Typography variant="h6" color="text.secondary" gutterBottom>
-                No notifications found
+                {notifications.length === 0 ? 'No notifications yet' : 'No notifications found'}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {searchTerm || filterCategory !== 'all' || filterPriority !== 'all'
-                  ? 'Try adjusting your filters'
-                  : 'You\'re all caught up!'
-                }
+                {notifications.length === 0
+                  ? 'Mill events will appear here when farmers, stock, production, sales, or payments are recorded.'
+                  : 'Try adjusting your filters'}
               </Typography>
             </Box>
           ) : (
@@ -359,13 +357,13 @@ const NotificationsPage = () => {
                             {notification.title}
                           </Typography>
                           <Chip
-                            label={notification.priority}
+                            label={notification.severity || notification.priority}
                             size="small"
-                            color={getPriorityColor(notification.priority)}
+                            color={getPriorityColor(notification.severity || notification.priority)}
                             variant="outlined"
                           />
                           <Chip
-                            label={notification.category.replace('_', ' ')}
+                            label={(notification.category || 'system').replace('_', ' ')}
                             size="small"
                             variant="outlined"
                           />
@@ -374,10 +372,10 @@ const NotificationsPage = () => {
                       secondary={
                         <React.Fragment>
                           <span style={{ display: 'block', marginBottom: '4px', color: 'rgba(0, 0, 0, 0.6)' }}>
-                            {notification.message}
+                            {notification.message || notification.body}
                           </span>
                           <span style={{ fontSize: '0.75rem', color: 'rgba(0, 0, 0, 0.6)' }}>
-                            {formatTimeAgo(notification.timestamp)}
+                            {formatTimeAgo(notification.timestamp || notification.created_at)}
                           </span>
                         </React.Fragment>
                       }

@@ -13,11 +13,31 @@ class SmartDashboardService:
     
     def get_smart_overview(self, user: User, start_date: datetime, end_date: datetime):
         """Generate AI-powered dashboard overview based on user role and context"""
-        
-        base_metrics = self._get_base_metrics(start_date, end_date)
-        role_specific_data = self._get_role_specific_data(user, start_date, end_date)
-        ai_insights = self._get_ai_overview_insights(user, base_metrics)
-        
+        base_metrics = self._safe_section(
+            lambda: self._get_base_metrics(start_date, end_date),
+            {
+                'total_production': 0.0,
+                'avg_quality': 0.0,
+                'inventory_value': 0.0,
+                'pending_orders': 0,
+                'active_farmers': 0,
+            },
+        )
+        role_specific_data = self._safe_section(
+            lambda: self._get_role_specific_data(user, start_date, end_date),
+            {},
+        )
+        ai_insights = self._safe_section(
+            lambda: self._get_ai_overview_insights(user, base_metrics),
+            [],
+        )
+        trends = self._safe_section(
+            lambda: self._calculate_trends(start_date, end_date),
+            {'production': [], 'quality': [], 'direction': 'stable'},
+        )
+        quick_actions = self._safe_section(lambda: self._get_quick_actions(user), [])
+        kpis = self._safe_section(lambda: self._get_kpis(user, start_date, end_date), [])
+
         return {
             'summary': {
                 'total_production': base_metrics['total_production'],
@@ -26,12 +46,20 @@ class SmartDashboardService:
                 'pending_orders': base_metrics['pending_orders'],
                 'active_farmers': base_metrics['active_farmers']
             },
-            'trends': self._calculate_trends(start_date, end_date),
+            'trends': trends,
             'role_data': role_specific_data,
             'ai_insights': ai_insights,
-            'quick_actions': self._get_quick_actions(user),
-            'performance_indicators': self._get_kpis(user, start_date, end_date)
+            'quick_actions': quick_actions,
+            'performance_indicators': kpis,
         }
+
+    def _safe_section(self, factory, fallback):
+        try:
+            value = factory()
+            return fallback if value is None else value
+        except Exception:
+            db.session.rollback()
+            return fallback
     
     def get_priority_widgets(self, user: User):
         """AI determines widget priority based on user role, time, and current context"""
@@ -279,20 +307,29 @@ class SmartDashboardService:
             db.session.query(
                 func.sum(
                     func.coalesce(PaddyStock.remaining_quantity, PaddyStock.quantity)
-                    * PaddyStock.purchase_price
+                    * func.coalesce(PaddyStock.purchase_price, 0)
                 )
             ).scalar() or 0
         ) + (
-            db.session.query(func.sum(ProductStock.quantity * ProductStock.market_price)).scalar() or 0
+            db.session.query(
+                func.sum(
+                    func.coalesce(ProductStock.quantity, 0)
+                    * func.coalesce(ProductStock.market_price, ProductStock.unit_cost, 0)
+                )
+            ).scalar() or 0
         )
         
         pending_orders = SalesOrder.query.filter(
             SalesOrder.status.in_(['pending', 'confirmed', 'processing'])
         ).count()
         
-        active_farmers = Farmer.query.filter(
-            Farmer.last_transaction_date >= start_date
-        ).count()
+        try:
+            active_farmers = Farmer.query.filter(
+                Farmer.last_transaction_date >= start_date
+            ).count()
+        except Exception:
+            db.session.rollback()
+            active_farmers = Farmer.query.filter_by(is_active=True).count()
         
         return {
             'total_production': float(total_production),
@@ -303,28 +340,113 @@ class SmartDashboardService:
         }
     
     def _get_role_specific_data(self, user: User, start_date: datetime, end_date: datetime):
-        """Get data specific to user role"""
-        
-        if user.role == 'manager':
+        """Role extras from mill records. Missing helpers used to 500 for manager."""
+        role = (user.role or '').lower()
+        if role in ('manager', 'admin', 'administrator', 'super_admin', 'finance'):
             return {
-                'profit_margin': self._calculate_profit_margin(start_date, end_date),
-                'efficiency_trends': self._get_efficiency_trends(start_date, end_date),
-                'cost_analysis': self._get_cost_analysis(start_date, end_date)
+                'profit_margin': self._call_helper('_calculate_profit_margin', start_date, end_date),
+                'efficiency_trends': self._call_helper('_get_efficiency_trends', start_date, end_date),
+                'cost_analysis': self._call_helper('_get_cost_analysis', start_date, end_date),
             }
-        elif user.role == 'operator':
+        if role in ('operator', 'supervisor', 'quality_control', 'quality_controller'):
             return {
-                'current_batch': self._get_current_batch_info(),
-                'machine_status': self._get_machine_status(),
-                'next_maintenance': self._get_next_maintenance()
+                'current_batch': self._call_helper('_get_current_batch_info'),
+                'machine_status': self._call_helper('_get_machine_status'),
+                'next_maintenance': self._call_helper('_get_next_maintenance'),
             }
-        elif user.role == 'sales':
+        if role == 'sales':
             return {
-                'sales_pipeline': self._get_sales_pipeline(),
-                'customer_insights': self._get_customer_insights(),
-                'revenue_forecast': self._get_revenue_forecast()
+                'sales_pipeline': self._call_helper('_get_sales_pipeline'),
+                'customer_insights': self._call_helper('_get_customer_insights'),
+                'revenue_forecast': self._call_helper('_get_revenue_forecast'),
             }
-        
         return {}
+
+    def _call_helper(self, name, *args):
+        fn = getattr(self, name, None)
+        if not callable(fn):
+            return {}
+        try:
+            return fn(*args)
+        except Exception:
+            db.session.rollback()
+            return {}
+
+    def _calculate_profit_margin(self, start_date: datetime, end_date: datetime):
+        revenue = float(db.session.query(func.sum(Invoice.total_amount)).filter(
+            Invoice.invoice_date >= start_date,
+            Invoice.invoice_date <= end_date,
+            Invoice.status != 'cancelled',
+        ).scalar() or 0)
+        collected = 0.0
+        try:
+            collected = float(db.session.query(func.sum(Payment.amount)).filter(
+                Payment.payment_date >= start_date,
+                Payment.payment_date <= end_date,
+            ).scalar() or 0)
+        except Exception:
+            db.session.rollback()
+        margin = (collected / revenue * 100) if revenue else 0.0
+        return {
+            'revenue': revenue,
+            'collected': collected,
+            'margin_percent': margin,
+        }
+
+    def _get_efficiency_trends(self, start_date: datetime, end_date: datetime):
+        batches = ProductionBatch.query.filter(
+            ProductionBatch.start_time >= start_date,
+            ProductionBatch.start_time <= end_date,
+        ).all()
+        if not batches:
+            return {'average_efficiency': 0.0, 'batch_count': 0}
+        avg = sum((batch.efficiency_percentage or 0) for batch in batches) / len(batches)
+        return {'average_efficiency': float(avg), 'batch_count': len(batches)}
+
+    def _get_cost_analysis(self, start_date: datetime, end_date: datetime):
+        cost = float(db.session.query(func.sum(PaddyStock.total_amount)).filter(
+            PaddyStock.purchase_date >= start_date,
+            PaddyStock.purchase_date <= end_date,
+        ).scalar() or 0)
+        return {'paddy_purchase_cost': cost}
+
+    def _get_current_batch_info(self):
+        batch = ProductionBatch.query.filter(
+            ProductionBatch.status.in_(['in_progress', 'started', 'paused', 'planned'])
+        ).order_by(ProductionBatch.start_time.desc()).first()
+        if not batch:
+            return {'batch_id': None, 'status': 'No active batch', 'progress': 0}
+        return {
+            'batch_id': batch.batch_number,
+            'status': batch.status,
+            'progress': batch.completion_percentage or 0,
+            'variety': batch.paddy_variety,
+        }
+
+    def _get_machine_status(self):
+        widget = self._create_machine_status_widget()
+        return (widget or {}).get('data') or {'online': 0, 'offline': 0, 'maintenance': 0}
+
+    def _get_next_maintenance(self):
+        return None
+
+    def _get_sales_pipeline(self):
+        rows = db.session.query(SalesOrder.status, func.count(SalesOrder.id)).group_by(SalesOrder.status).all()
+        return {status or 'unknown': count for status, count in rows}
+
+    def _get_customer_insights(self):
+        return {'customer_count': Customer.query.count()}
+
+    def _get_revenue_forecast(self):
+        start = datetime.utcnow() - timedelta(days=30)
+        revenue = float(db.session.query(func.sum(Invoice.total_amount)).filter(
+            Invoice.invoice_date >= start,
+            Invoice.status != 'cancelled',
+        ).scalar() or 0)
+        return {
+            'recorded_revenue_30d': revenue,
+            'note': 'Invoice totals already recorded, not a forecast model',
+        }
     
     def _get_ai_overview_insights(self, user: User, metrics: dict):
         """Get AI-generated insights for overview"""

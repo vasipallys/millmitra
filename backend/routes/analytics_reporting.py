@@ -493,3 +493,31 @@ def get_smart_alerts():
         
     except Exception as e:
         return jsonify({'error': f'Smart alerts generation failed: {str(e)}'}), 500
+
+
+@analytics_reporting_bp.route('/saved', methods=['GET'])
+@jwt_required()
+def list_saved_reports():
+    from models.saved_report import SavedReport
+    rows = SavedReport.query.order_by(SavedReport.created_at.desc()).limit(50).all()
+    return jsonify({'success': True, 'reports': [row.to_dict() for row in rows]})
+
+
+@analytics_reporting_bp.route('/saved', methods=['POST'])
+@jwt_required()
+def create_saved_report():
+    import json
+    from models.saved_report import SavedReport
+    from utils import current_user
+    user = current_user()
+    data = request.get_json() or {}
+    title = (data.get('title') or data.get('report_type') or 'Mill report').strip()
+    row = SavedReport(
+        title=title[:200],
+        report_type=(data.get('report_type') or 'mill_snapshot')[:80],
+        payload_json=json.dumps(data.get('payload') or data),
+        created_by=user.id if user else None,
+    )
+    db.session.add(row)
+    db.session.commit()
+    return jsonify({'success': True, 'report': row.to_dict()}), 201

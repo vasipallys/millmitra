@@ -30,6 +30,9 @@ import { useNavigate } from 'react-router-dom';
 import NotificationsPanel from './NotificationsPanel';
 import ProfilePanel from './ProfilePanel';
 import notificationService from '../services/notificationService';
+import LanguageSwitcher from '../i18n/LanguageSwitcher';
+import { useI18n } from '../i18n/I18nContext';
+import api from '../services/api';
 
 const accountLabel = (account) => (
   account?.username || account?.email || 'Account'
@@ -47,19 +50,40 @@ const Navbar = ({ onMenuClick, onLogout, user }) => {
   const [infoOpen, setInfoOpen] = useState(false);
   const [voiceNoteOpen, setVoiceNoteOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [aiFlags, setAiFlags] = useState({ showChip: false, voiceCommands: false });
   const navigate = useNavigate();
+  const { t } = useI18n();
 
-  // Subscribe to notification updates
   useEffect(() => {
-    const unsubscribe = notificationService.subscribe(({ unreadCount }) => {
-      setUnreadCount(unreadCount);
+    if (!user) {
+      setUnreadCount(0);
+      setAiFlags({ showChip: false, voiceCommands: false });
+      return undefined;
+    }
+    let cancelled = false;
+    api.get('/user/mill-settings').then((response) => {
+      if (cancelled) return;
+      const ai = response.data?.settings?.ai || {};
+      const notes = response.data?.settings?.notifications || {};
+      setAiFlags({
+        showChip: Boolean(ai.showAiChip || ai.smartRecommendations || ai.predictiveAnalytics),
+        voiceCommands: Boolean(ai.voiceCommands),
+      });
+      if (notes.inApp !== false) {
+        notificationService.start();
+      }
+    }).catch(() => {
+      if (!cancelled) notificationService.start();
     });
-
-    // Initial load
+    const unsubscribe = notificationService.subscribe(({ unreadCount: nextCount }) => {
+      setUnreadCount(nextCount);
+    });
     setUnreadCount(notificationService.getUnreadCount());
-
-    return unsubscribe;
-  }, []);
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, [user]);
 
   const handleProfileMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -119,29 +143,40 @@ const Navbar = ({ onMenuClick, onLogout, user }) => {
 
         {/* Title */}
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          Rice Mill Management System
+          {t('appTitle')}
         </Typography>
 
-        {/* AI Status Indicator */}
         <Chip
-          label="AI Active"
-          color="success"
+          label={user?.role || t('role')}
           size="small"
-          sx={{ mr: 2, cursor: 'pointer' }}
-          onClick={() => setInfoOpen(true)}
+          color="primary"
+          variant="outlined"
+          sx={{ mr: 1 }}
         />
+        <LanguageSwitcher />
 
-        {/* Voice Control Button */}
-        <Tooltip title={isVoiceActive ? "Disable Voice" : "Enable Voice"}>
-          <IconButton
-            color={isVoiceActive ? "primary" : "default"}
-            onClick={toggleVoice}
-            sx={{ mr: 1 }}
-            aria-label={isVoiceActive ? 'Disable voice commands' : 'Voice commands (experimental)'}
-          >
-            {isVoiceActive ? <Mic /> : <MicOff />}
-          </IconButton>
-        </Tooltip>
+        {aiFlags.showChip && (
+          <Chip
+            label="AI Active"
+            color="success"
+            size="small"
+            sx={{ mr: 2, cursor: 'pointer' }}
+            onClick={() => setInfoOpen(true)}
+          />
+        )}
+
+        {aiFlags.voiceCommands && (
+          <Tooltip title={isVoiceActive ? 'Disable Voice' : 'Enable Voice'}>
+            <IconButton
+              color={isVoiceActive ? 'primary' : 'default'}
+              onClick={toggleVoice}
+              sx={{ mr: 1 }}
+              aria-label={isVoiceActive ? 'Disable voice commands' : 'Voice commands (experimental)'}
+            >
+              {isVoiceActive ? <Mic /> : <MicOff />}
+            </IconButton>
+          </Tooltip>
+        )}
 
         {/* Notifications */}
         <Tooltip title="Notifications">
@@ -193,15 +228,15 @@ const Navbar = ({ onMenuClick, onLogout, user }) => {
           </Box>
           <MenuItem onClick={handleProfileClick}>
             <AccountCircle sx={{ mr: 1 }} />
-            Profile
+            {t('profile')}
           </MenuItem>
           <MenuItem onClick={handleSettingsClick}>
             <Settings sx={{ mr: 1 }} />
-            Settings
+            {t('settings')}
           </MenuItem>
           <MenuItem onClick={onLogout}>
             <Logout sx={{ mr: 1 }} />
-            Logout
+            {t('logout')}
           </MenuItem>
         </Menu>
 

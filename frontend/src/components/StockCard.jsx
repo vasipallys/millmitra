@@ -69,11 +69,13 @@ const StockCard = ({
   };
 
   const getStockTrend = () => {
-    // Mock trend calculation - in real app, this would be based on historical data
-    const trend = stock.trend || Math.random() > 0.5 ? 'up' : 'down';
-    const percentage = stock.trend_percentage || (Math.random() * 20).toFixed(1);
-    
-    return { trend, percentage };
+    if (!stock.trend && stock.trend_percentage == null) {
+      return null;
+    }
+    return {
+      trend: stock.trend || 'flat',
+      percentage: stock.trend_percentage,
+    };
   };
 
   const getCategoryIcon = (category) => {
@@ -107,7 +109,7 @@ const StockCard = ({
 
   const stockStatus = getStockStatus();
   const stockPercentage = calculateStockPercentage();
-  const { trend, percentage } = getStockTrend();
+  const stockTrend = getStockTrend();
 
   return (
     <Card 
@@ -207,33 +209,34 @@ const StockCard = ({
               Total Value
             </Typography>
             <Typography variant="body1" fontWeight="medium">
-              ₹{(((stock?.current_stock || 0) * (stock?.unit_price || 45)) / 1000).toFixed(0)}K
+              ₹{(((stock?.current_stock || 0) * (stock?.unit_price || stock?.market_price || 0)) / 1000).toFixed(0)}K
             </Typography>
           </Grid>
         </Grid>
 
-        {/* Stock Trend */}
+        {stockTrend && (
         <Box sx={{ mb: 2, p: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Typography variant="body2" color="text.secondary">
-              Stock Trend (7 days)
+              Stock trend
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              {trend === 'up' ? (
+              {stockTrend.trend === 'up' ? (
                 <TrendingUp fontSize="small" color="success" />
               ) : (
                 <TrendingDown fontSize="small" color="error" />
               )}
               <Typography 
                 variant="body2" 
-                color={trend === 'up' ? 'success.main' : 'error.main'}
+                color={stockTrend.trend === 'up' ? 'success.main' : 'error.main'}
                 fontWeight="medium"
               >
-                {percentage}%
+                {stockTrend.percentage}%
               </Typography>
             </Box>
           </Box>
         </Box>
+        )}
 
         {/* Last Updated */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

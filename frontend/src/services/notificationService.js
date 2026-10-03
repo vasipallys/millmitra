@@ -1,229 +1,214 @@
 /**
- * Notification Service
- * Handles real-time notifications, alerts, and system messages
+ * Loads mill notifications from the API and keeps the bell live via SSE.
+ * Stream uses fetch + Authorization (EventSource cannot set headers).
+ * If the stream drops, the list is polled every 15 seconds.
  */
 
 import api from './api';
+
+const POLL_MS = 15000;
+
+function apiBase() {
+  return import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+}
+
+function authToken() {
+  return localStorage.getItem('token');
+}
+
+function normalize(item) {
+  if (!item) return item;
+  const body = item.body || item.message || '';
+  const created = item.created_at || item.timestamp;
+  return {
+    ...item,
+    body,
+    message: body,
+    severity: item.severity || item.priority || 'medium',
+    priority: item.severity || item.priority || 'medium',
+    link: item.link || item.action_url,
+    action_url: item.link || item.action_url,
+    created_at: created,
+    timestamp: created,
+    read: Boolean(item.read || item.read_at),
+  };
+}
 
 class NotificationService {
   constructor() {
     this.notifications = [];
     this.listeners = [];
     this.unreadCount = 0;
-    this.setupEventSource();
+    this.pollInterval = null;
+    this.started = false;
+    this.streamActive = false;
+    this.abortStream = null;
   }
 
-  /**
-   * Setup Server-Sent Events for real-time notifications
-   */
-  setupEventSource() {
-    // In a real implementation, this would connect to a WebSocket or SSE endpoint
-    // For now, we'll only fetch on application start, not poll continuously
-    // this.pollInterval = setInterval(() => {
-    //   this.fetchNotifications();
-    // }, 30000); // Disabled automatic polling
-  }
-
-  /**
-   * Fetch notifications from backend
-   */
-  async fetchNotifications() {
-    try {
-      const response = await api.get('/notifications');
-      if (response.data.success) {
-        this.notifications = response.data.notifications;
-        this.unreadCount = response.data.unread_count;
-        this.notifyListeners();
-      }
-    } catch (error) {
-      // Fallback to mock data if API fails
-      this.loadMockNotifications();
+  start() {
+    if (!authToken()) {
+      this.resetLocal();
+      return;
+    }
+    this.fetchNotifications();
+    if (!this.started) {
+      this.started = true;
+      this.connectStream();
+    } else if (!this.streamActive && !this.pollInterval) {
+      this.connectStream();
     }
   }
 
-  /**
-   * Load mock notifications for development
-   */
-  loadMockNotifications() {
-    const mockNotifications = [
-      {
-        id: 1,
-        type: 'farmer_registration',
-        title: 'New Farmer Registration',
-        message: 'Siva Kumar reddy Vasipally has registered and is pending approval',
-        timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-        read: false,
-        priority: 'medium',
-        category: 'farmer_management',
-        action_url: '/farmers',
-        icon: 'person_add'
-      },
-      {
-        id: 2,
-        type: 'production_complete',
-        title: 'Production Batch Completed',
-        message: 'Production batch #PB001 has been completed successfully',
-        timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-        read: false,
-        priority: 'low',
-        category: 'production',
-        action_url: '/production',
-        icon: 'check_circle'
-      },
-      {
-        id: 3,
-        type: 'inventory_alert',
-        title: 'Low Stock Alert',
-        message: 'Basmati Rice stock is running low (Current: 50 kg, Minimum: 100 kg)',
-        timestamp: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
-        read: false,
-        priority: 'high',
-        category: 'inventory',
-        action_url: '/inventory',
-        icon: 'warning'
-      },
-      {
-        id: 4,
-        type: 'quality_alert',
-        title: 'Quality Check Required',
-        message: 'Batch #QC001 requires immediate quality inspection',
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        read: true,
-        priority: 'high',
-        category: 'quality',
-        action_url: '/quality-control',
-        icon: 'science'
-      },
-      {
-        id: 5,
-        type: 'payment_received',
-        title: 'Payment Received',
-        message: 'Payment of ₹25,000 received from ABC Distributors',
-        timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-        read: true,
-        priority: 'low',
-        category: 'finance',
-        action_url: '/finance',
-        icon: 'payment'
-      },
-      {
-        id: 6,
-        type: 'system_update',
-        title: 'System Update Available',
-        message: 'A new system update (v2.1.0) is available with enhanced AI features',
-        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-        read: false,
-        priority: 'medium',
-        category: 'system',
-        action_url: '/settings',
-        icon: 'system_update'
-      }
-    ];
-
-    this.notifications = mockNotifications;
-    this.unreadCount = mockNotifications.filter(n => !n.read).length;
+  resetLocal() {
+    this.notifications = [];
+    this.unreadCount = 0;
     this.notifyListeners();
   }
 
-  /**
-   * Get all notifications
-   */
+  async fetchNotifications() {
+    if (!authToken()) {
+      this.resetLocal();
+      return;
+    }
+    try {
+      const response = await api.get('/notifications');
+      const data = response.data || {};
+      const items = Array.isArray(data.notifications) ? data.notifications.map(normalize) : [];
+      this.notifications = items;
+      this.unreadCount = typeof data.unread_count === 'number'
+        ? data.unread_count
+        : items.filter((item) => !item.read).length;
+      this.notifyListeners();
+    } catch (error) {
+      this.resetLocal();
+    }
+  }
+
+  prepend(raw) {
+    const item = normalize(raw);
+    if (!item || item.id == null) return;
+    if (this.notifications.some((existing) => existing.id === item.id)) return;
+    this.notifications = [item, ...this.notifications];
+    this.unreadCount = this.notifications.filter((row) => !row.read).length;
+    this.notifyListeners();
+  }
+
+  async connectStream() {
+    const token = authToken();
+    if (!token) return;
+    if (this.abortStream) {
+      this.abortStream.abort();
+    }
+    const controller = new AbortController();
+    this.abortStream = controller;
+    try {
+      const response = await fetch(`${apiBase()}/notifications/stream`, {
+        headers: { Authorization: `Bearer ${token}` },
+        signal: controller.signal,
+      });
+      if (!response.ok || !response.body) {
+        throw new Error('stream unavailable');
+      }
+      this.streamActive = true;
+      this.clearPoll();
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const chunks = buffer.split('\n\n');
+        buffer = chunks.pop() || '';
+        chunks.forEach((chunk) => {
+          const line = chunk.split('\n').find((row) => row.startsWith('data:'));
+          if (!line) return;
+          try {
+            const payload = JSON.parse(line.slice(5).trim() || '{}');
+            if (payload.notification) {
+              this.prepend(payload.notification);
+            }
+          } catch (error) {
+            // Ignore a partial or keepalive frame.
+          }
+        });
+      }
+      throw new Error('stream closed');
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      this.streamActive = false;
+      this.startPoll();
+    }
+  }
+
+  startPoll() {
+    if (this.pollInterval) return;
+    this.pollInterval = setInterval(() => {
+      this.fetchNotifications();
+    }, POLL_MS);
+  }
+
+  clearPoll() {
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+      this.pollInterval = null;
+    }
+  }
+
   getNotifications() {
     return this.notifications;
   }
 
-  /**
-   * Get unread notifications count
-   */
   getUnreadCount() {
     return this.unreadCount;
   }
 
-  /**
-   * Mark notification as read
-   */
   async markAsRead(notificationId) {
+    const notification = this.notifications.find((item) => item.id === notificationId);
+    if (notification && !notification.read) {
+      notification.read = true;
+      notification.read_at = notification.read_at || new Date().toISOString();
+      this.unreadCount = this.notifications.filter((item) => !item.read).length;
+      this.notifyListeners();
+    }
     try {
       await api.post(`/notifications/${notificationId}/read`);
-      
-      // Update local state
-      const notification = this.notifications.find(n => n.id === notificationId);
-      if (notification && !notification.read) {
-        notification.read = true;
-        this.unreadCount = Math.max(0, this.unreadCount - 1);
-        this.notifyListeners();
-      }
     } catch (error) {
-      console.error('Error marking notification as read:', error);
-      // Update locally even if API fails
-      const notification = this.notifications.find(n => n.id === notificationId);
-      if (notification && !notification.read) {
-        notification.read = true;
-        this.unreadCount = Math.max(0, this.unreadCount - 1);
-        this.notifyListeners();
-      }
+      this.fetchNotifications();
     }
   }
 
-  /**
-   * Mark all notifications as read
-   */
   async markAllAsRead() {
+    this.notifications.forEach((item) => {
+      item.read = true;
+    });
+    this.unreadCount = 0;
+    this.notifyListeners();
     try {
       await api.post('/notifications/mark-all-read');
-      
-      // Update local state
-      this.notifications.forEach(n => n.read = true);
-      this.unreadCount = 0;
-      this.notifyListeners();
     } catch (error) {
-      console.error('Error marking all notifications as read:', error);
-      // Update locally even if API fails
-      this.notifications.forEach(n => n.read = true);
-      this.unreadCount = 0;
-      this.notifyListeners();
+      this.fetchNotifications();
     }
   }
 
-  /**
-   * Delete notification
-   */
   async deleteNotification(notificationId) {
+    const index = this.notifications.findIndex((item) => item.id === notificationId);
+    if (index !== -1) {
+      this.notifications.splice(index, 1);
+      this.unreadCount = this.notifications.filter((item) => !item.read).length;
+      this.notifyListeners();
+    }
     try {
       await api.delete(`/notifications/${notificationId}`);
-      
-      // Update local state
-      const index = this.notifications.findIndex(n => n.id === notificationId);
-      if (index !== -1) {
-        const notification = this.notifications[index];
-        if (!notification.read) {
-          this.unreadCount = Math.max(0, this.unreadCount - 1);
-        }
-        this.notifications.splice(index, 1);
-        this.notifyListeners();
-      }
     } catch (error) {
-      console.error('Error deleting notification:', error);
+      this.fetchNotifications();
     }
   }
 
-  /**
-   * Get notifications by category
-   */
   getNotificationsByCategory(category) {
-    return this.notifications.filter(n => n.category === category);
+    return this.notifications.filter((item) => item.category === category);
   }
 
-  /**
-   * Get notifications by priority
-   */
-  getNotificationsByPriority(priority) {
-    return this.notifications.filter(n => n.priority === priority);
-  }
-
-  /**
-   * Subscribe to notification updates
-   */
   subscribe(callback) {
     this.listeners.push(callback);
     return () => {
@@ -234,65 +219,31 @@ class NotificationService {
     };
   }
 
-  /**
-   * Notify all listeners of changes
-   */
   notifyListeners() {
-    this.listeners.forEach(callback => {
+    this.listeners.forEach((callback) => {
       try {
         callback({
           notifications: this.notifications,
-          unreadCount: this.unreadCount
+          unreadCount: this.unreadCount,
         });
       } catch (error) {
-        console.error('Error in notification listener:', error);
+        // A listener should not break the others.
       }
     });
   }
 
-  /**
-   * Create new notification (for testing)
-   */
-  createNotification(notification) {
-    const newNotification = {
-      id: Date.now(),
-      timestamp: new Date().toISOString(),
-      read: false,
-      priority: 'medium',
-      category: 'system',
-      ...notification
-    };
-
-    this.notifications.unshift(newNotification);
-    if (!newNotification.read) {
-      this.unreadCount++;
-    }
-    this.notifyListeners();
-  }
-
-  /**
-   * Initialize service
-   */
-  init() {
-    // Load notifications once on application start
-    this.fetchNotifications();
-  }
-
-  /**
-   * Cleanup
-   */
   destroy() {
-    if (this.pollInterval) {
-      clearInterval(this.pollInterval);
+    this.clearPoll();
+    if (this.abortStream) {
+      this.abortStream.abort();
+      this.abortStream = null;
     }
+    this.streamActive = false;
+    this.started = false;
     this.listeners = [];
   }
 }
 
-// Create and export singleton instance
 const notificationService = new NotificationService();
-
-// Initialize on import
-notificationService.init();
 
 export default notificationService;

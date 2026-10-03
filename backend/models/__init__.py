@@ -40,7 +40,7 @@ class AIInteraction(db.Model):
 
 # Import models from separate files
 try:
-    from .user import User, AuthLog, UserSession, UserPreference
+    from .user import User, AuthLog, UserSession, UserPreference, RolePermission
 except ImportError:
     pass
 
@@ -101,7 +101,7 @@ except ImportError:
 
 # Export all models
 __all__ = [
-    'User', 'AuthLog', 'AIInteraction', 'UserSession', 'UserPreference',
+    'User', 'AuthLog', 'AIInteraction', 'UserSession', 'UserPreference', 'RolePermission',
     'Farmer', 'FarmerContract', 'PaddyProcurement', 'PaddyStock', 'ProductStock', 'StockMovement',
     'ProductionBatch', 'QualityTest', 'Customer', 'SalesOrder',
     'Payment', 'Expense', 'Budget', 'Transaction', 'Invoice',

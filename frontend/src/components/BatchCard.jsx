@@ -138,7 +138,7 @@ const BatchCard = ({
               Product Type
             </Typography>
             <Typography variant="body1" fontWeight="medium">
-              {batch.product_type || 'Basmati Rice'}
+              {batch.product_type || batch.paddy_variety || batch.target_rice_variety || '—'}
             </Typography>
           </Grid>
           <Grid item xs={6}>
@@ -146,7 +146,7 @@ const BatchCard = ({
               Quality Grade
             </Typography>
             <Typography variant="body1" fontWeight="medium">
-              {batch.quality_grade || 'A'}
+              {batch.quality_grade || '—'}
             </Typography>
           </Grid>
           <Grid item xs={6}>

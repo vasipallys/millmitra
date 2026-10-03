@@ -7,6 +7,10 @@ from config import Config
 # Import models to ensure they're registered
 from models.farmer_edit_request import FarmerEditRequest
 from models.inventory import StockMovement  # noqa: F401
+from models.notification import Notification  # noqa: F401
+from models.mill_config import MillConfig  # noqa: F401
+from models.gst_filing import GstFilingRecord  # noqa: F401
+from models.saved_report import SavedReport  # noqa: F401
 
 # Import all blueprints
 from routes.auth import auth_bp
@@ -30,6 +34,7 @@ from routes.analytics import analytics_bp
 from routes.logistics import logistics_bp
 from routes.compliance import compliance_bp
 from routes.quality import quality_bp
+from routes.users_admin import users_admin_bp
 
 def create_app():
     app = Flask(__name__)
@@ -69,9 +74,27 @@ def create_app():
     app.register_blueprint(logistics_bp, url_prefix='/api/logistics')
     app.register_blueprint(compliance_bp, url_prefix='/api/compliance')
     app.register_blueprint(quality_bp, url_prefix='/api/quality')
+    app.register_blueprint(users_admin_bp, url_prefix='/api')
 
     from observability import init_observability
     init_observability(app)
+    from services.access_control import register_access_guard
+    register_access_guard(app)
+
+    with app.app_context():
+        try:
+            db.create_all()
+            from services.demo_users import ensure_demo_users
+            from services.access_control import ensure_role_permissions
+            ensure_demo_users()
+            ensure_role_permissions()
+        except Exception:
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
+        from services.mill_settings_service import start_backup_scheduler
+        start_backup_scheduler(app)
 
     return app
 

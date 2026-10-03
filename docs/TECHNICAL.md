@@ -65,22 +65,21 @@ Use **this** repo’s venv. A common mistake is activating `D:\GenAi\ricemill\ba
 ```powershell
 cd D:\GenAi\millmitra\backend
 python -m venv venv
-.\venv\Scripts\activate
-python -c "import sys; print(sys.executable)"
-# Must be ...\millmitra\backend\venv\Scripts\python.exe
-python -m pip install -r requirements.txt
+.\venv\Scripts\python.exe -m pip install -r requirements.txt
 # Optional vision/NLP extras only:
-# python -m pip install -r requirements-ml.txt
-copy .env.example .env   # if you need env overrides
-python migrate_db.py
-python app.py
+# .\venv\Scripts\python.exe -m pip install -r requirements-ml.txt
+copy .env.example .env
+.\venv\Scripts\python.exe migrate_db.py
+.\venv\Scripts\python.exe app.py
 ```
 
-Server: `http://localhost:5000`. Health: `GET /api/health`.
+Server: `http://localhost:5000`. Liveness: `GET /api/health`. Readiness: `GET /api/ready`.
 
-Default DB: SQLite `sqlite:///rice_mill_erp.db` (working-directory relative). Set `DATABASE_URL` for PostgreSQL.
+Do **not** bind port 5000 with system Python (`C:\Python313\python.exe app.py`). That process keeps stale modules. After role/dashboard/login changes, stop Flask and start again with the venv executable.
 
-Default users from `migrate_db.py`: `admin` / `admin123`, `manager` / `manager123`, `operator` / `operator123` (also emails `@ricemill.com`).
+Default DB: SQLite `sqlite:///rice_mill_erp.db`. Set `DATABASE_URL` for PostgreSQL.
+
+Demo users are ensured on **startup** (`services/demo_users.py`) if missing — passwords of existing rows are not reset: `admin/admin123`, `manager/manager123`, `operator/operator123`, `quality/quality123`, `sales/sales123`, `accountant/accountant123` (emails `@ricemill.com`). Role defaults live in `services/access_control.py` and table `role_permissions`.
 
 ### Frontend
 
@@ -90,7 +89,9 @@ npm install
 npm run dev
 ```
 
-Vite prefers port **3000**. If that port is taken, it binds the next free port and prints the URL. Do not pin HMR to another port.
+Vite prefers port **3000**. If that port is taken, it binds the next free port and prints the URL. Do not pin HMR to another port. `npm run dev` does **not** register `public/sw.js` (`isDevRuntime()` in `usePWA.js` / `pwaRuntime.js`).
+
+i18n: React context + `src/i18n/translations.js` (en / hi / te). Locale key `millmitra.language`.
 
 Axios `baseURL` is `import.meta.env.VITE_API_URL` or `http://localhost:5000/api`.
 
@@ -118,6 +119,7 @@ Flask app (backend/app.py)
 ```
 
 - **Routes** validate JWT (most mutating and live GETs), load `current_user()`, talk to models.
+- **Access guard** (`services/access_control.py`, `register_access_guard`) maps `/api/...` prefixes to permission keys and returns **403** when the stored matrix (or defaults) deny the call. Quality may write quality-test paths; other production writes are denied for `quality_control`.
 - **Unused “AI service” routes** (many inventory/customer extras) return empty stubs so they do not 500.
 - **Frontend** pages call `src/services/*.js` or `api.js`. React Query wraps list loads. `queryFn` must be an arrow so React Query context is not sent as HTTP params.
 
@@ -157,11 +159,11 @@ Prefix `/api` unless noted. JWT required except login, username suggest, OTP ver
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| POST | `/login` | Password (or experimental voice/biometric fields); returns `access_token`, `user`, optional `session_token` |
-| GET | `/me` | Current user |
+| POST | `/login` | Password; returns `access_token`, `user` (includes `role`, `permissions`), optional `session_token`. Voice/biometric methods on this route return **501** |
+| GET | `/me` | Current user + `permissions` |
 | POST | `/logout` | End DB/Redis session |
 | POST | `/verify-otp` | OTP check if login asked for 2FA |
-| POST | `/suggest-username` | Optional username suggestions |
+| POST | `/suggest-username` | Exists for registration-style hints; **Login does not treat these as sign-in accounts** |
 | POST | `/voice-login` | Experimental |
 
 ### Dashboard (`/api/dashboard`)
@@ -279,6 +281,16 @@ Blueprint has **no** `/api` prefix on the blueprint; paths are absolute:
 | DELETE | `/api/user/delete-session/<id>` | Deactivate own session |
 | POST | `/api/user/enable-2fa` / `disable-2fa` | 501, not configured |
 
+### Users and access (`/api`, admin / `users` permission)
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/users` | List users |
+| POST | `/users` | Create user (username, password, role) |
+| PATCH | `/users/<id>` | Change role or `is_active` (cannot deactivate self) |
+| GET | `/access` | Permission matrix |
+| PUT | `/access` | Toggle `{ role, permission, allowed }` |
+
 ### Health
 
 | Method | Path | Purpose |
@@ -324,6 +336,7 @@ Invoice and sales order lines are **JSON**, not line tables. Product stock match
 | Path | Page | Live? |
 | --- | --- | --- |
 | `/dashboard` | Dashboard | Yes |
+| `/mill-flow` | MillFlow | Yes (reuses farmer/inventory/production/sales/finance APIs) |
 | `/farmers/*` | Farmers | Yes |
 | `/inventory/*` | Inventory | Yes |
 | `/production/*` | Production | Yes |
@@ -331,14 +344,16 @@ Invoice and sales order lines are **JSON**, not line tables. Product stock match
 | `/finance/*` | Finance | Yes |
 | `/customers/*` | Customers | Yes |
 | `/settings` | Settings | Yes (localStorage + mill-settings) |
-| `/analytics` | Analytics | Preview |
-| `/quality-control` | QualityControl | Preview |
-| `/financial-intelligence` | FinancialIntelligence | Preview |
-| `/compliance-gst` | ComplianceGST | Preview |
+| `/users` | Users | Admin only |
+| `/access` | Access | Admin only |
+| `/analytics` | Analytics | Preview; **live mill records by default** (`usePreviewMode`, `View sample`) |
+| `/quality-control` | QualityControl | Preview; live default; official tests stay on Production |
+| `/financial-intelligence` | FinancialIntelligence | Preview; live default |
+| `/compliance-gst` | ComplianceGST | Preview; live default; does not file GST |
 | `/analytics-reporting` | AnalyticsReporting | Preview, not in sidebar |
 | `/notifications` | Notifications | In-app list |
 
-Sidebar: core items first; Preview group with **Sample** chip.
+Sidebar: core items first (filtered by `user.permissions`); Preview group without a Sample-only chip. `RequireAccess` shows a denied panel on a forbidden URL.
 
 Clients:
 
@@ -372,10 +387,10 @@ There is no reliable `frontend` unit-test script. Many files under `toberemoved/
 
 - **`models.py` vs `models/`** — runtime uses the package; the file is a leftover re-export.
 - **Stub routes** — inventory AI, customer campaigns, finance journal, quotations/leads. Safe empties, not features.
-- **Preview screens** — sample data; labeled in the sidebar.
+- **Preview screens** — same pages; default to mill records; `View sample` is opt-in (`sessionStorage` `millmitra.previewMode.<page>`).
 - **Optional ML** — `requirements-ml.txt`; `enhanced_nlp` / OpenCV imports are guarded so the app starts without them.
 - **JSON line items** — hard to query; invoice stock match is stringly typed.
-- **Role UI** — almost no button hiding; enforcement is sparse (farmer verify).
+- **Role UI** — sidebar and route guard hide by permission; server `before_request` enforces the matrix. Farmer verify remains admin/manager. Admin can change the stored matrix.
 - **Partial payment** sets invoice `paid`.
 - **Dual schema names** — routes use `paddy_input_quantity` / `rice_output` / `business_name`; older services used other names. Live routes follow the models.
 - **Kitchen-sink root `requirements.txt`** — do not `pip install` that file on 3.13; use `backend/requirements.txt`.
@@ -386,4 +401,6 @@ There is no reliable `frontend` unit-test script. Many files under `toberemoved/
 
 ## 11. Claims omitted on purpose
 
-Not implemented as described in older README/API lists: JWT refresh endpoint, `/api/users` CRUD, encryption at rest, production HTTPS, barcode scanning, FAISS-as-required, TensorFlow, working 2FA enrollment, GST calculation as legal output, `npm test`.
+Not implemented as described in older README/API lists: JWT refresh endpoint, encryption at rest, production HTTPS, barcode scanning, FAISS-as-required, TensorFlow, working 2FA enrollment, GST filing, `npm test`. User list/create/role and the access matrix **are** implemented (`/api/users`, `/api/access`).
+
+Dashboard `GET /api/dashboard/overview` for manager uses role helpers in `dashboard_service.py`. A Flask process started before that change still 500s until restart.

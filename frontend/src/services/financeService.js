@@ -77,6 +77,16 @@ class FinanceService {
     });
     return response.data;
   }
+
+  async getPaymentSchedules() {
+    const response = await api.get(`${API_BASE}/schedules`);
+    return response.data;
+  }
+
+  async createPaymentSchedule(paymentData) {
+    const response = await api.post(`${API_BASE}/schedules`, paymentData);
+    return response.data;
+  }
 }
 
 export const financeService = new FinanceService();

@@ -69,6 +69,7 @@ def _find_product_stock(item):
 
 def _deduct_invoice_stock(items):
     shortages = []
+    deducted = []
     for item in items:
         qty = float(item.get('quantity', 0) or 0)
         if qty <= 0:
@@ -88,7 +89,8 @@ def _deduct_invoice_stock(items):
         stock.quantity = available - qty
         if stock.quantity <= 0:
             stock.status = 'sold'
-    return shortages
+        deducted.append(stock)
+    return shortages, deducted
 
 
 def _month_key(dt):
@@ -328,7 +330,7 @@ def create_invoice():
         except ValueError:
             pass
 
-    shortages = _deduct_invoice_stock(items)
+    shortages, deducted = _deduct_invoice_stock(items)
     if shortages:
         db.session.rollback()
         return jsonify({
@@ -352,6 +354,10 @@ def create_invoice():
     )
     db.session.add(invoice)
     db.session.commit()
+    from services.notification_service import invoice_created, notify_low_product_stock
+    invoice_created(invoice)
+    for stock in deducted:
+        notify_low_product_stock(stock)
     return jsonify({
         'success': True,
         'invoice': invoice.to_dict()
@@ -399,6 +405,8 @@ def record_payment():
             invoice.status = payment_status_for_amount(invoice.total_amount, amount)
 
     db.session.commit()
+    from services.notification_service import payment_recorded
+    payment_recorded(payment)
     result = payment.to_dict()
     result['payment_number'] = payment.payment_id
     return jsonify({
@@ -453,5 +461,47 @@ def get_aging_report():
         'invoices': details,
         'report_type': request.args.get('type', 'receivables')
     })
+
+
+@finance_bp.route('/schedules', methods=['GET'])
+@jwt_required()
+def list_payment_schedules():
+    from models.financial import PaymentSchedule
+    rows = PaymentSchedule.query.order_by(PaymentSchedule.created_at.desc()).all()
+    return jsonify({'success': True, 'schedules': [row.to_dict() for row in rows]})
+
+
+@finance_bp.route('/schedules', methods=['POST'])
+@jwt_required()
+def create_payment_schedule():
+    from models.financial import PaymentSchedule
+    user = current_user()
+    if not user:
+        return jsonify({'success': False, 'message': 'User not found'}), 401
+    data = request.get_json() or {}
+    amount = float(data.get('amount') or 0)
+    if amount <= 0:
+        return jsonify({'success': False, 'message': 'Amount must be greater than 0'}), 400
+    farmer_id = data.get('farmer_id')
+    try:
+        farmer_id = int(farmer_id) if farmer_id not in (None, '') else None
+    except (TypeError, ValueError):
+        farmer_id = None
+    if farmer_id:
+        from models.farmer import Farmer
+        if not Farmer.query.get(farmer_id):
+            return jsonify({'success': False, 'message': 'Farmer not found'}), 400
+    row = PaymentSchedule(
+        schedule_id=f'SCH{datetime.utcnow().strftime("%Y%m%d")}{uuid.uuid4().hex[:6].upper()}',
+        farmer_id=farmer_id,
+        amount=amount,
+        payment_type=data.get('payment_type') or 'procurement',
+        scheduled_date=datetime.utcnow(),
+        status='scheduled',
+        created_by=user.id,
+    )
+    db.session.add(row)
+    db.session.commit()
+    return jsonify({'success': True, 'schedule': row.to_dict()}), 201
 
 

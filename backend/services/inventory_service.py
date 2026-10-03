@@ -65,6 +65,8 @@ class InventoryService:
         db.session.add(stock)
         db.session.add(movement)
         db.session.commit()
+        from services.notification_service import paddy_stock_added
+        paddy_stock_added(stock)
         
         return stock
     

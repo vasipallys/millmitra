@@ -1,285 +1,321 @@
-"""
-Notification Service
-Handles notification creation, management, and delivery
-"""
+"""Create and deliver mill notifications from real database events."""
 
-from datetime import datetime, timedelta
-from sqlalchemy import and_, or_
-from models.notification import Notification, NotificationTemplate
-from models.user import User
-from extensions import db
 import json
+import queue
+import threading
+from datetime import datetime
+
+from sqlalchemy import or_
+
+from extensions import db
+from models.notification import Notification
+
+_subscribers = []
+_lock = threading.Lock()
+
+
+def subscribe():
+    waiter = queue.Queue(maxsize=100)
+    with _lock:
+        _subscribers.append(waiter)
+    return waiter
+
+
+def unsubscribe(waiter):
+    with _lock:
+        if waiter in _subscribers:
+            _subscribers.remove(waiter)
+
+
+def publish(payload, owner_id=None):
+    event = {'notification': payload, 'user_id': owner_id}
+    with _lock:
+        waiters = list(_subscribers)
+    for waiter in waiters:
+        try:
+            waiter.put_nowait(event)
+        except queue.Full:
+            pass
+
+
+def visible_query(user_id):
+    return Notification.query.filter(
+        or_(Notification.user_id.is_(None), Notification.user_id == user_id)
+    )
+
+
+def create_notification(
+    title,
+    body,
+    category=None,
+    severity='medium',
+    link=None,
+    user_id=None,
+):
+    """Persist a mill-wide (user_id null) or user-targeted notification."""
+    row = Notification(
+        user_id=user_id,
+        title=(title or 'Mill update')[:200],
+        body=body or '',
+        category=category,
+        severity=severity or 'medium',
+        link=link,
+        created_at=datetime.utcnow(),
+    )
+    db.session.add(row)
+    db.session.commit()
+    publish(row.to_dict(), owner_id=row.user_id)
+    return row
+
+
+def safe_notify(*args, **kwargs):
+    try:
+        return create_notification(*args, **kwargs)
+    except Exception:
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        return None
+
+
+def list_notifications(user_id, limit=100):
+    rows = (
+        visible_query(user_id)
+        .order_by(Notification.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+    return [row.to_dict() for row in rows]
+
+
+def unread_count(user_id):
+    return visible_query(user_id).filter(Notification.read_at.is_(None)).count()
+
+
+def get_visible(user_id, notification_id):
+    return visible_query(user_id).filter(Notification.id == notification_id).first()
+
+
+def mark_read(user_id, notification_id):
+    row = get_visible(user_id, notification_id)
+    if not row:
+        return None
+    if row.read_at is None:
+        row.read_at = datetime.utcnow()
+        db.session.commit()
+    return row
+
+
+def mark_all_read(user_id):
+    now = datetime.utcnow()
+    updated = (
+        visible_query(user_id)
+        .filter(Notification.read_at.is_(None))
+        .update({'read_at': now}, synchronize_session=False)
+    )
+    db.session.commit()
+    return updated
+
+
+def delete_notification(user_id, notification_id):
+    row = get_visible(user_id, notification_id)
+    if not row:
+        return False
+    db.session.delete(row)
+    db.session.commit()
+    return True
+
+
+def _qty(value):
+    try:
+        number = float(value or 0)
+    except (TypeError, ValueError):
+        return 0.0
+    return number
+
+
+def _label(value, fallback='item'):
+    text = (value or '').strip() if isinstance(value, str) else ''
+    return text or fallback
+
+
+def farmer_registered(farmer):
+    name = _label(getattr(farmer, 'name', None), 'Farmer')
+    code = getattr(farmer, 'farmer_code', None) or ''
+    suffix = f' ({code})' if code else ''
+    return safe_notify(
+        title='New farmer registered',
+        body=f'{name}{suffix} was registered',
+        category='farmer_management',
+        severity='medium',
+        link='/farmers',
+    )
+
+
+def paddy_stock_added(stock):
+    variety = _label(getattr(stock, 'variety', None), 'Paddy')
+    qty = _qty(getattr(stock, 'quantity', 0) or getattr(stock, 'remaining_quantity', 0))
+    return safe_notify(
+        title='Paddy stock added',
+        body=f'{qty:g} kg {variety} received',
+        category='inventory',
+        severity='low',
+        link='/inventory',
+    )
+
+
+def notify_low_product_stock(stock):
+    if stock is None:
+        return None
+    try:
+        from services.mill_settings_service import notification_writer_enabled
+        if not notification_writer_enabled('lowStockAlerts', True):
+            return None
+    except Exception:
+        pass
+    threshold = (
+        getattr(stock, 'minimum_stock_level', None)
+        or getattr(stock, 'reorder_point', None)
+        or 100
+    )
+    qty = _qty(getattr(stock, 'quantity', 0))
+    try:
+        limit = float(threshold)
+    except (TypeError, ValueError):
+        limit = 100.0
+    if qty > limit:
+        return None
+    name = _label(
+        getattr(stock, 'product_name', None) or getattr(stock, 'variety', None),
+        'Product',
+    )
+    link = f'/inventory?stock={getattr(stock, "id", "")}'
+    existing = Notification.query.filter(
+        Notification.category == 'inventory',
+        Notification.link == link,
+        Notification.read_at.is_(None),
+        Notification.title == 'Low stock',
+    ).first()
+    if existing:
+        return existing
+    return safe_notify(
+        title='Low stock',
+        body=f'{name} stock is running low ({qty:g} kg)',
+        category='inventory',
+        severity='high',
+        link=link,
+    )
+
+
+def batch_started(batch):
+    number = _label(getattr(batch, 'batch_number', None), f'#{getattr(batch, "id", "")}')
+    return safe_notify(
+        title='Production batch started',
+        body=f'Batch {number} is in progress',
+        category='production',
+        severity='medium',
+        link='/production',
+    )
+
+
+def batch_completed(batch):
+    try:
+        from services.mill_settings_service import notification_writer_enabled
+        if not notification_writer_enabled('productionAlerts', True):
+            return None
+    except Exception:
+        pass
+    number = _label(getattr(batch, 'batch_number', None), f'#{getattr(batch, "id", "")}')
+    output = _qty(
+        getattr(batch, 'rice_output', None)
+        or getattr(batch, 'output_quantity', None)
+    )
+    detail = f' ({output:g} kg rice)' if output else ''
+    return safe_notify(
+        title='Production batch completed',
+        body=f'Batch {number} finished{detail}',
+        category='production',
+        severity='low',
+        link='/production',
+    )
+
+
+def sales_order_created(order, customer=None):
+    number = _label(getattr(order, 'order_number', None), f'#{getattr(order, "id", "")}')
+    buyer = ''
+    if customer is not None:
+        buyer = _label(
+            getattr(customer, 'company_name', None)
+            or getattr(customer, 'business_name', None)
+            or getattr(customer, 'name', None),
+            '',
+        )
+    suffix = f' for {buyer}' if buyer else ''
+    return safe_notify(
+        title='Sales order created',
+        body=f'Order {number}{suffix}',
+        category='sales',
+        severity='medium',
+        link='/sales',
+    )
+
+
+def invoice_created(invoice):
+    number = _label(getattr(invoice, 'invoice_number', None), f'#{getattr(invoice, "id", "")}')
+    amount = _qty(getattr(invoice, 'total_amount', 0))
+    return safe_notify(
+        title='Invoice created',
+        body=f'Invoice {number} for ₹{amount:g}',
+        category='finance',
+        severity='medium',
+        link='/finance',
+    )
+
+
+def payment_recorded(payment):
+    amount = _qty(getattr(payment, 'amount', 0))
+    ref = getattr(payment, 'payment_id', None) or getattr(payment, 'payment_number', None) or ''
+    suffix = f' ({ref})' if ref else ''
+    return safe_notify(
+        title='Payment recorded',
+        body=f'Payment of ₹{amount:g} recorded{suffix}',
+        category='finance',
+        severity='low',
+        link='/finance',
+    )
+
 
 class NotificationService:
-    
+    """Compatibility wrappers used by inventory helpers."""
+
+    create_notification = staticmethod(create_notification)
+
     @staticmethod
     def create_farmer_registration_notification(farmer):
-        """Create notification for new farmer registration"""
-        return Notification.create_notification(
-            type='farmer_registration',
-            title='New Farmer Registration',
-            message=f'{farmer.name} has registered and is pending verification',
-            priority='medium',
-            category='farmer_management',
-            action_url='/farmers',
-            action_type='navigate',
-            role_target='admin',
-            icon='person_add',
-            farmer_id=farmer.id
-        )
-    
-    @staticmethod
-    def create_farmer_verification_notification(farmer, verified_by):
-        """Create notification when farmer is verified"""
-        return Notification.create_notification(
-            type='farmer_verified',
-            title='Farmer Verified',
-            message=f'{farmer.name} has been verified and approved',
-            priority='low',
-            category='farmer_management',
-            action_url=f'/farmers/{farmer.id}',
-            action_type='navigate',
-            role_target='manager',
-            icon='verified_user',
-            farmer_id=farmer.id,
-            created_by=verified_by
-        )
-    
+        return farmer_registered(farmer)
+
     @staticmethod
     def create_production_batch_notification(batch_data):
-        """Create notification for production batch completion"""
-        return Notification.create_notification(
-            type='production_complete',
-            title='Production Batch Completed',
-            message=f'Production batch #{batch_data.get("batch_number")} has been completed successfully',
-            priority='medium',
-            category='production',
-            action_url='/production',
-            action_type='navigate',
-            role_target='operator',
-            icon='manufacturing',
-            batch_id=batch_data.get('id')
-        )
-    
+        class _Batch:
+            batch_number = (batch_data or {}).get('batch_number')
+            id = (batch_data or {}).get('id')
+            rice_output = (batch_data or {}).get('output_quantity')
+
+        return batch_completed(_Batch())
+
     @staticmethod
     def create_inventory_low_stock_notification(item):
-        """Create notification for low stock items"""
-        return Notification.create_notification(
-            type='inventory_low',
-            title='Low Stock Alert',
-            message=f'{item.get("name", "Unknown item")} stock is running low ({item.get("quantity", 0)} remaining)',
-            priority='high',
-            category='inventory',
-            action_url='/inventory',
-            action_type='navigate',
-            role_target='manager',
-            icon='warning',
-            inventory_id=item.get('id')
-        )
-    
-    @staticmethod
-    def create_contract_expiring_notification(contract):
-        """Create notification for expiring contracts"""
-        return Notification.create_notification(
-            type='contract_expiring',
-            title='Contract Expiring Soon',
-            message=f'Contract with {contract.get("farmer_name", "Unknown farmer")} expires in 7 days',
-            priority='high',
-            category='contracts',
-            action_url='/contracts',
-            action_type='navigate',
-            role_target='admin',
-            icon='schedule',
-            contract_id=contract.get('id'),
-            expires_at=datetime.utcnow() + timedelta(days=7)
-        )
-    
-    @staticmethod
-    def create_quality_issue_notification(quality_data):
-        """Create notification for quality issues"""
-        return Notification.create_notification(
-            type='quality_issue',
-            title='Quality Issue Detected',
-            message=f'Quality issue detected in batch #{quality_data.get("batch_number")}',
-            priority='urgent',
-            category='quality',
-            action_url='/quality',
-            action_type='navigate',
-            role_target='admin',
-            icon='report_problem',
-            batch_id=quality_data.get('batch_id')
-        )
-    
-    @staticmethod
-    def get_notifications(user_id=None, role=None, limit=50, offset=0, unread_only=False):
-        """Get notifications for user or role"""
-        query = Notification.query.filter(Notification.archived == False)
-        
-        # Filter by user or role
-        if user_id:
-            query = query.filter(
-                or_(
-                    Notification.user_id == user_id,
-                    Notification.user_id.is_(None)  # Global notifications
-                )
-            )
-        
-        if role:
-            query = query.filter(
-                or_(
-                    Notification.role_target == role,
-                    Notification.role_target.is_(None)  # Global notifications
-                )
-            )
-        
-        # Filter by read status
-        if unread_only:
-            query = query.filter(Notification.read == False)
-        
-        # Filter expired notifications
-        query = query.filter(
-            or_(
-                Notification.expires_at.is_(None),
-                Notification.expires_at > datetime.utcnow()
-            )
-        )
-        
-        # Order by priority and creation time
-        priority_order = {
-            'urgent': 4,
-            'high': 3,
-            'medium': 2,
-            'low': 1
-        }
-        
-        notifications = query.order_by(
-            Notification.read.asc(),  # Unread first
-            Notification.created_at.desc()  # Newest first
-        ).limit(limit).offset(offset).all()
-        
-        return notifications
-    
-    @staticmethod
-    def mark_as_read(notification_id, user_id=None):
-        """Mark notification as read"""
-        notification = Notification.query.get(notification_id)
-        if notification:
-            notification.read = True
-            notification.updated_at = datetime.utcnow()
-            db.session.commit()
-            return notification
-        return None
-    
-    @staticmethod
-    def mark_all_as_read(user_id=None, role=None):
-        """Mark all notifications as read for user/role"""
-        query = Notification.query.filter(Notification.read == False)
-        
-        if user_id:
-            query = query.filter(
-                or_(
-                    Notification.user_id == user_id,
-                    Notification.user_id.is_(None)
-                )
-            )
-        
-        if role:
-            query = query.filter(
-                or_(
-                    Notification.role_target == role,
-                    Notification.role_target.is_(None)
-                )
-            )
-        
-        updated_count = query.update({'read': True, 'updated_at': datetime.utcnow()})
-        db.session.commit()
-        return updated_count
-    
-    @staticmethod
-    def archive_notification(notification_id):
-        """Archive a notification"""
-        notification = Notification.query.get(notification_id)
-        if notification:
-            notification.archived = True
-            notification.updated_at = datetime.utcnow()
-            db.session.commit()
-            return notification
-        return None
-    
-    @staticmethod
-    def get_notification_stats(user_id=None, role=None):
-        """Get notification statistics"""
-        base_query = Notification.query.filter(Notification.archived == False)
-        
-        if user_id:
-            base_query = base_query.filter(
-                or_(
-                    Notification.user_id == user_id,
-                    Notification.user_id.is_(None)
-                )
-            )
-        
-        if role:
-            base_query = base_query.filter(
-                or_(
-                    Notification.role_target == role,
-                    Notification.role_target.is_(None)
-                )
-            )
-        
-        total = base_query.count()
-        unread = base_query.filter(Notification.read == False).count()
-        urgent = base_query.filter(Notification.priority == 'urgent').count()
-        high = base_query.filter(Notification.priority == 'high').count()
-        
-        return {
-            'total': total,
-            'unread': unread,
-            'urgent': urgent,
-            'high': high,
-            'read': total - unread
-        }
-    
-    @staticmethod
-    def cleanup_expired_notifications():
-        """Remove expired notifications"""
-        expired_count = Notification.query.filter(
-            and_(
-                Notification.expires_at.isnot(None),
-                Notification.expires_at < datetime.utcnow()
-            )
-        ).delete()
-        
-        db.session.commit()
-        return expired_count
-    
-    @staticmethod
-    def create_template_based_notification(template_type, context_data, **override_params):
-        """Create notification using template"""
-        template = NotificationTemplate.query.filter_by(type=template_type, is_active=True).first()
-        
-        if not template:
-            raise ValueError(f"No active template found for type: {template_type}")
-        
-        # Format title and message using context data
-        title = template.title_template.format(**context_data)
-        message = template.message_template.format(**context_data)
-        
-        # Set default values from template
-        params = {
-            'type': template_type,
-            'title': title,
-            'message': message,
-            'priority': template.default_priority,
-            'category': template.default_category,
-            'icon': template.default_icon
-        }
-        
-        # Add auto-expiry if configured
-        if template.auto_expire_hours:
-            params['expires_at'] = datetime.utcnow() + timedelta(hours=template.auto_expire_hours)
-        
-        # Override with provided parameters
-        params.update(override_params)
-        
-        return Notification.create_notification(**params)
+        class _Stock:
+            id = (item or {}).get('id')
+            product_name = (item or {}).get('name')
+            variety = (item or {}).get('name')
+            quantity = (item or {}).get('quantity', 0)
+            minimum_stock_level = 0
+            reorder_point = 0
+
+        return notify_low_product_stock(_Stock())
+
+
+def encode_sse(payload):
+    return f"data: {json.dumps(payload)}\n\n"

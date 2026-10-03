@@ -193,6 +193,8 @@ def start_batch(batch_id):
     if user:
         batch.operator_id = user.id
     db.session.commit()
+    from services.notification_service import batch_started
+    batch_started(batch)
 
     return jsonify({
         'success': True,
@@ -253,6 +255,8 @@ def complete_batch(batch_id):
             db.session.add(product)
 
     db.session.commit()
+    from services.notification_service import batch_completed
+    batch_completed(batch)
 
     return jsonify({
         'success': True,

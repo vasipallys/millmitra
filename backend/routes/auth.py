@@ -5,6 +5,7 @@ from models import User, AuthLog
 from services.ai_auth_service import AIAuthService
 from extensions import db
 from utils import current_user_id
+from services.access_control import permissions_for
 import re
 from datetime import datetime, timedelta
 
@@ -46,6 +47,7 @@ def _issue_login_response(user, device_info, risk_score=0.0):
             'username': user.username,
             'email': user.email,
             'role': user.role,
+            'permissions': permissions_for(user),
             'preferences': user.get_preferences() if hasattr(user, 'get_preferences') else {}
         },
         'risk_score': risk_score
@@ -94,7 +96,11 @@ def login():
                 ai_auth.log_failed_attempt(username, 'user_not_found', device_info)
             except Exception:
                 pass
-            return jsonify({'error': 'Invalid credentials'}), 401
+            return jsonify({
+                'success': False,
+                'error': 'Username or password is not recognized',
+                'message': 'Username or password is not recognized',
+            }), 401
 
         try:
             risk_score = ai_auth.assess_login_risk(user, device_info)
@@ -107,7 +113,11 @@ def login():
                     ai_auth.log_failed_attempt(username, 'wrong_password', device_info)
                 except Exception:
                     pass
-                return jsonify({'error': 'Invalid credentials'}), 401
+                return jsonify({
+                'success': False,
+                'error': 'Username or password is not recognized',
+                'message': 'Username or password is not recognized',
+            }), 401
         elif login_method == 'voice':
             return jsonify({'error': 'Voice login is experimental. Use the Password tab.'}), 501
         elif login_method == 'biometric':
@@ -155,6 +165,7 @@ def get_current_user():
                 'username': user.username,
                 'email': user.email,
                 'role': user.role,
+                'permissions': permissions_for(user),
                 'preferences': user.get_preferences() if hasattr(user, 'get_preferences') else {}
             }
         })

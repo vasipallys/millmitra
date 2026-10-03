@@ -16,6 +16,7 @@ import AIInsights from '../components/AIInsights';
 import AlertsPanel from '../components/AlertsPanel';
 import { PageHeader, PageLoading, PageShell, QueryErrorAlert } from '../components/common/PageChrome';
 import { getApiErrorMessage } from '../utils/apiError';
+import { useI18n } from '../i18n/I18nContext';
 
 const DEFAULT_WIDGETS = [
   { id: 'production', label: 'Production snapshot' },
@@ -26,6 +27,7 @@ const DEFAULT_WIDGETS = [
 ];
 
 const Dashboard = () => {
+  const { t } = useI18n();
   const [timeRange, setTimeRange] = useState(7);
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [selectedWidgets, setSelectedWidgets] = useState([]);
@@ -103,8 +105,8 @@ const Dashboard = () => {
   return (
     <PageShell>
       <PageHeader
-        title="Smart Dashboard"
-        subtitle="Live mill snapshot from farmers, stock, batches, orders, and invoices"
+        title={t('dashboardTitle')}
+        subtitle={t('dashboardSubtitle')}
         actions={
           <>
             <IconButton onClick={handleRefresh} aria-label="Refresh dashboard">

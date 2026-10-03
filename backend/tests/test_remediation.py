@@ -59,6 +59,257 @@ class RemediationTests(unittest.TestCase):
         self.assertEqual(payment_status_for_amount(100, 40), 'partial')
         self.assertEqual(payment_status_for_amount(100, 0), 'pending')
 
+    def test_dashboard_overview_as_manager(self):
+        from flask_jwt_extended import create_access_token
+        from models import User
+        with app.app_context():
+            user = (
+                User.query.filter(User.role.ilike('manager')).first()
+                or User.query.filter_by(is_active=True).first()
+            )
+            if not user:
+                self.skipTest('No mill user in the database')
+            token = create_access_token(identity=str(user.id))
+        response = self.client.get(
+            '/api/dashboard/overview?days=7',
+            headers={'Authorization': f'Bearer {token}'},
+        )
+        self.assertEqual(response.status_code, 200, response.get_data(as_text=True))
+        body = response.get_json() or {}
+        summary = body.get('summary') or {}
+        self.assertIn('total_production', summary)
+        self.assertGreaterEqual(float(summary.get('total_production') or 0), 0)
+        self.assertGreaterEqual(float(summary.get('quality_score') or 0), 0)
+        self.assertGreaterEqual(float(summary.get('inventory_value') or 0), 0)
+        self.assertGreaterEqual(int(summary.get('pending_orders') or 0), 0)
+        self.assertGreaterEqual(int(summary.get('active_farmers') or 0), 0)
+        self.assertIn('role_data', body)
+
+    def _overview_as(self, role_needles):
+        from flask_jwt_extended import create_access_token
+        from models import User
+        with app.app_context():
+            user = None
+            for needle in role_needles:
+                user = User.query.filter(User.role.ilike(needle)).first()
+                if user:
+                    break
+            if not user:
+                self.skipTest(f'No mill user with role {role_needles}')
+            token = create_access_token(identity=str(user.id))
+        response = self.client.get(
+            '/api/dashboard/overview?days=7',
+            headers={'Authorization': f'Bearer {token}'},
+        )
+        self.assertEqual(response.status_code, 200, response.get_data(as_text=True))
+        body = response.get_json() or {}
+        summary = body.get('summary') or {}
+        self.assertIn('total_production', summary)
+        self.assertIn('role_data', body)
+        return body
+
+    def test_dashboard_overview_as_admin(self):
+        body = self._overview_as(['admin', 'administrator', 'super_admin'])
+        self.assertIn('profit_margin', body.get('role_data') or {})
+
+    def test_login_quality_user_and_wrong_password(self):
+        from services.demo_users import ensure_demo_users
+        with app.app_context():
+            ensure_demo_users()
+        ok = self.client.post(
+            '/api/auth/login',
+            json={'username': 'quality', 'password': 'quality123', 'method': 'password'},
+        )
+        self.assertEqual(ok.status_code, 200, ok.get_data(as_text=True))
+        payload = ok.get_json() or {}
+        self.assertTrue(payload.get('access_token'))
+        self.assertEqual((payload.get('user') or {}).get('username'), 'quality')
+        bad = self.client.post(
+            '/api/auth/login',
+            json={'username': 'quality', 'password': 'not-the-password', 'method': 'password'},
+        )
+        self.assertEqual(bad.status_code, 401)
+        message = ((bad.get_json() or {}).get('error') or (bad.get_json() or {}).get('message') or '')
+        self.assertIn('not recognized', message.lower())
+
+    def test_roles_access_and_sales_user(self):
+        from flask_jwt_extended import create_access_token
+        from models import User
+        from services.demo_users import ensure_demo_users
+        from services.access_control import ensure_role_permissions
+        with app.app_context():
+            ensure_demo_users()
+            ensure_role_permissions()
+            sales = User.query.filter_by(username='sales').first()
+            self.assertIsNotNone(sales)
+            operator = User.query.filter_by(username='operator').first()
+            admin = User.query.filter_by(username='admin').first()
+            self.assertIsNotNone(operator)
+            self.assertIsNotNone(admin)
+            op_token = create_access_token(identity=str(operator.id))
+            ad_token = create_access_token(identity=str(admin.id))
+        forbidden = self.client.post(
+            '/api/finance/invoices',
+            json={'customer_id': 1, 'items': [{'description': 'Rice', 'quantity': 1, 'unit_price': 10}]},
+            headers={'Authorization': f'Bearer {op_token}'},
+        )
+        self.assertEqual(forbidden.status_code, 403, forbidden.get_data(as_text=True))
+        listed = self.client.get(
+            '/api/users',
+            headers={'Authorization': f'Bearer {ad_token}'},
+        )
+        self.assertEqual(listed.status_code, 200, listed.get_data(as_text=True))
+        names = [item.get('username') for item in (listed.get_json() or {}).get('users', [])]
+        self.assertIn('sales', names)
+
+    def test_notifications_create_list_and_mark_read(self):
+        from flask_jwt_extended import create_access_token
+        from models import User
+        from services.notification_service import create_notification
+
+        with app.app_context():
+            user = User.query.filter_by(is_active=True).first()
+            if not user:
+                self.skipTest('No mill user in the database')
+            row = create_notification(
+                title='Test mill event',
+                body='Created by remediation test',
+                category='system',
+                severity='low',
+                link='/notifications',
+            )
+            self.assertIsNotNone(row.id)
+            note_id = row.id
+            token = create_access_token(identity=str(user.id))
+
+        listed = self.client.get(
+            '/api/notifications',
+            headers={'Authorization': f'Bearer {token}'},
+        )
+        self.assertEqual(listed.status_code, 200, listed.get_data(as_text=True))
+        payload = listed.get_json() or {}
+        items = payload.get('notifications') or []
+        self.assertTrue(isinstance(items, list))
+        found = next((item for item in items if item.get('id') == note_id), None)
+        self.assertIsNotNone(found)
+        self.assertEqual(found.get('title'), 'Test mill event')
+        self.assertFalse(found.get('read'))
+        fake_bodies = ' '.join(
+            f"{item.get('title', '')} {item.get('body', '')} {item.get('message', '')}"
+            for item in items
+        )
+        self.assertNotIn('PB001', fake_bodies)
+        self.assertNotIn('Siva Kumar reddy Vasipally', fake_bodies)
+
+        marked = self.client.post(
+            f'/api/notifications/{note_id}/read',
+            headers={'Authorization': f'Bearer {token}'},
+        )
+        self.assertEqual(marked.status_code, 200, marked.get_data(as_text=True))
+        again = self.client.get(
+            '/api/notifications',
+            headers={'Authorization': f'Bearer {token}'},
+        )
+        self.assertEqual(again.status_code, 200)
+        reread = next(
+            (item for item in (again.get_json() or {}).get('notifications', []) if item.get('id') == note_id),
+            None,
+        )
+        self.assertIsNotNone(reread)
+        self.assertTrue(reread.get('read'))
+
+    def test_backup_admin_file_operator_forbidden(self):
+        from flask_jwt_extended import create_access_token
+        from models import User
+        from services.demo_users import ensure_demo_users
+        from services.mill_settings_service import sqlite_file_path
+
+        with app.app_context():
+            ensure_demo_users()
+            admin = User.query.filter_by(username='admin').first()
+            operator = User.query.filter_by(username='operator').first()
+            if not admin or not operator:
+                self.skipTest('Demo admin/operator missing')
+            db_file = sqlite_file_path()
+            if not db_file.exists():
+                self.skipTest('SQLite database file not found')
+            admin_token = create_access_token(identity=str(admin.id))
+            operator_token = create_access_token(identity=str(operator.id))
+
+        created = self.client.post(
+            '/api/user/backup',
+            headers={'Authorization': f'Bearer {admin_token}'},
+        )
+        self.assertEqual(created.status_code, 200, created.headers.get('Content-Disposition'))
+        disposition = created.headers.get('Content-Disposition') or ''
+        self.assertIn('attachment', disposition.lower())
+        self.assertGreater(len(created.data), 100)
+
+        forbidden = self.client.post(
+            '/api/user/backup',
+            headers={'Authorization': f'Bearer {operator_token}'},
+        )
+        self.assertEqual(forbidden.status_code, 403, forbidden.get_data(as_text=True))
+        message = ((forbidden.get_json() or {}).get('message') or '').lower()
+        self.assertIn('admin', message)
+
+    def test_previously_hardcoded_lists_return_saved_rows_only(self):
+        from flask_jwt_extended import create_access_token
+        from extensions import db
+        from models import User
+        from models.farmer import FarmerContract
+        from models.gst_filing import GstFilingRecord
+
+        with app.app_context():
+            user = User.query.filter_by(is_active=True).first()
+            if not user:
+                self.skipTest('No mill user in the database')
+            token = create_access_token(identity=str(user.id))
+            contract_count = FarmerContract.query.count()
+            filing_count = GstFilingRecord.query.count()
+
+        first = self.client.get(
+            '/api/farmer/contracts?status=all',
+            headers={'Authorization': f'Bearer {token}'},
+        )
+        self.assertEqual(first.status_code, 200, first.get_data(as_text=True))
+        first_rows = (first.get_json() or {}).get('contracts') or []
+        self.assertEqual(len(first_rows), contract_count)
+
+        second = self.client.get(
+            '/api/farmer/contracts?status=all',
+            headers={'Authorization': f'Bearer {token}'},
+        )
+        self.assertEqual(len((second.get_json() or {}).get('contracts') or []), len(first_rows))
+
+        listed = self.client.get(
+            '/api/compliance/gst/filings',
+            headers={'Authorization': f'Bearer {token}'},
+        )
+        self.assertEqual(listed.status_code, 200, listed.get_data(as_text=True))
+        existing = (listed.get_json() or {}).get('filings') or []
+        self.assertEqual(len(existing), filing_count)
+        marker = 'TEST-EMPTY-LIST'
+        created = self.client.post(
+            '/api/compliance/gst/filings',
+            json={'form': marker, 'due_date': '2026-10-11', 'amount': 0, 'notes': 'test row'},
+            headers={'Authorization': f'Bearer {token}'},
+        )
+        self.assertEqual(created.status_code, 201, created.get_data(as_text=True))
+        created_id = ((created.get_json() or {}).get('filing') or {}).get('id')
+        again = self.client.get(
+            '/api/compliance/gst/filings',
+            headers={'Authorization': f'Bearer {token}'},
+        )
+        again_rows = (again.get_json() or {}).get('filings') or []
+        self.assertEqual(len(again_rows), filing_count + 1)
+        self.assertTrue(any(row.get('form') == marker for row in again_rows))
+        with app.app_context():
+            row = GstFilingRecord.query.get(created_id)
+            if row:
+                db.session.delete(row)
+                db.session.commit()
+
 
 if __name__ == '__main__':
     unittest.main()

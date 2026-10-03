@@ -1,5 +1,7 @@
 # MillMitra remediation report
 
+**Historical snapshot** (3 October 2026). For the product as it works **now**, use [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), [BUSINESS.md](BUSINESS.md), and [TECHNICAL.md](TECHNICAL.md). Several items below are outdated (roles now server-enforced; preview pages default to live mill records; `/api/users` and `/api/access` exist; six demo personas).
+
 Date: 3 October 2026. Scope: `D:\GenAi\millmitra` repo plus what was reachable on this machine. This pass **implemented** fixes; it is not analysis-only.
 
 Prior work left in place: inventory selects, sales orders, dashboard widgets, finance stock deduct, JWT `str(user.id)` + `current_user()`, PWA/SW dev unregister, GST preview buttons, `/api/health` + `/api/ready`, PageChrome.

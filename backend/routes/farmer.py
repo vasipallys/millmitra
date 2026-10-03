@@ -81,6 +81,8 @@ def register_farmer():
 
         db.session.add(farmer)
         db.session.commit()
+        from services.notification_service import farmer_registered
+        farmer_registered(farmer)
 
         return jsonify({
             'success': True,
@@ -106,7 +108,6 @@ def register_farmer():
 @farmer_bp.route('/list', methods=['GET'])
 @jwt_required()
 def get_farmers():
-    # Simplified implementation - return mock data for now
     farmers = Farmer.query.all()
 
     return jsonify({
@@ -383,69 +384,10 @@ def reject_edit_request(request_id):
 @farmer_bp.route('/edit-requests/create-sample', methods=['POST'])
 @jwt_required()
 def create_sample_edit_requests():
-    """Create sample edit requests for testing"""
-    try:
-        # Get first farmer
-        farmer = Farmer.query.first()
-        if not farmer:
-            return jsonify({
-                'success': False,
-                'message': 'No farmers found. Please create a farmer first.'
-            }), 404
-
-        # Create sample edit requests
-        sample_requests = []
-
-        # Sample 1: Name change (high priority)
-        original_data = farmer.to_dict()
-        proposed_changes = {
-            'name': 'Updated Farmer Name',
-            'phone': '+91 9876543210'
-        }
-
-        edit_request1 = FarmerEditRequest.create_edit_request(
-            farmer_id=farmer.id,
-            requested_by=1,  # Assuming user ID 1 exists
-            original_data=original_data,
-            proposed_changes=proposed_changes,
-            reason='Correction of name and phone number as per updated documents'
-        )
-
-        # Sample 2: Email change (auto-approved)
-        proposed_changes2 = {
-            'email': 'updated.farmer@example.com'
-        }
-
-        edit_request2 = FarmerEditRequest.create_edit_request(
-            farmer_id=farmer.id,
-            requested_by=1,
-            original_data=original_data,
-            proposed_changes=proposed_changes2,
-            reason='Email address correction'
-        )
-
-        db.session.add(edit_request1)
-        db.session.add(edit_request2)
-        db.session.commit()
-
-        sample_requests.append(edit_request1.to_dict())
-        sample_requests.append(edit_request2.to_dict())
-
-        return jsonify({
-            'success': True,
-            'message': 'Sample edit requests created',
-            'edit_requests': sample_requests
-        })
-
-    except Exception as e:
-        db.session.rollback()
-        print(f"Error creating sample edit requests: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({
-            'success': False,
-            'message': f'Error creating sample edit requests: {str(e)}'
-        }), 500
+    return jsonify({
+        'success': False,
+        'message': 'Sample edit-request seed is disabled. Create a real edit from Farmers.',
+    }), 410
 
 @farmer_bp.route('/contracts', methods=['GET'])
 @jwt_required()
@@ -465,32 +407,6 @@ def get_contracts():
             query = query.filter_by(status=status)
 
         contracts = query.all()
-
-        # If no contracts exist and we have farmers, create a sample contract for testing
-        if not contracts and status == 'all':
-            farmers = Farmer.query.limit(1).all()
-            if farmers:
-                sample_contract = FarmerContract(
-                    contract_number=f"CON{datetime.now().strftime('%Y%m%d')}001",
-                    farmer_id=farmers[0].id,
-                    contract_type='seasonal',
-                    variety='Basmati',
-                    quantity_committed=1000.0,
-                    price_per_kg=25.0,
-                    start_date=datetime.utcnow(),
-                    end_date=datetime.utcnow() + timedelta(days=120),
-                    status='active',
-                    created_by=1,  # Assuming admin user
-                    payment_terms='30 days'
-                )
-                db.session.add(sample_contract)
-                try:
-                    db.session.commit()
-                    contracts = [sample_contract]
-                    print("[SUCCESS] Created sample contract for testing")
-                except Exception as e:
-                    db.session.rollback()
-                    print(f"[WARN] Could not create sample contract: {e}")
 
         # Format contract data with farmer names and field mapping
         contract_list = []

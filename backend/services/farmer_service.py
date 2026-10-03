@@ -46,6 +46,8 @@ class FarmerService:
         
         db.session.add(farmer)
         db.session.commit()
+        from services.notification_service import farmer_registered
+        farmer_registered(farmer)
         
         return farmer
     

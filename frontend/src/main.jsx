@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from 'react-query'
 import App from './App.jsx'
+import { I18nProvider } from './i18n/I18nContext.jsx'
 import { clearDevServiceWorkers } from './utils/pwaRuntime.js'
 import './index.css'
 
@@ -18,7 +19,9 @@ function renderApp() {
             v7_relativeSplatPath: true
           }}
         >
-          <App />
+          <I18nProvider>
+            <App />
+          </I18nProvider>
         </BrowserRouter>
       </QueryClientProvider>
     </React.StrictMode>,

@@ -3,12 +3,24 @@ User Profile API Routes
 Handles user profile and authentication related endpoints
 """
 
-from flask import Blueprint, request, jsonify, session
+from flask import Blueprint, request, jsonify, send_file, session
 from flask_jwt_extended import jwt_required
 from utils import current_user
 from models.user import AuthLog, UserSession
 from extensions import db
+from services.mill_settings_service import (
+    backup_status,
+    can_manage_mill,
+    cleanup_old_backups,
+    create_backup_file,
+    get_mill_config,
+    mail_configured,
+    save_mill_config,
+    sqlite_file_path,
+)
 import json
+import tempfile
+from pathlib import Path
 
 user_bp = Blueprint('user', __name__)
 
@@ -111,15 +123,53 @@ def update_user_preferences():
         'message': 'Preferences updated successfully'
     })
 
+def _merged_settings(user):
+    mill = get_mill_config()
+    prefs = user.get_preferences() or {}
+    legacy = prefs.get('mill_settings') if isinstance(prefs.get('mill_settings'), dict) else {}
+    user_notes = user.get_notification_settings()
+    notifications = dict(mill.get('notifications') or {})
+    notifications.update(user_notes or {})
+    if 'inApp' not in notifications and 'pushNotifications' in notifications:
+        notifications['inApp'] = bool(notifications.get('pushNotifications'))
+    business = dict(mill.get('business') or {})
+    legacy_business = (legacy.get('business') or {}) if isinstance(legacy, dict) else {}
+    if not any(business.values()) and legacy_business:
+        business = {**business, **legacy_business}
+    security = dict(mill.get('security') or {})
+    user_security = prefs.get('security') if isinstance(prefs.get('security'), dict) else {}
+    if user_security.get('sessionTimeout'):
+        security['sessionTimeout'] = user_security.get('sessionTimeout')
+    return {
+        'business': business,
+        'notifications': notifications,
+        'ai': mill.get('ai') or {},
+        'security': security,
+        'backup': mill.get('backup') or {},
+    }
+
+
+def _settings_meta(user):
+    return {
+        'mail_configured': mail_configured(),
+        'can_edit_business': can_manage_mill(user),
+        'can_manage_backup': can_manage_mill(user),
+        'notification_scope': 'per_user',
+        'backup': backup_status(),
+    }
+
+
 @user_bp.route('/api/user/mill-settings', methods=['GET'])
 @jwt_required()
 def get_mill_settings():
     user = current_user()
     if not user:
         return jsonify({'success': False, 'error': 'User not found'}), 401
-    prefs = user.get_preferences() or {}
-    settings = prefs.get('mill_settings') or {}
-    return jsonify({'success': True, 'settings': settings})
+    return jsonify({
+        'success': True,
+        'settings': _merged_settings(user),
+        **_settings_meta(user),
+    })
 
 @user_bp.route('/api/user/mill-settings', methods=['PUT'])
 @jwt_required()
@@ -128,16 +178,137 @@ def save_mill_settings():
     if not user:
         return jsonify({'success': False, 'error': 'User not found'}), 401
     data = request.get_json() or {}
-    settings = data.get('settings') or data
-    prefs = user.get_preferences() or {}
-    prefs['mill_settings'] = settings
-    user.set_preferences(prefs)
+    incoming = data.get('settings') if isinstance(data.get('settings'), dict) else data
+    if not isinstance(incoming, dict):
+        incoming = {}
+    tab = (data.get('tab') or incoming.get('tab') or '').strip().lower()
+    manager = can_manage_mill(user)
+
+    if tab == 'business' and not manager:
+        return jsonify({
+            'success': False,
+            'error': 'Only admin or manager can change mill business info',
+            'message': 'Only admin or manager can change mill business info',
+        }), 403
+    if tab == 'backup' and not manager:
+        return jsonify({
+            'success': False,
+            'error': 'Only admin or manager can change backup settings',
+            'message': 'Only admin or manager can change backup settings',
+        }), 403
+
+    if isinstance(incoming.get('notifications'), dict):
+        notes = user.get_notification_settings()
+        notes.update(incoming['notifications'])
+        if 'inApp' in incoming['notifications']:
+            notes['pushNotifications'] = bool(incoming['notifications']['inApp'])
+        user.set_notification_settings(notes)
+        prefs = user.get_preferences() or {}
+        prefs['notifications'] = notes
+        user.set_preferences(prefs)
+        if manager:
+            save_mill_config({'notifications': notes})
+
+    mill_updates = {}
+    if manager and isinstance(incoming.get('business'), dict):
+        mill_updates['business'] = incoming['business']
+    if isinstance(incoming.get('ai'), dict):
+        mill_updates['ai'] = incoming['ai']
+    if manager and isinstance(incoming.get('backup'), dict):
+        mill_updates['backup'] = incoming['backup']
+    if isinstance(incoming.get('security'), dict):
+        timeout = incoming['security'].get('sessionTimeout')
+        prefs = user.get_preferences() or {}
+        prefs['security'] = {**(prefs.get('security') or {}), 'sessionTimeout': timeout}
+        user.set_preferences(prefs)
+        if manager:
+            mill_updates['security'] = {'sessionTimeout': timeout}
+    if mill_updates:
+        save_mill_config(mill_updates)
     db.session.commit()
     return jsonify({
         'success': True,
-        'settings': settings,
-        'message': 'Settings saved'
+        'settings': _merged_settings(user),
+        'message': 'Settings saved',
+        **_settings_meta(user),
     })
+
+
+def _send_db_copy(path):
+    return send_file(
+        str(path),
+        as_attachment=True,
+        download_name=path.name,
+        mimetype='application/octet-stream',
+    )
+
+
+@user_bp.route('/api/user/backup/status', methods=['GET'])
+@jwt_required()
+def get_backup_status():
+    user = current_user()
+    if not user:
+        return jsonify({'success': False, 'error': 'User not found'}), 401
+    return jsonify({'success': True, **_settings_meta(user)})
+
+
+@user_bp.route('/api/user/backup', methods=['POST'])
+@jwt_required()
+def create_mill_backup():
+    user = current_user()
+    if not user:
+        return jsonify({'success': False, 'error': 'User not found'}), 401
+    if not can_manage_mill(user):
+        return jsonify({
+            'success': False,
+            'error': 'Only admin or manager can back up the mill database onto the server',
+            'message': 'Only admin or manager can back up the mill database onto the server',
+        }), 403
+    dest, error = create_backup_file()
+    if error:
+        return jsonify({'success': False, 'error': error, 'message': error}), 404
+    return _send_db_copy(dest)
+
+
+@user_bp.route('/api/user/backup/download', methods=['GET'])
+@jwt_required()
+def download_mill_copy():
+    user = current_user()
+    if not user:
+        return jsonify({'success': False, 'error': 'User not found'}), 401
+    src = sqlite_file_path()
+    if not src.exists():
+        return jsonify({
+            'success': False,
+            'error': 'SQLite database file was not found',
+            'message': 'SQLite database file was not found',
+        }), 404
+    stamp = Path(tempfile.gettempdir()) / f'rice_mill_erp_copy_{user.id}.db'
+    from services.mill_settings_service import _copy_sqlite
+    _copy_sqlite(src, stamp)
+    return send_file(
+        str(stamp),
+        as_attachment=True,
+        download_name=f'rice_mill_erp_copy.db',
+        mimetype='application/octet-stream',
+    )
+
+
+@user_bp.route('/api/user/backup/cleanup', methods=['POST'])
+@jwt_required()
+def run_backup_cleanup():
+    user = current_user()
+    if not user:
+        return jsonify({'success': False, 'error': 'User not found'}), 401
+    if not can_manage_mill(user):
+        return jsonify({
+            'success': False,
+            'error': 'Only admin or manager can delete old backup files',
+            'message': 'Only admin or manager can delete old backup files',
+        }), 403
+    data = request.get_json(silent=True) or {}
+    result = cleanup_old_backups(days=data.get('retentionDays'))
+    return jsonify({'success': True, **result, 'backup': backup_status()})
 
 @user_bp.route('/api/user/activity', methods=['GET'])
 @jwt_required()

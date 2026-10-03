@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { CssBaseline, Box, CircularProgress, Typography } from '@mui/material';
 import { QueryClient, QueryClientProvider } from 'react-query';
@@ -27,6 +27,11 @@ import QualityControl from './pages/QualityControl';
 import FinancialIntelligence from './pages/FinancialIntelligence';
 import ComplianceGST from './pages/ComplianceGST';
 import AnalyticsReporting from './pages/AnalyticsReporting';
+import MillFlow from './pages/MillFlow';
+import Users from './pages/Users';
+import Access from './pages/Access';
+import RequireAccess from './components/RequireAccess';
+import { permissionForPath } from './utils/permissions';
 
 // Services
 import { authService } from './services/authService';
@@ -111,6 +116,15 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+function Guard({ user, children }) {
+  const location = useLocation();
+  return (
+    <RequireAccess user={user} permission={permissionForPath(location.pathname)}>
+      {children}
+    </RequireAccess>
+  );
+}
 
 function App() {
   return (
@@ -240,20 +254,23 @@ function AppContent() {
             <Routes>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/login" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/farmers/*" element={<Farmers />} />
-              <Route path="/inventory/*" element={<Inventory />} />
-              <Route path="/production/*" element={<Production />} />
-              <Route path="/sales/*" element={<Sales />} />
-              <Route path="/finance/*" element={<Finance />} />
-              <Route path="/customers/*" element={<Customers />} />
-              <Route path="/analytics" element={<Analytics />} />
-              <Route path="/quality-control" element={<QualityControl />} />
-              <Route path="/financial-intelligence" element={<FinancialIntelligence />} />
-              <Route path="/compliance-gst" element={<ComplianceGST />} />
-              <Route path="/analytics-reporting" element={<AnalyticsReporting />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/settings" element={<Settings />} />
+              <Route path="/dashboard" element={<Guard user={user}><Dashboard /></Guard>} />
+              <Route path="/mill-flow" element={<Guard user={user}><MillFlow /></Guard>} />
+              <Route path="/farmers/*" element={<Guard user={user}><Farmers /></Guard>} />
+              <Route path="/inventory/*" element={<Guard user={user}><Inventory /></Guard>} />
+              <Route path="/production/*" element={<Guard user={user}><Production /></Guard>} />
+              <Route path="/sales/*" element={<Guard user={user}><Sales /></Guard>} />
+              <Route path="/finance/*" element={<Guard user={user}><Finance /></Guard>} />
+              <Route path="/customers/*" element={<Guard user={user}><Customers /></Guard>} />
+              <Route path="/analytics" element={<Guard user={user}><Analytics /></Guard>} />
+              <Route path="/quality-control" element={<Guard user={user}><QualityControl /></Guard>} />
+              <Route path="/financial-intelligence" element={<Guard user={user}><FinancialIntelligence /></Guard>} />
+              <Route path="/compliance-gst" element={<Guard user={user}><ComplianceGST /></Guard>} />
+              <Route path="/analytics-reporting" element={<Guard user={user}><AnalyticsReporting /></Guard>} />
+              <Route path="/notifications" element={<Guard user={user}><Notifications /></Guard>} />
+              <Route path="/settings" element={<Guard user={user}><Settings /></Guard>} />
+              <Route path="/users" element={<Guard user={user}><Users currentUser={user} /></Guard>} />
+              <Route path="/access" element={<Guard user={user}><Access /></Guard>} />
             </Routes>
           </Box>
         </Box>

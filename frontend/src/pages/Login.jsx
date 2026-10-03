@@ -9,10 +9,23 @@ import { Mic, MicOff, Fingerprint, Face, Visibility, VisibilityOff } from '@mui/
 import { useVoiceRecognition } from '../hooks/useVoiceRecognition';
 import { useBiometric } from '../hooks/useBiometric';
 import { authService } from '../services/authService';
+import { getApiErrorMessage } from '../utils/apiError';
 import BiometricLogin from '../components/BiometricLogin';
+import LanguageSwitcher from '../i18n/LanguageSwitcher';
+import { useI18n } from '../i18n/I18nContext';
+
+const DEMO_ACCOUNTS = [
+  { username: 'admin', password: 'admin123' },
+  { username: 'manager', password: 'manager123' },
+  { username: 'operator', password: 'operator123' },
+  { username: 'quality', password: 'quality123' },
+  { username: 'sales', password: 'sales123' },
+  { username: 'accountant', password: 'accountant123' },
+];
 
 const Login = ({ onLogin }) => {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [activeTab, setActiveTab] = useState(0);
   const [formData, setFormData] = useState({ username: '', password: '' });
   const [loading, setLoading] = useState(false);
@@ -34,9 +47,6 @@ const Login = ({ onLogin }) => {
 
   // Biometric hook
   const { captureFingerprint, captureFace } = useBiometric();
-
-  // AI-powered username suggestions
-  const [usernameSuggestions, setUsernameSuggestions] = useState([]);
 
   useEffect(() => {
     if (transcript) {
@@ -63,22 +73,6 @@ const Login = ({ onLogin }) => {
       }
     }
     return null;
-  };
-
-  const handleUsernameChange = async (value) => {
-    setFormData({ ...formData, username: value });
-    
-    // AI-powered username suggestions and typo correction
-    if (value.length > 2) {
-      try {
-        const suggestions = await authService.getUsernameSuggestions(value);
-        setUsernameSuggestions(suggestions);
-      } catch (error) {
-        console.error('Error getting suggestions:', error);
-      }
-    } else {
-      setUsernameSuggestions([]);
-    }
   };
 
   const handlePasswordLogin = async (e) => {
@@ -108,7 +102,11 @@ const Login = ({ onLogin }) => {
         navigate('/', { replace: true });
       }
     } catch (error) {
-      setError(error.message || 'Login failed');
+      const status = error.response?.status;
+      setError(getApiErrorMessage(
+        error,
+        status === 401 ? 'Username or password is not recognized' : 'Login failed'
+      ));
     } finally {
       setLoading(false);
     }
@@ -275,22 +273,25 @@ const Login = ({ onLogin }) => {
     >
       <Card sx={{ maxWidth: 400, width: '100%', m: 2 }}>
         <CardContent sx={{ p: 4 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
+            <LanguageSwitcher />
+          </Box>
           <Typography variant="h4" align="center" gutterBottom color="primary">
-            Rice Mill AI
+            {t('appName')}
           </Typography>
           <Typography variant="subtitle1" align="center" color="textSecondary" mb={1}>
-            Sign in to MillMitra
+            {t('signIn')}
           </Typography>
           <Typography variant="body2" align="center" color="text.secondary" mb={3}>
-            Use the Password tab for daily work. Voice and Biometric are experimental.
+            {t('loginHint')}
           </Typography>
 
           {error && <Alert severity="error" sx={{ mb: 2 }} role="alert">{error}</Alert>}
 
           <Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)} sx={{ mb: 3 }} aria-label="Sign-in method">
-            <Tab label="Password" />
-            <Tab label="Voice" />
-            <Tab label="Biometric" />
+            <Tab label={t('passwordTab')} />
+            <Tab label={t('voiceTab')} />
+            <Tab label={t('biometricTab')} />
           </Tabs>
 
           {/* Password Login */}
@@ -298,35 +299,19 @@ const Login = ({ onLogin }) => {
             <form onSubmit={handlePasswordLogin}>
               <TextField
                 fullWidth
-                label="Username / Email / Phone"
+                label={t('username')}
                 value={formData.username}
-                onChange={(e) => handleUsernameChange(e.target.value)}
+                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                 margin="normal"
                 autoComplete="username"
                 required
                 autoFocus
-                helperText="Username, email, or 10-digit phone"
+                helperText={t('usernameHelp')}
               />
-              
-              {usernameSuggestions.length > 0 && (
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="caption">Suggestions:</Typography>
-                  {usernameSuggestions.map((suggestion, index) => (
-                    <Button
-                      key={index}
-                      size="small"
-                      onClick={() => setFormData({ ...formData, username: suggestion })}
-                      sx={{ mr: 1, mt: 0.5 }}
-                    >
-                      {suggestion}
-                    </Button>
-                  ))}
-                </Box>
-              )}
 
               <TextField
                 fullWidth
-                label="Password"
+                label={t('password')}
                 type={showPassword ? 'text' : 'password'}
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -337,7 +322,7 @@ const Login = ({ onLogin }) => {
                   endAdornment: (
                     <IconButton
                       onClick={() => setShowPassword(!showPassword)}
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      aria-label={showPassword ? t('hidePassword') : t('showPassword')}
                     >
                       {showPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
@@ -352,8 +337,18 @@ const Login = ({ onLogin }) => {
                 disabled={loading}
                 sx={{ mt: 3, mb: 2 }}
               >
-                {loading ? <CircularProgress size={24} /> : 'Login'}
+                {loading ? <CircularProgress size={24} /> : t('login')}
               </Button>
+              <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 1 }}>
+                {t('demoAccounts')}
+                {' '}
+                {DEMO_ACCOUNTS.map((account, index) => (
+                  <span key={account.username}>
+                    {index > 0 ? ' · ' : ''}
+                    {account.username} / {account.password}
+                  </span>
+                ))}
+              </Typography>
             </form>
           )}
 

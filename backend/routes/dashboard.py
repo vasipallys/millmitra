@@ -31,9 +31,25 @@ def get_dashboard_overview():
     end_date = datetime.utcnow()
     start_date = end_date - timedelta(days=days)
     
-    # Get AI-powered dashboard data
-    overview = dashboard_service.get_smart_overview(user, start_date, end_date)
-    
+    try:
+        overview = dashboard_service.get_smart_overview(user, start_date, end_date)
+    except Exception:
+        from extensions import db
+        db.session.rollback()
+        overview = {
+            'summary': {
+                'total_production': 0.0,
+                'quality_score': 0.0,
+                'inventory_value': 0.0,
+                'pending_orders': 0,
+                'active_farmers': 0,
+            },
+            'trends': {'production': [], 'quality': [], 'direction': 'stable'},
+            'role_data': {},
+            'ai_insights': [],
+            'quick_actions': [],
+            'performance_indicators': [],
+        }
     return jsonify(overview)
 
 @dashboard_bp.route('/widgets', methods=['GET'])

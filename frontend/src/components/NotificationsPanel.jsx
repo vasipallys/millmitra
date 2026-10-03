@@ -5,15 +5,15 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Menu, MenuItem, Box, Typography, IconButton, Badge, Chip, Avatar,
+  Menu, MenuItem, Box, Typography, IconButton, Chip, Avatar,
   List, ListItem, ListItemText, ListItemAvatar, ListItemSecondaryAction,
   Divider, Button, Tabs, Tab, Tooltip, Dialog, DialogTitle, DialogContent,
   DialogActions, TextField, FormControl, InputLabel, Select
 } from '@mui/material';
 import {
-  Notifications, NotificationsActive, MarkEmailRead, Delete,
-  Warning, Info, CheckCircle, Error, Settings as SettingsIcon,
-  FilterList, Search, MoreVert, PersonAdd, Payment, Science,
+  MarkEmailRead, Delete,
+  Info, Settings as SettingsIcon,
+  Search, PersonAdd, Payment, Science,
   Inventory2, Factory, SystemUpdate
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -51,21 +51,13 @@ const NotificationsPanel = ({ anchorEl, open, onClose }) => {
     }
   };
 
-  const getPriorityIcon = (priority) => {
-    switch (priority) {
-      case 'high': return <Error color="error" />;
-      case 'medium': return <Warning color="warning" />;
-      case 'low': return <Info color="info" />;
-      default: return <CheckCircle />;
-    }
-  };
-
   const getCategoryIcon = (category) => {
     switch (category) {
       case 'farmer_management': return <PersonAdd />;
       case 'production': return <Factory />;
       case 'inventory': return <Inventory2 />;
       case 'quality': return <Science />;
+      case 'sales': return <Payment />;
       case 'finance': return <Payment />;
       case 'system': return <SystemUpdate />;
       default: return <Info />;
@@ -87,11 +79,11 @@ const NotificationsPanel = ({ anchorEl, open, onClose }) => {
       filtered = filtered.filter(n => n.category === filterCategory);
     }
 
-    // Filter by search term
     if (searchTerm) {
-      filtered = filtered.filter(n => 
-        n.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        n.message.toLowerCase().includes(searchTerm.toLowerCase())
+      const needle = searchTerm.toLowerCase();
+      filtered = filtered.filter((n) =>
+        (n.title || '').toLowerCase().includes(needle)
+        || (n.message || n.body || '').toLowerCase().includes(needle)
       );
     }
 
@@ -105,8 +97,9 @@ const NotificationsPanel = ({ anchorEl, open, onClose }) => {
     }
 
     // Navigate to relevant page
-    if (notification.action_url) {
-      navigate(notification.action_url);
+    const target = notification.link || notification.action_url;
+    if (target) {
+      navigate(target);
       onClose();
     }
   };
@@ -211,6 +204,7 @@ const NotificationsPanel = ({ anchorEl, open, onClose }) => {
               <MenuItem value="production">Production</MenuItem>
               <MenuItem value="inventory">Inventory</MenuItem>
               <MenuItem value="quality">Quality Control</MenuItem>
+              <MenuItem value="sales">Sales</MenuItem>
               <MenuItem value="finance">Finance</MenuItem>
               <MenuItem value="system">System</MenuItem>
             </Select>
@@ -222,7 +216,9 @@ const NotificationsPanel = ({ anchorEl, open, onClose }) => {
           {filteredNotifications.length === 0 ? (
             <Box sx={{ p: 3, textAlign: 'center' }}>
               <Typography variant="body2" color="text.secondary">
-                No notifications found
+                {notifications.length === 0
+                  ? 'No notifications yet'
+                  : 'No notifications found'}
               </Typography>
             </Box>
           ) : (
@@ -249,9 +245,9 @@ const NotificationsPanel = ({ anchorEl, open, onClose }) => {
                             {notification.title}
                           </Typography>
                           <Chip
-                            label={notification.priority}
+                            label={notification.severity || notification.priority}
                             size="small"
-                            color={getPriorityColor(notification.priority)}
+                            color={getPriorityColor(notification.severity || notification.priority)}
                             variant="outlined"
                           />
                         </Box>
@@ -259,10 +255,10 @@ const NotificationsPanel = ({ anchorEl, open, onClose }) => {
                       secondary={
                         <React.Fragment>
                           <span style={{ display: 'block', marginBottom: '4px', color: 'rgba(0, 0, 0, 0.6)' }}>
-                            {notification.message}
+                            {notification.message || notification.body}
                           </span>
                           <span style={{ fontSize: '0.75rem', color: 'rgba(0, 0, 0, 0.6)' }}>
-                            {formatTimeAgo(notification.timestamp)}
+                            {formatTimeAgo(notification.timestamp || notification.created_at)}
                           </span>
                         </React.Fragment>
                       }

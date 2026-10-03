@@ -29,114 +29,46 @@ import {
   Refresh
 } from '@mui/icons-material';
 
-const AlertsPanel = ({ maxAlerts = 10, autoRefresh = true }) => {
+const normalizeAlert = (item, index) => ({
+  id: item.id || index,
+  type: item.type || 'info',
+  title: item.title || 'Mill alert',
+  message: item.message || item.action || '',
+  category: item.category || 'mill',
+  priority: item.priority,
+  timestamp: item.timestamp || item.created_at,
+  acknowledged: Boolean(item.acknowledged),
+  details: item.details || {},
+});
+
+const AlertsPanel = ({ alerts: incoming, maxAlerts = 10, autoRefresh = true }) => {
   const [alerts, setAlerts] = useState([]);
   const [expanded, setExpanded] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  // Mock alerts data
-  const mockAlerts = [
-    {
-      id: 1,
-      type: 'warning',
-      title: 'Low Stock Alert',
-      message: 'Broken Rice stock is below reorder level (150 kg remaining)',
-      category: 'inventory',
-      priority: 'high',
-      timestamp: new Date(Date.now() - 1800000).toISOString(), // 30 minutes ago
-      acknowledged: false,
-      details: {
-        current_stock: 150,
-        reorder_level: 200,
-        product: 'Broken Rice'
-      }
-    },
-    {
-      id: 2,
-      type: 'error',
-      title: 'Quality Test Failed',
-      message: 'Batch #BT2024001 failed moisture content test (15.2% - exceeds limit)',
-      category: 'quality',
-      priority: 'urgent',
-      timestamp: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-      acknowledged: false,
-      details: {
-        batch_id: 'BT2024001',
-        test_type: 'moisture_content',
-        result: 15.2,
-        limit: 14.0
-      }
-    },
-    {
-      id: 3,
-      type: 'info',
-      title: 'Production Target Achieved',
-      message: 'Daily production target of 2,500 kg achieved at 2:30 PM',
-      category: 'production',
-      priority: 'low',
-      timestamp: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
-      acknowledged: true,
-      details: {
-        target: 2500,
-        achieved: 2500,
-        time_completed: '14:30'
-      }
-    },
-    {
-      id: 4,
-      type: 'warning',
-      title: 'Equipment Maintenance Due',
-      message: 'Milling Machine #2 is due for scheduled maintenance',
-      category: 'maintenance',
-      priority: 'medium',
-      timestamp: new Date(Date.now() - 10800000).toISOString(), // 3 hours ago
-      acknowledged: false,
-      details: {
-        equipment: 'Milling Machine #2',
-        last_maintenance: '2024-01-01',
-        next_due: '2024-01-22'
-      }
-    },
-    {
-      id: 5,
-      type: 'success',
-      title: 'Payment Received',
-      message: 'Payment of ₹1,25,000 received from Customer #C001',
-      category: 'finance',
-      priority: 'low',
-      timestamp: new Date(Date.now() - 14400000).toISOString(), // 4 hours ago
-      acknowledged: true,
-      details: {
-        amount: 125000,
-        customer_id: 'C001',
-        payment_method: 'bank_transfer'
-      }
-    }
-  ];
+  const [loading, setLoading] = useState(!incoming);
 
   useEffect(() => {
+    if (Array.isArray(incoming)) {
+      setAlerts(incoming.slice(0, maxAlerts).map(normalizeAlert));
+      setLoading(false);
+      return undefined;
+    }
     loadAlerts();
-    
     if (autoRefresh) {
-      const interval = setInterval(loadAlerts, 60000); // Refresh every minute
+      const interval = setInterval(loadAlerts, 60000);
       return () => clearInterval(interval);
     }
-  }, [autoRefresh]);
+    return undefined;
+  }, [incoming, autoRefresh, maxAlerts]);
 
   const loadAlerts = async () => {
     try {
       setLoading(true);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // In real implementation, fetch from API
-      // const response = await api.get('/alerts');
-      // setAlerts(response.data.alerts);
-      
-      setAlerts(mockAlerts.slice(0, maxAlerts));
+      const { dashboardService } = await import('../services/dashboardService');
+      const payload = await dashboardService.getAlerts();
+      const rows = Array.isArray(payload) ? payload : (payload?.alerts || []);
+      setAlerts(rows.slice(0, maxAlerts).map(normalizeAlert));
     } catch (error) {
-      console.error('Failed to load alerts:', error);
+      setAlerts([]);
     } finally {
       setLoading(false);
     }

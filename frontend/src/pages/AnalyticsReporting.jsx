@@ -56,7 +56,7 @@ import { usePreviewMode } from '../hooks/usePreviewMode';
 import { dashboardService } from '../services/dashboardService';
 import { financeService } from '../services/financeService';
 import { productionService } from '../services/productionService';
-import { productionAPI } from '../services/api';
+import api, { productionAPI } from '../services/api';
 import {
   mapDashboardInsights,
   normalizeQualityTests,
@@ -180,15 +180,28 @@ const AnalyticsReporting = () => {
       }
       setLoading(true);
       try {
-        const [overview, productionPayload, finance, testsRes, insightsRes, batchesRes] = await Promise.all([
+        const [overview, productionPayload, finance, testsRes, insightsRes, batchesRes, savedRes] = await Promise.all([
           dashboardService.getOverview(30),
           productionService.getAnalytics(30),
           financeService.getFinancialSummary(30),
           productionAPI.getQualityTests({ per_page: 50 }),
           dashboardService.getInsights(),
           productionService.getBatches({ per_page: 50 }),
+          api.get('/analytics/reporting/saved').catch(() => ({ data: { reports: [] } })),
         ]);
         if (cancelled) return;
+        setReports((savedRes?.data?.reports || []).map((row) => ({
+          report_id: row.report_id,
+          title: row.title,
+          generated_at: row.generated_at,
+          language: row.payload?.language || 'english',
+          confidence_score: row.payload?.confidence_score || 80,
+          period: row.payload?.period,
+          kpis: row.payload?.kpis,
+          note: row.payload?.note,
+          ...row.payload,
+          id: row.id,
+        })));
         const production = productionPayload?.analytics || productionPayload || {};
         const tests = normalizeQualityTests(testsRes?.data || testsRes);
         const quality = qualityDashboardFromTests(tests);
@@ -280,7 +293,7 @@ const AnalyticsReporting = () => {
     URL.revokeObjectURL(url);
   };
 
-  const generateReport = () => {
+  const generateReport = async () => {
     const report = {
       report_id: `RPT-${Date.now()}`,
       title: reportForm.report_type.replace(/_/g, ' '),
@@ -293,6 +306,27 @@ const AnalyticsReporting = () => {
         ? 'Preview report from sample figures.'
         : 'Report built from mill records on Dashboard, Production, Quality tests, and Finance.',
     };
+    if (!isSample) {
+      try {
+        const saved = await api.post('/analytics/reporting/saved', {
+          title: report.title,
+          report_type: reportForm.report_type,
+          payload: report,
+        });
+        const row = saved?.data?.report;
+        if (row?.report_id) {
+          report.report_id = row.report_id;
+          report.id = row.id;
+          report.generated_at = row.generated_at || report.generated_at;
+        }
+      } catch (error) {
+        setPageMessage({
+          severity: 'error',
+          text: error?.userMessage || 'Could not save the report on the mill',
+        });
+        return;
+      }
+    }
     setReports((prev) => [report, ...prev]);
     downloadJson(`${report.report_id}.json`, report);
     setShowReportDialog(false);
@@ -300,7 +334,7 @@ const AnalyticsReporting = () => {
       severity: 'success',
       text: isSample
         ? `Downloaded ${report.report_id}. This is a sample preview.`
-        : `Downloaded ${report.report_id} from mill records.`,
+        : `Saved and downloaded ${report.report_id} from mill records.`,
     });
   };
 

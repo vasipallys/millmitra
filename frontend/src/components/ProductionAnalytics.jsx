@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Card,
   CardContent,
@@ -24,35 +24,58 @@ import {
 } from 'recharts';
 
 const ProductionAnalytics = ({ data = null }) => {
-  // Mock data if none provided
-  const mockData = {
-    dailyProduction: [
-      { date: '2024-01-15', production: 4200, efficiency: 85, target: 4000 },
-      { date: '2024-01-16', production: 4500, efficiency: 88, target: 4000 },
-      { date: '2024-01-17', production: 3800, efficiency: 82, target: 4000 },
-      { date: '2024-01-18', production: 4100, efficiency: 87, target: 4000 },
-      { date: '2024-01-19', production: 4300, efficiency: 89, target: 4000 },
-      { date: '2024-01-20', production: 4600, efficiency: 91, target: 4000 },
-      { date: '2024-01-21', production: 4000, efficiency: 86, target: 4000 }
-    ],
-    productionByType: [
-      { name: 'Basmati Rice', value: 45, color: '#8884d8' },
-      { name: 'IR64 Rice', value: 30, color: '#82ca9d' },
-      { name: 'Broken Rice', value: 15, color: '#ffc658' },
-      { name: 'Premium Rice', value: 10, color: '#ff7300' }
-    ],
-    qualityTrends: [
-      { date: '2024-01-15', gradeA: 65, gradeB: 25, gradeC: 10 },
-      { date: '2024-01-16', gradeA: 70, gradeB: 22, gradeC: 8 },
-      { date: '2024-01-17', gradeA: 68, gradeB: 24, gradeC: 8 },
-      { date: '2024-01-18', gradeA: 72, gradeB: 20, gradeC: 8 },
-      { date: '2024-01-19', gradeA: 75, gradeB: 18, gradeC: 7 },
-      { date: '2024-01-20', gradeA: 78, gradeB: 17, gradeC: 5 },
-      { date: '2024-01-21', gradeA: 76, gradeB: 19, gradeC: 5 }
-    ]
-  };
+  const [fetched, setFetched] = useState(null);
+  useEffect(() => {
+    if (data) return undefined;
+    let cancelled = false;
+    import('../services/productionService').then(({ productionService }) =>
+      Promise.all([
+        productionService.getAnalytics(30),
+        productionService.getBatches({ per_page: 50 }),
+      ]).then(([analyticsPayload, batchesPayload]) => {
+        if (cancelled) return;
+        const analytics = analyticsPayload?.analytics || analyticsPayload || {};
+        const batches = batchesPayload?.batches || batchesPayload?.items || [];
+        const daily = (analytics.daily_production || []).map((row) => ({
+          date: row.date || row.day,
+          production: Number(row.production || row.output || row.total_output || 0),
+          efficiency: Number(row.efficiency || analytics.average_efficiency || 0),
+          target: Number(row.target || 0),
+        }));
+        const byType = {};
+        batches.forEach((batch) => {
+          const name = batch.paddy_variety || batch.target_rice_variety || 'Rice';
+          byType[name] = (byType[name] || 0) + Number(batch.total_output || batch.rice_output || 0);
+        });
+        const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#00C49F'];
+        setFetched({
+          dailyProduction: daily,
+          productionByType: Object.entries(byType).map(([name, value], index) => ({
+            name,
+            value,
+            color: colors[index % colors.length],
+          })).filter((row) => row.value > 0),
+          qualityTrends: [],
+        });
+      }).catch(() => {
+        if (!cancelled) setFetched({ dailyProduction: [], productionByType: [], qualityTrends: [] });
+      })
+    );
+    return () => { cancelled = true; };
+  }, [data]);
 
-  const analyticsData = data || mockData;
+  const analyticsData = data || fetched || { dailyProduction: [], productionByType: [], qualityTrends: [] };
+  const dailyRows = analyticsData.dailyProduction || [];
+  const avgEfficiency = dailyRows.length
+    ? dailyRows.reduce((sum, row) => sum + Number(row.efficiency || 0), 0) / dailyRows.length
+    : 0;
+  const avgDailyKg = dailyRows.length
+    ? dailyRows.reduce((sum, row) => sum + Number(row.production || 0), 0) / dailyRows.length
+    : 0;
+  const gradeA = (analyticsData.qualityTrends || []).length
+    ? (analyticsData.qualityTrends.reduce((sum, row) => sum + Number(row.gradeA || 0), 0) / analyticsData.qualityTrends.length)
+    : 0;
+
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', { 
@@ -101,7 +124,10 @@ const ProductionAnalytics = ({ data = null }) => {
             <Typography variant="h6" gutterBottom>
               Daily Production Trend
             </Typography>
-            <Box sx={{ height: 300 }}>
+            <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {dailyRows.length === 0 ? (
+                <Typography color="text.secondary">No records yet</Typography>
+              ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={analyticsData.dailyProduction}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -128,6 +154,7 @@ const ProductionAnalytics = ({ data = null }) => {
                   />
                 </LineChart>
               </ResponsiveContainer>
+              )}
             </Box>
           </CardContent>
         </Card>
@@ -140,7 +167,10 @@ const ProductionAnalytics = ({ data = null }) => {
             <Typography variant="h6" gutterBottom>
               Production by Type
             </Typography>
-            <Box sx={{ height: 300 }}>
+            <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {(analyticsData.productionByType || []).length === 0 ? (
+                <Typography color="text.secondary">No records yet</Typography>
+              ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -160,6 +190,7 @@ const ProductionAnalytics = ({ data = null }) => {
                   <Tooltip />
                 </PieChart>
               </ResponsiveContainer>
+              )}
             </Box>
           </CardContent>
         </Card>
@@ -172,7 +203,10 @@ const ProductionAnalytics = ({ data = null }) => {
             <Typography variant="h6" gutterBottom>
               Production Efficiency
             </Typography>
-            <Box sx={{ height: 250 }}>
+            <Box sx={{ height: 250, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {dailyRows.length === 0 ? (
+                <Typography color="text.secondary">No records yet</Typography>
+              ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={analyticsData.dailyProduction}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -180,7 +214,7 @@ const ProductionAnalytics = ({ data = null }) => {
                     dataKey="date" 
                     tickFormatter={formatDate}
                   />
-                  <YAxis domain={[70, 100]} />
+                  <YAxis domain={[0, 100]} />
                   <Tooltip content={<CustomTooltip />} />
                   <Bar 
                     dataKey="efficiency" 
@@ -189,6 +223,7 @@ const ProductionAnalytics = ({ data = null }) => {
                   />
                 </BarChart>
               </ResponsiveContainer>
+              )}
             </Box>
           </CardContent>
         </Card>
@@ -201,7 +236,10 @@ const ProductionAnalytics = ({ data = null }) => {
             <Typography variant="h6" gutterBottom>
               Quality Grade Trends
             </Typography>
-            <Box sx={{ height: 250 }}>
+            <Box sx={{ height: 250, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {(analyticsData.qualityTrends || []).length === 0 ? (
+                <Typography color="text.secondary">No records yet</Typography>
+              ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={analyticsData.qualityTrends}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -217,6 +255,7 @@ const ProductionAnalytics = ({ data = null }) => {
                   <Bar dataKey="gradeC" stackId="a" fill="#F44336" name="Grade C %" />
                 </BarChart>
               </ResponsiveContainer>
+              )}
             </Box>
           </CardContent>
         </Card>
@@ -233,45 +272,41 @@ const ProductionAnalytics = ({ data = null }) => {
               <Grid item xs={12} sm={6} md={3}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="h4" color="primary.main">
-                    87.5%
+                    {avgEfficiency.toFixed(1)}%
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Average Efficiency
                   </Typography>
-                  <Chip label="+2.3%" color="success" size="small" sx={{ mt: 1 }} />
                 </Box>
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="h4" color="success.main">
-                    4,167
+                    {Math.round(avgDailyKg).toLocaleString()}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Daily Average (kg)
                   </Typography>
-                  <Chip label="+5.2%" color="success" size="small" sx={{ mt: 1 }} />
                 </Box>
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="h4" color="info.main">
-                    72%
+                    {gradeA.toFixed(0)}%
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Grade A Production
                   </Typography>
-                  <Chip label="+7.1%" color="success" size="small" sx={{ mt: 1 }} />
                 </Box>
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="h4" color="warning.main">
-                    98.5%
+                    {dailyRows.length}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Equipment Uptime
+                    Days with production records
                   </Typography>
-                  <Chip label="-0.5%" color="warning" size="small" sx={{ mt: 1 }} />
                 </Box>
               </Grid>
             </Grid>

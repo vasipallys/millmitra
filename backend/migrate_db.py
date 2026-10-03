@@ -67,60 +67,11 @@ def migrate_database():
 def create_default_users():
     """Create default users for testing"""
     try:
-        # Check if admin user already exists
-        admin_user = User.query.filter_by(username='admin').first()
-        if not admin_user:
-            admin_user = User(
-                username='admin',
-                email='admin@ricemill.com',
-                first_name='System',
-                last_name='Administrator',
-                role='admin',
-                department='Management',
-                is_active=True,
-                is_verified=True
-            )
-            admin_user.set_password('admin123')
-            db.session.add(admin_user)
-        
-        # Create operator user
-        operator_user = User.query.filter_by(username='operator').first()
-        if not operator_user:
-            operator_user = User(
-                username='operator',
-                email='operator@ricemill.com',
-                first_name='Mill',
-                last_name='Operator',
-                role='operator',
-                department='Production',
-                is_active=True,
-                is_verified=True
-            )
-            operator_user.set_password('operator123')
-            db.session.add(operator_user)
-        
-        # Create manager user
-        manager_user = User.query.filter_by(username='manager').first()
-        if not manager_user:
-            manager_user = User(
-                username='manager',
-                email='manager@ricemill.com',
-                first_name='Production',
-                last_name='Manager',
-                role='manager',
-                department='Production',
-                is_active=True,
-                is_verified=True
-            )
-            manager_user.set_password('manager123')
-            db.session.add(manager_user)
-        
-        db.session.commit()
-        print("✅ Default users created successfully!")
-        print("   - admin@ricemill.com / admin123")
-        print("   - operator@ricemill.com / operator123")
-        print("   - manager@ricemill.com / manager123")
-        
+        from services.demo_users import ensure_demo_users
+        created = ensure_demo_users()
+        print("✅ Default users ensured (admin, manager, operator, quality).")
+        if created:
+            print(f"   Created {created} missing demo account(s).")
     except Exception as e:
         print(f"❌ Error creating default users: {e}")
         db.session.rollback()

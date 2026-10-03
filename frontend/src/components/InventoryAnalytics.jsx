@@ -25,46 +25,27 @@ import {
 } from 'recharts';
 
 const InventoryAnalytics = ({ data = null }) => {
-  // Mock data if none provided
-  const mockData = {
-    stockLevels: [
-      { category: 'Processed Rice', current: 2500, max: 5000, reorder: 500 },
-      { category: 'Raw Rice', current: 1800, max: 3000, reorder: 300 },
-      { category: 'Broken Rice', current: 150, max: 1000, reorder: 200 },
-      { category: 'Rice Bran', current: 800, max: 1500, reorder: 100 },
-      { category: 'Packaging', current: 1200, max: 2000, reorder: 400 }
-    ],
-    stockMovement: [
-      { date: '2024-01-15', inbound: 1200, outbound: 800, net: 400 },
-      { date: '2024-01-16', inbound: 800, outbound: 1100, net: -300 },
-      { date: '2024-01-17', inbound: 1500, outbound: 900, net: 600 },
-      { date: '2024-01-18', inbound: 600, outbound: 1200, net: -600 },
-      { date: '2024-01-19', inbound: 1800, outbound: 1000, net: 800 },
-      { date: '2024-01-20', inbound: 1000, outbound: 1300, net: -300 },
-      { date: '2024-01-21', inbound: 1400, outbound: 950, net: 450 }
-    ],
-    categoryDistribution: [
-      { name: 'Processed Rice', value: 45, color: '#8884d8' },
-      { name: 'Raw Rice', value: 25, color: '#82ca9d' },
-      { name: 'Broken Rice', value: 10, color: '#ffc658' },
-      { name: 'Rice Bran', value: 15, color: '#ff7300' },
-      { name: 'Packaging', value: 5, color: '#00ff88' }
-    ],
-    turnoverRates: [
-      { product: 'Basmati Rice', turnover: 8.5, status: 'excellent' },
-      { product: 'IR64 Rice', turnover: 6.2, status: 'good' },
-      { product: 'Broken Rice', turnover: 12.1, status: 'excellent' },
-      { product: 'Rice Bran', turnover: 4.8, status: 'average' },
-      { product: 'Premium Rice', turnover: 3.2, status: 'slow' }
-    ]
-  };
-
-  const live = data && (
+  const liveOverview = data && (
     typeof data.total_valuation === 'number' ||
     typeof data.paddy_count === 'number' ||
-    typeof data.low_stock_items === 'number'
+    typeof data.low_stock_items === 'number' ||
+    Array.isArray(data.stockLevels)
   );
-  const analyticsData = (!live && data?.stockLevels) ? data : mockData;
+  const analyticsData = liveOverview
+    ? {
+        stockLevels: data.stockLevels || [
+          { category: 'Paddy lots', current: data.paddy_count || 0, max: Math.max(data.paddy_count || 0, 1), reorder: 0 },
+          { category: 'Product lots', current: data.product_count || 0, max: Math.max(data.product_count || 0, 1), reorder: 0 },
+          { category: 'Low stock items', current: data.low_stock_items || 0, max: Math.max(data.low_stock_items || 0, 1), reorder: 0 },
+        ],
+        stockMovement: data.stockMovement || [],
+        categoryDistribution: data.categoryDistribution || [
+          { name: 'Paddy value', value: Number(data.paddy_valuation || 0), color: '#82ca9d' },
+          { name: 'Product value', value: Number(data.product_valuation || 0), color: '#8884d8' },
+        ].filter((row) => row.value > 0),
+        turnoverRates: data.turnoverRates || [],
+      }
+    : { stockLevels: [], stockMovement: [], categoryDistribution: [], turnoverRates: [] };
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', { 
@@ -120,7 +101,7 @@ const InventoryAnalytics = ({ data = null }) => {
 
   return (
     <Grid container spacing={3}>
-      {live && (
+      {liveOverview && (
         <>
           <Grid item xs={12} md={3}>
             <Card>
@@ -158,7 +139,6 @@ const InventoryAnalytics = ({ data = null }) => {
           </Grid>
         </>
       )}
-      {!live && (
       <>
       {/* Stock Levels Overview */}
       <Grid item xs={12} lg={8}>
@@ -167,7 +147,10 @@ const InventoryAnalytics = ({ data = null }) => {
             <Typography variant="h6" gutterBottom>
               Current Stock Levels
             </Typography>
-            <Box sx={{ height: 300 }}>
+            <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {analyticsData.stockLevels.length === 0 ? (
+                <Typography color="text.secondary">No records yet</Typography>
+              ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={analyticsData.stockLevels}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -180,6 +163,7 @@ const InventoryAnalytics = ({ data = null }) => {
                   <Bar dataKey="max" fill="#E0E0E0" name="Max Capacity" />
                 </BarChart>
               </ResponsiveContainer>
+              )}
             </Box>
           </CardContent>
         </Card>
@@ -192,7 +176,10 @@ const InventoryAnalytics = ({ data = null }) => {
             <Typography variant="h6" gutterBottom>
               Inventory Distribution
             </Typography>
-            <Box sx={{ height: 300 }}>
+            <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {analyticsData.categoryDistribution.length === 0 ? (
+                <Typography color="text.secondary">No records yet</Typography>
+              ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -212,6 +199,7 @@ const InventoryAnalytics = ({ data = null }) => {
                   <Tooltip />
                 </PieChart>
               </ResponsiveContainer>
+              )}
             </Box>
           </CardContent>
         </Card>
@@ -224,7 +212,10 @@ const InventoryAnalytics = ({ data = null }) => {
             <Typography variant="h6" gutterBottom>
               Stock Movement Trend
             </Typography>
-            <Box sx={{ height: 300 }}>
+            <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {analyticsData.stockMovement.length === 0 ? (
+                <Typography color="text.secondary">No records yet</Typography>
+              ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={analyticsData.stockMovement}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -258,6 +249,7 @@ const InventoryAnalytics = ({ data = null }) => {
                   />
                 </LineChart>
               </ResponsiveContainer>
+              )}
             </Box>
           </CardContent>
         </Card>
@@ -270,6 +262,9 @@ const InventoryAnalytics = ({ data = null }) => {
             <Typography variant="h6" gutterBottom>
               Stock Status by Category
             </Typography>
+            {analyticsData.stockLevels.length === 0 && (
+              <Typography color="text.secondary">No records yet</Typography>
+            )}
             {analyticsData.stockLevels.map((item, index) => {
               const status = getStockStatus(item.current, item.reorder, item.max);
               const percentage = (item.current / item.max) * 100;
@@ -314,6 +309,9 @@ const InventoryAnalytics = ({ data = null }) => {
             <Typography variant="h6" gutterBottom>
               Inventory Turnover Rates
             </Typography>
+            {analyticsData.turnoverRates.length === 0 && (
+              <Typography color="text.secondary">No records yet</Typography>
+            )}
             {analyticsData.turnoverRates.map((item, index) => {
               const status = getTurnoverStatus(item.turnover);
               
@@ -363,45 +361,41 @@ const InventoryAnalytics = ({ data = null }) => {
               <Grid item xs={12} sm={6} md={3}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="h4" color="primary.main">
-                    6,450
+                    {Number(data?.paddy_count || 0) + Number(data?.product_count || 0)}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Total Stock (kg)
+                    Paddy + product lots
                   </Typography>
-                  <Chip label="+3.2%" color="success" size="small" sx={{ mt: 1 }} />
                 </Box>
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="h4" color="warning.main">
-                    1
+                    {Number(data?.low_stock_items || 0)}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Low Stock Items
                   </Typography>
-                  <Chip label="Needs attention" color="warning" size="small" sx={{ mt: 1 }} />
                 </Box>
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="h4" color="success.main">
-                    7.2
+                    ₹{Number(data?.total_valuation || 0).toLocaleString()}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Avg Turnover Rate
+                    Total valuation
                   </Typography>
-                  <Chip label="Good" color="success" size="small" sx={{ mt: 1 }} />
                 </Box>
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="h4" color="info.main">
-                    78.5%
+                    ₹{Number(data?.paddy_valuation || 0).toLocaleString()}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Warehouse Utilization
+                    Paddy valuation
                   </Typography>
-                  <Chip label="Optimal" color="info" size="small" sx={{ mt: 1 }} />
                 </Box>
               </Grid>
             </Grid>
@@ -409,7 +403,6 @@ const InventoryAnalytics = ({ data = null }) => {
         </Card>
       </Grid>
       </>
-      )}
     </Grid>
   );
 };

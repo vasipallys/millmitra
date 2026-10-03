@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Grid,
@@ -6,15 +6,12 @@ import {
   CardContent,
   Typography,
   Switch,
-  FormControlLabel,
   TextField,
   Button,
-  Divider,
   List,
   ListItem,
   ListItemText,
   ListItemSecondaryAction,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -24,34 +21,8 @@ import {
   Tabs,
   Tab,
   Paper,
-  Container,
-  ListItemIcon,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Tooltip,
-  Badge
 } from '@mui/material';
 import {
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Settings as SettingsIcon,
-  Security,
-  Notifications,
-  Palette,
-  Language,
-  Storage,
-  Backup,
-  Update,
-  Info,
-  Warning,
-  Error,
-  CheckCircle,
-  Refresh,
-  Download,
-  Upload,
-  Add as AddIcon,
   Security as SecurityIcon,
   Notifications as NotificationsIcon,
   Storage as StorageIcon,
@@ -60,76 +31,105 @@ import {
 } from '@mui/icons-material';
 import api from '../services/api';
 import { getApiErrorMessage } from '../utils/apiError';
-import { downloadText } from '../utils/downloadFile';
+import { downloadBlob, filenameFromDisposition } from '../utils/downloadFile';
 import { PageHeader, PageShell } from '../components/common/PageChrome';
 
-const SETTINGS_STORAGE_KEY = 'millmitra_settings';
-
-const defaultSettings = {
+const emptySettings = {
   notifications: {
-    emailAlerts: true,
+    emailAlerts: false,
     smsAlerts: false,
+    inApp: true,
     pushNotifications: true,
     lowStockAlerts: true,
     qualityAlerts: true,
     productionAlerts: true,
   },
   ai: {
-    voiceCommands: true,
-    predictiveAnalytics: true,
+    voiceCommands: false,
+    predictiveAnalytics: false,
     autoOptimization: false,
-    smartRecommendations: true,
+    smartRecommendations: false,
+    showAiChip: false,
   },
   business: {
-    companyName: 'ABC Rice Mills',
-    gstNumber: '27AABCU9603R1ZX',
-    address: '123 Mill Street, Rice City',
-    phone: '+91 9876543210',
-    email: 'info@abcricemills.com',
+    companyName: '',
+    gstNumber: '',
+    address: '',
+    phone: '',
+    email: '',
   },
   security: {
-    twoFactorAuth: false,
     sessionTimeout: 30,
-    passwordExpiry: 90,
-    loginAttempts: 3,
+  },
+  backup: {
+    autoEnabled: false,
+    autoTime: '02:00',
+    folder: 'backups',
+    retentionDays: 30,
   },
 };
+
+const mergeSettings = (incoming) => ({
+  ...emptySettings,
+  ...(incoming || {}),
+  notifications: { ...emptySettings.notifications, ...(incoming?.notifications || {}) },
+  ai: { ...emptySettings.ai, ...(incoming?.ai || {}) },
+  business: { ...emptySettings.business, ...(incoming?.business || {}) },
+  security: { ...emptySettings.security, ...(incoming?.security || {}) },
+  backup: { ...emptySettings.backup, ...(incoming?.backup || {}) },
+});
+
+const TabPanel = ({ children, value, index }) => (
+  <div hidden={value !== index}>
+    {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+  </div>
+);
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [saveMessage, setSaveMessage] = useState('');
   const [saveError, setSaveError] = useState('');
-  const [opsNote, setOpsNote] = useState(null);
-  const [settings, setSettings] = useState(defaultSettings);
+  const [settings, setSettings] = useState(emptySettings);
+  const [meta, setMeta] = useState({
+    mail_configured: false,
+    can_edit_business: false,
+    can_manage_backup: false,
+    notification_scope: 'per_user',
+    backup: {},
+  });
+  const [dialog, setDialog] = useState(null);
+  const [draft, setDraft] = useState({});
+  const [password, setPassword] = useState({ current: '', next: '', confirm: '' });
+  const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
-        if (stored) {
-          setSettings((prev) => ({ ...prev, ...JSON.parse(stored) }));
-        }
-      } catch (err) {
-        console.warn('Could not read local settings', err);
-      }
-      try {
-        const response = await api.get('/user/mill-settings');
-        if (response.data?.settings && Object.keys(response.data.settings).length) {
-          setSettings((prev) => ({ ...prev, ...response.data.settings }));
-        }
-      } catch (err) {
-        setSaveError(getApiErrorMessage(err, 'Could not load mill settings from the server. Using this computer’s copy.'));
-      }
-    };
-    loadSettings();
-  }, []);
-
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
+  const applyPayload = (data) => {
+    if (data?.settings) {
+      setSettings(mergeSettings(data.settings));
+    }
+    setMeta((prev) => ({
+      ...prev,
+      mail_configured: Boolean(data?.mail_configured),
+      can_edit_business: Boolean(data?.can_edit_business),
+      can_manage_backup: Boolean(data?.can_manage_backup),
+      notification_scope: data?.notification_scope || 'per_user',
+      backup: data?.backup || prev.backup || {},
+    }));
   };
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const response = await api.get('/user/mill-settings');
+        applyPayload(response.data);
+      } catch (err) {
+        setSaveError(getApiErrorMessage(err, 'Could not load mill settings from the server.'));
+      }
+    };
+    load();
+  }, []);
+
   const handleSettingChange = (category, setting, value) => {
-    setSettings(prev => ({
+    setSettings((prev) => ({
       ...prev,
       [category]: {
         ...prev[category],
@@ -138,46 +138,144 @@ const Settings = () => {
     }));
   };
 
+  const tabName = ['business', 'notifications', 'ai', 'security', 'backup'][activeTab];
+
   const handleSave = async () => {
     setSaveMessage('');
     setSaveError('');
     try {
-      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+      const response = await api.put('/user/mill-settings', { tab: tabName, settings });
+      applyPayload(response.data);
+      setSaveMessage(response.data?.message || 'Settings saved');
     } catch (err) {
-      setSaveError('Could not save settings on this computer');
-      return;
-    }
-    try {
-      await api.put('/user/mill-settings', { settings });
-      setSaveMessage('Settings saved');
-    } catch (err) {
-      setSaveError(getApiErrorMessage(err, 'Saved on this computer. Could not store them on the mill server.'));
+      setSaveError(getApiErrorMessage(err, 'Could not save settings.'));
     }
   };
 
-  const TabPanel = ({ children, value, index }) => (
-    <div hidden={value !== index}>
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
-    </div>
-  );
+  const saveBackupDraft = async () => {
+    setSaveMessage('');
+    setSaveError('');
+    try {
+      const nextBackup = { ...settings.backup, ...draft };
+      const response = await api.put('/user/mill-settings', {
+        tab: 'backup',
+        settings: { backup: nextBackup },
+      });
+      applyPayload(response.data);
+      setSettings((prev) => ({ ...prev, backup: { ...prev.backup, ...nextBackup } }));
+      setDialog(null);
+      setSaveMessage('Backup settings saved');
+    } catch (err) {
+      setSaveError(getApiErrorMessage(err, 'Could not save backup settings.'));
+    }
+  };
+
+  const readBlobError = async (err) => {
+    const data = err.response?.data;
+    if (data instanceof Blob) {
+      try {
+        const parsed = JSON.parse(await data.text());
+        return parsed.message || parsed.error || 'Backup failed';
+      } catch (inner) {
+        return 'Backup failed';
+      }
+    }
+    return getApiErrorMessage(err, 'Backup failed');
+  };
+
+  const downloadResponse = (response, fallback) => {
+    const name = filenameFromDisposition(response.headers['content-disposition'], fallback);
+    downloadBlob(name, response.data);
+  };
+
+  const handleCreateBackup = async () => {
+    setSaveMessage('');
+    setSaveError('');
+    setBusy(true);
+    try {
+      if (meta.can_manage_backup) {
+        const response = await api.post('/user/backup', {}, { responseType: 'blob' });
+        downloadResponse(response, 'rice_mill_erp.db');
+        const status = await api.get('/user/backup/status');
+        applyPayload(status.data);
+        setSaveMessage('Backup saved on the mill server and downloaded to this computer.');
+      } else {
+        const response = await api.get('/user/backup/download', { responseType: 'blob' });
+        downloadResponse(response, 'rice_mill_erp_copy.db');
+        setSaveMessage('Downloaded a copy of the mill database. Server archives are admin/manager only.');
+      }
+    } catch (err) {
+      setSaveError(await readBlobError(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleCleanup = async () => {
+    setSaveMessage('');
+    setSaveError('');
+    setBusy(true);
+    try {
+      const response = await api.post('/user/backup/cleanup', {
+        retentionDays: settings.backup.retentionDays,
+      });
+      if (response.data?.backup) {
+        setMeta((prev) => ({ ...prev, backup: response.data.backup }));
+      }
+      setSaveMessage(`Cleanup finished. Removed ${response.data?.removed ?? 0} old backup file(s).`);
+    } catch (err) {
+      setSaveError(getApiErrorMessage(err, 'Cleanup failed.'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    setSaveMessage('');
+    setSaveError('');
+    if (!password.current || !password.next) {
+      setSaveError('Current password and new password are required.');
+      return;
+    }
+    if (password.next !== password.confirm) {
+      setSaveError('New password and confirmation do not match.');
+      return;
+    }
+    try {
+      const response = await api.post('/user/change-password', {
+        current_password: password.current,
+        new_password: password.next,
+      });
+      setPassword({ current: '', next: '', confirm: '' });
+      setSaveMessage(response.data?.message || 'Password changed');
+    } catch (err) {
+      setSaveError(getApiErrorMessage(err, 'Could not change password.'));
+    }
+  };
+
+  const backup = meta.backup || {};
+  const openDialog = (kind) => {
+    if (kind === 'auto') {
+      setDraft({ autoEnabled: settings.backup.autoEnabled, autoTime: settings.backup.autoTime || '02:00' });
+    } else if (kind === 'location') {
+      setDraft({ folder: settings.backup.folder || 'backups' });
+    } else {
+      setDraft({ retentionDays: settings.backup.retentionDays || 30 });
+    }
+    setDialog(kind);
+  };
 
   return (
     <PageShell>
       <PageHeader
         title="System Settings"
-        subtitle="Business info is stored on this computer and on the mill server when you are signed in"
+        subtitle="Saved values come from the mill server. Backup numbers are the SQLite file and the backups folder on this computer."
       />
       {saveMessage && <Alert severity="success" sx={{ mb: 2 }} role="status">{saveMessage}</Alert>}
       {saveError && <Alert severity="error" sx={{ mb: 2 }} role="alert">{saveError}</Alert>}
 
-      {/* Settings Tabs */}
       <Paper sx={{ mb: 3 }}>
-        <Tabs
-          value={activeTab}
-          onChange={handleTabChange}
-          variant="scrollable"
-          scrollButtons="auto"
-        >
+        <Tabs value={activeTab} onChange={(_e, value) => setActiveTab(value)} variant="scrollable" scrollButtons="auto">
           <Tab icon={<BusinessIcon />} label="Business Info" />
           <Tab icon={<NotificationsIcon />} label="Notifications" />
           <Tab icon={<AIIcon />} label="AI Features" />
@@ -186,30 +284,32 @@ const Settings = () => {
         </Tabs>
       </Paper>
 
-      {/* Business Information Tab */}
       <TabPanel value={activeTab} index={0}>
+        {!meta.can_edit_business && (
+          <Alert severity="info" sx={{ mb: 2 }}>Only admin or manager can edit mill business info.</Alert>
+        )}
         <Grid container spacing={3}>
           <Grid item xs={12} md={8}>
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Company Information
-                </Typography>
+                <Typography variant="h6" gutterBottom>Company Information</Typography>
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
                     <TextField
                       fullWidth
-                      label="Company Name"
+                      label="Mill name"
                       value={settings.business.companyName}
                       onChange={(e) => handleSettingChange('business', 'companyName', e.target.value)}
+                      disabled={!meta.can_edit_business}
                     />
                   </Grid>
                   <Grid item xs={12} md={6}>
                     <TextField
                       fullWidth
-                      label="GST Number"
+                      label="GSTIN (optional)"
                       value={settings.business.gstNumber}
                       onChange={(e) => handleSettingChange('business', 'gstNumber', e.target.value)}
+                      disabled={!meta.can_edit_business}
                     />
                   </Grid>
                   <Grid item xs={12}>
@@ -220,6 +320,7 @@ const Settings = () => {
                       rows={3}
                       value={settings.business.address}
                       onChange={(e) => handleSettingChange('business', 'address', e.target.value)}
+                      disabled={!meta.can_edit_business}
                     />
                   </Grid>
                   <Grid item xs={12} md={6}>
@@ -228,6 +329,7 @@ const Settings = () => {
                       label="Phone"
                       value={settings.business.phone}
                       onChange={(e) => handleSettingChange('business', 'phone', e.target.value)}
+                      disabled={!meta.can_edit_business}
                     />
                   </Grid>
                   <Grid item xs={12} md={6}>
@@ -237,6 +339,7 @@ const Settings = () => {
                       type="email"
                       value={settings.business.email}
                       onChange={(e) => handleSettingChange('business', 'email', e.target.value)}
+                      disabled={!meta.can_edit_business}
                     />
                   </Grid>
                 </Grid>
@@ -246,21 +349,21 @@ const Settings = () => {
           <Grid item xs={12} md={4}>
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  System Status
-                </Typography>
+                <Typography variant="h6" gutterBottom>System Status</Typography>
                 <List>
                   <ListItem>
-                    <ListItemText primary="Database" secondary="Connected" />
-                    <Chip label="Online" color="success" size="small" />
+                    <ListItemText
+                      primary="Database"
+                      secondary={backup.database_exists ? backup.database_size_label : backup.database_size_label || 'Not found'}
+                    />
+                    <Chip label={backup.database_exists ? 'Found' : 'Missing'} color={backup.database_exists ? 'success' : 'warning'} size="small" />
                   </ListItem>
                   <ListItem>
-                    <ListItemText primary="AI Services" secondary="Active" />
-                    <Chip label="Running" color="success" size="small" />
+                    <ListItemText primary="AI flags" secondary="Saved preferences only — no models are running" />
+                    <Chip label="Flags" size="small" />
                   </ListItem>
                   <ListItem>
-                    <ListItemText primary="Backup" secondary="Last: 2 hours ago" />
-                    <Chip label="OK" color="success" size="small" />
+                    <ListItemText primary="Last backup" secondary={backup.last_backup_at || 'Never'} />
                   </ListItem>
                 </List>
               </CardContent>
@@ -269,40 +372,37 @@ const Settings = () => {
         </Grid>
       </TabPanel>
 
-      {/* Notifications Tab */}
       <TabPanel value={activeTab} index={1}>
+        <Alert severity="info" sx={{ mb: 2 }}>
+          These preferences are stored for your account. In-app is the live channel.
+          {meta.can_edit_business
+            ? ' Saving as admin/manager also updates mill-wide low-stock and batch-complete writers.'
+            : ' Low-stock and batch-complete writes follow mill-wide flags set by admin or manager.'}
+        </Alert>
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Alert Preferences
-                </Typography>
+                <Typography variant="h6" gutterBottom>Channels</Typography>
                 <List>
                   <ListItem>
-                    <ListItemText primary="Email Alerts" secondary="Receive alerts via email" />
+                    <ListItemText
+                      primary="Email"
+                      secondary={meta.mail_configured ? 'Saved preference (mail server is configured)' : 'Saved preference, not sent — no mail server is configured'}
+                    />
                     <ListItemSecondaryAction>
                       <Switch
-                        checked={settings.notifications.emailAlerts}
+                        checked={Boolean(settings.notifications.emailAlerts)}
                         onChange={(e) => handleSettingChange('notifications', 'emailAlerts', e.target.checked)}
                       />
                     </ListItemSecondaryAction>
                   </ListItem>
                   <ListItem>
-                    <ListItemText primary="SMS Alerts" secondary="Receive alerts via SMS" />
+                    <ListItemText primary="In-app" secondary="Bell panel and Notifications page" />
                     <ListItemSecondaryAction>
                       <Switch
-                        checked={settings.notifications.smsAlerts}
-                        onChange={(e) => handleSettingChange('notifications', 'smsAlerts', e.target.checked)}
-                      />
-                    </ListItemSecondaryAction>
-                  </ListItem>
-                  <ListItem>
-                    <ListItemText primary="Push Notifications" secondary="Browser notifications" />
-                    <ListItemSecondaryAction>
-                      <Switch
-                        checked={settings.notifications.pushNotifications}
-                        onChange={(e) => handleSettingChange('notifications', 'pushNotifications', e.target.checked)}
+                        checked={Boolean(settings.notifications.inApp)}
+                        onChange={(e) => handleSettingChange('notifications', 'inApp', e.target.checked)}
                       />
                     </ListItemSecondaryAction>
                   </ListItem>
@@ -313,33 +413,22 @@ const Settings = () => {
           <Grid item xs={12} md={6}>
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Alert Types
-                </Typography>
+                <Typography variant="h6" gutterBottom>Event types</Typography>
                 <List>
                   <ListItem>
-                    <ListItemText primary="Low Stock Alerts" secondary="When inventory is low" />
+                    <ListItemText primary="Low stock" secondary="Skip writing a low-stock row when this mill flag is off" />
                     <ListItemSecondaryAction>
                       <Switch
-                        checked={settings.notifications.lowStockAlerts}
+                        checked={Boolean(settings.notifications.lowStockAlerts)}
                         onChange={(e) => handleSettingChange('notifications', 'lowStockAlerts', e.target.checked)}
                       />
                     </ListItemSecondaryAction>
                   </ListItem>
                   <ListItem>
-                    <ListItemText primary="Quality Alerts" secondary="Quality issues detected" />
+                    <ListItemText primary="Batch complete" secondary="Skip production-complete rows when off" />
                     <ListItemSecondaryAction>
                       <Switch
-                        checked={settings.notifications.qualityAlerts}
-                        onChange={(e) => handleSettingChange('notifications', 'qualityAlerts', e.target.checked)}
-                      />
-                    </ListItemSecondaryAction>
-                  </ListItem>
-                  <ListItem>
-                    <ListItemText primary="Production Alerts" secondary="Production milestones" />
-                    <ListItemSecondaryAction>
-                      <Switch
-                        checked={settings.notifications.productionAlerts}
+                        checked={Boolean(settings.notifications.productionAlerts)}
                         onChange={(e) => handleSettingChange('notifications', 'productionAlerts', e.target.checked)}
                       />
                     </ListItemSecondaryAction>
@@ -351,154 +440,91 @@ const Settings = () => {
         </Grid>
       </TabPanel>
 
-      {/* AI Features Tab */}
       <TabPanel value={activeTab} index={2}>
-        <Grid container spacing={3}>
-          <Grid item xs={12}>
-            <Alert severity="info" sx={{ mb: 3 }}>
-              AI features help optimize your rice mill operations through machine learning and automation.
-            </Alert>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  AI Capabilities
-                </Typography>
-                <List>
-                  <ListItem>
-                    <ListItemText 
-                      primary="Voice Commands" 
-                      secondary="Control system with voice" 
-                    />
-                    <ListItemSecondaryAction>
-                      <Switch
-                        checked={settings.ai.voiceCommands}
-                        onChange={(e) => handleSettingChange('ai', 'voiceCommands', e.target.checked)}
-                      />
-                    </ListItemSecondaryAction>
-                  </ListItem>
-                  <ListItem>
-                    <ListItemText 
-                      primary="Predictive Analytics" 
-                      secondary="Forecast demand and production" 
-                    />
-                    <ListItemSecondaryAction>
-                      <Switch
-                        checked={settings.ai.predictiveAnalytics}
-                        onChange={(e) => handleSettingChange('ai', 'predictiveAnalytics', e.target.checked)}
-                      />
-                    </ListItemSecondaryAction>
-                  </ListItem>
-                  <ListItem>
-                    <ListItemText 
-                      primary="Auto Optimization" 
-                      secondary="Automatically optimize processes" 
-                    />
-                    <ListItemSecondaryAction>
-                      <Switch
-                        checked={settings.ai.autoOptimization}
-                        onChange={(e) => handleSettingChange('ai', 'autoOptimization', e.target.checked)}
-                      />
-                    </ListItemSecondaryAction>
-                  </ListItem>
-                  <ListItem>
-                    <ListItemText 
-                      primary="Smart Recommendations" 
-                      secondary="AI-powered suggestions" 
-                    />
-                    <ListItemSecondaryAction>
-                      <Switch
-                        checked={settings.ai.smartRecommendations}
-                        onChange={(e) => handleSettingChange('ai', 'smartRecommendations', e.target.checked)}
-                      />
-                    </ListItemSecondaryAction>
-                  </ListItem>
-                </List>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  AI Performance
-                </Typography>
-                <List>
-                  <ListItem>
-                    <ListItemText primary="Model Accuracy" secondary="Production forecasting" />
-                    <Chip label="94.2%" color="success" />
-                  </ListItem>
-                  <ListItem>
-                    <ListItemText primary="Quality Detection" secondary="Defect identification" />
-                    <Chip label="97.8%" color="success" />
-                  </ListItem>
-                  <ListItem>
-                    <ListItemText primary="Demand Prediction" secondary="Sales forecasting" />
-                    <Chip label="89.5%" color="warning" />
-                  </ListItem>
-                  <ListItem>
-                    <ListItemText primary="Cost Optimization" secondary="Efficiency improvements" />
-                    <Chip label="92.1%" color="success" />
-                  </ListItem>
-                </List>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
+        <Alert severity="info" sx={{ mb: 3 }}>
+          These flags are saved. They do not start machine-learning models. The navbar chip appears only when you turn on a banner flag below.
+        </Alert>
+        <Card>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>Optional UI flags</Typography>
+            <List>
+              <ListItem>
+                <ListItemText primary="Voice commands banner" secondary="Shows the experimental mic control. Voice login is not a real sign-in method." />
+                <ListItemSecondaryAction>
+                  <Switch
+                    checked={Boolean(settings.ai.voiceCommands)}
+                    onChange={(e) => handleSettingChange('ai', 'voiceCommands', e.target.checked)}
+                  />
+                </ListItemSecondaryAction>
+              </ListItem>
+              <ListItem>
+                <ListItemText primary="Predictive analytics banner" secondary="UI only. No forecast model is running." />
+                <ListItemSecondaryAction>
+                  <Switch
+                    checked={Boolean(settings.ai.predictiveAnalytics)}
+                    onChange={(e) => handleSettingChange('ai', 'predictiveAnalytics', e.target.checked)}
+                  />
+                </ListItemSecondaryAction>
+              </ListItem>
+              <ListItem>
+                <ListItemText primary="Auto optimization" secondary="UI only. Processes are not changed automatically." />
+                <ListItemSecondaryAction>
+                  <Switch
+                    checked={Boolean(settings.ai.autoOptimization)}
+                    onChange={(e) => handleSettingChange('ai', 'autoOptimization', e.target.checked)}
+                  />
+                </ListItemSecondaryAction>
+              </ListItem>
+              <ListItem>
+                <ListItemText primary="Smart recommendations / AI Active chip" secondary="Shows the navbar chip. Insight cards stay optional." />
+                <ListItemSecondaryAction>
+                  <Switch
+                    checked={Boolean(settings.ai.smartRecommendations)}
+                    onChange={(e) => handleSettingChange('ai', 'smartRecommendations', e.target.checked)}
+                  />
+                </ListItemSecondaryAction>
+              </ListItem>
+            </List>
+          </CardContent>
+        </Card>
       </TabPanel>
 
-      {/* Security Tab */}
       <TabPanel value={activeTab} index={3}>
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Authentication
-                </Typography>
-                <List>
-                  <ListItem>
-                    <ListItemText 
-                      primary="Two-Factor Authentication" 
-                      secondary="Extra security layer" 
-                    />
-                    <ListItemSecondaryAction>
-                      <Switch
-                        checked={settings.security.twoFactorAuth}
-                        onChange={(e) => handleSettingChange('security', 'twoFactorAuth', e.target.checked)}
-                      />
-                    </ListItemSecondaryAction>
-                  </ListItem>
-                </List>
-                <Divider sx={{ my: 2 }} />
+                <Typography variant="h6" gutterBottom>Change password</Typography>
                 <Grid container spacing={2}>
                   <Grid item xs={12}>
                     <TextField
                       fullWidth
-                      label="Session Timeout (minutes)"
-                      type="number"
-                      value={settings.security.sessionTimeout}
-                      onChange={(e) => handleSettingChange('security', 'sessionTimeout', parseInt(e.target.value))}
+                      type="password"
+                      label="Current password"
+                      value={password.current}
+                      onChange={(e) => setPassword((prev) => ({ ...prev, current: e.target.value }))}
                     />
                   </Grid>
                   <Grid item xs={12}>
                     <TextField
                       fullWidth
-                      label="Password Expiry (days)"
-                      type="number"
-                      value={settings.security.passwordExpiry}
-                      onChange={(e) => handleSettingChange('security', 'passwordExpiry', parseInt(e.target.value))}
+                      type="password"
+                      label="New password"
+                      value={password.next}
+                      onChange={(e) => setPassword((prev) => ({ ...prev, next: e.target.value }))}
                     />
                   </Grid>
                   <Grid item xs={12}>
                     <TextField
                       fullWidth
-                      label="Max Login Attempts"
-                      type="number"
-                      value={settings.security.loginAttempts}
-                      onChange={(e) => handleSettingChange('security', 'loginAttempts', parseInt(e.target.value))}
+                      type="password"
+                      label="Confirm new password"
+                      value={password.confirm}
+                      onChange={(e) => setPassword((prev) => ({ ...prev, confirm: e.target.value }))}
                     />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Button variant="contained" onClick={handlePasswordChange}>Change password</Button>
                   </Grid>
                 </Grid>
               </CardContent>
@@ -507,95 +533,69 @@ const Settings = () => {
           <Grid item xs={12} md={6}>
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Security Status
-                </Typography>
-                <List>
-                  <ListItem>
-                    <ListItemText primary="SSL Certificate" secondary="Valid until Dec 2024" />
-                    <Chip label="Active" color="success" size="small" />
-                  </ListItem>
-                  <ListItem>
-                    <ListItemText primary="Firewall" secondary="All ports secured" />
-                    <Chip label="Protected" color="success" size="small" />
-                  </ListItem>
-                  <ListItem>
-                    <ListItemText primary="Data Encryption" secondary="AES-256 encryption" />
-                    <Chip label="Enabled" color="success" size="small" />
-                  </ListItem>
-                  <ListItem>
-                    <ListItemText primary="Audit Logs" secondary="All activities logged" />
-                    <Chip label="Active" color="success" size="small" />
-                  </ListItem>
-                </List>
+                <Typography variant="h6" gutterBottom>Session</Typography>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="Session timeout (minutes)"
+                  helperText="Stored preference. Sign-in tokens still last up to 24 hours unless you sign out."
+                  value={settings.security.sessionTimeout}
+                  onChange={(e) => handleSettingChange('security', 'sessionTimeout', parseInt(e.target.value, 10) || 0)}
+                  sx={{ mb: 2 }}
+                />
+                <Alert severity="info">
+                  Two-factor enrollment is not available in this deployment. The 2FA API returns 501.
+                </Alert>
               </CardContent>
             </Card>
           </Grid>
         </Grid>
       </TabPanel>
 
-      {/* Data & Backup Tab */}
       <TabPanel value={activeTab} index={4}>
+        {!meta.can_manage_backup && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            You can download a copy of the database. Saving the archive folder, schedule, and cleanup is admin/manager only.
+          </Alert>
+        )}
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Backup Settings
-                </Typography>
+                <Typography variant="h6" gutterBottom>Backup Settings</Typography>
                 <List>
                   <ListItem>
-                    <ListItemText primary="Auto Backup" secondary="Daily at 2:00 AM" />
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => setOpsNote({
-                        title: 'Auto backup',
-                        text: 'Scheduled cloud backup is not connected. Use Create Backup Now to download a settings copy on this computer.',
-                      })}
-                    >
+                    <ListItemText
+                      primary="Auto backup"
+                      secondary={settings.backup.autoEnabled
+                        ? `Enabled daily at ${settings.backup.autoTime} while Flask is running`
+                        : 'Off — no backup is pretended when the server is stopped'}
+                    />
+                    <Button variant="outlined" size="small" disabled={!meta.can_manage_backup} onClick={() => openDialog('auto')}>
                       Configure
                     </Button>
                   </ListItem>
                   <ListItem>
-                    <ListItemText primary="Backup Location" secondary="This computer (download)" />
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => setOpsNote({
-                        title: 'Backup location',
-                        text: 'Backups download as millmitra-settings.json. There is no remote vault in this build.',
-                      })}
-                    >
+                    <ListItemText
+                      primary="Backup location"
+                      secondary={`This computer → instance/${settings.backup.folder || 'backups'}`}
+                    />
+                    <Button variant="outlined" size="small" disabled={!meta.can_manage_backup} onClick={() => openDialog('location')}>
                       Change
                     </Button>
                   </ListItem>
                   <ListItem>
-                    <ListItemText primary="Retention Period" secondary="Keep local copies you download" />
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => setOpsNote({
-                        title: 'Retention',
-                        text: 'MillMitra does not delete or rotate downloaded backups. Keep or discard the JSON files yourself.',
-                      })}
-                    >
+                    <ListItemText
+                      primary="Retention"
+                      secondary={`Keep files ${settings.backup.retentionDays || 30} days, then delete on Run Now or the daily job`}
+                    />
+                    <Button variant="outlined" size="small" disabled={!meta.can_manage_backup} onClick={() => openDialog('retention')}>
                       Modify
                     </Button>
                   </ListItem>
                 </List>
                 <Box sx={{ mt: 2 }}>
-                  <Button
-                    variant="contained"
-                    fullWidth
-                    onClick={() => {
-                      downloadText('millmitra-settings.json', JSON.stringify(settings, null, 2), 'application/json');
-                      setOpsNote({
-                        title: 'Backup created',
-                        text: 'Settings were downloaded to this computer. Database backup is not wired.',
-                      });
-                    }}
-                  >
+                  <Button variant="contained" fullWidth disabled={busy} onClick={handleCreateBackup}>
                     Create Backup Now
                   </Button>
                 </Box>
@@ -605,28 +605,34 @@ const Settings = () => {
           <Grid item xs={12} md={6}>
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Data Management
-                </Typography>
+                <Typography variant="h6" gutterBottom>Data Management</Typography>
                 <List>
                   <ListItem>
-                    <ListItemText primary="Database Size" secondary="2.4 GB" />
-                    <Chip label="Normal" color="success" size="small" />
+                    <ListItemText
+                      primary="Database size"
+                      secondary={backup.database_exists
+                        ? `${backup.database_size_label} (${backup.database_path})`
+                        : `Not found${backup.database_path ? ` at ${backup.database_path}` : ''}`}
+                    />
+                    <Chip label={backup.database_exists ? 'SQLite' : 'Missing'} size="small" color={backup.database_exists ? 'success' : 'warning'} />
                   </ListItem>
                   <ListItem>
-                    <ListItemText primary="Storage Used" secondary="45% of 10 GB" />
-                    <Chip label="OK" color="success" size="small" />
+                    <ListItemText
+                      primary="Backups folder"
+                      secondary={`${backup.backups_size_label || '0 bytes'} in ${backup.backups_folder || 'instance/backups'}`}
+                    />
                   </ListItem>
+                  {backup.disk_free_label && (
+                    <ListItem>
+                      <ListItemText
+                        primary="This computer's free space"
+                        secondary={backup.disk_free_label}
+                      />
+                    </ListItem>
+                  )}
                   <ListItem>
-                    <ListItemText primary="Last Cleanup" secondary="3 days ago" />
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => setOpsNote({
-                        title: 'Cleanup',
-                        text: 'No server cleanup job is connected. Unused demo records stay until you delete them on the mill pages.',
-                      })}
-                    >
+                    <ListItemText primary="Last cleanup" secondary={backup.last_cleanup_label || 'Never'} />
+                    <Button variant="outlined" size="small" disabled={!meta.can_manage_backup || busy} onClick={handleCleanup}>
                       Run Now
                     </Button>
                   </ListItem>
@@ -637,20 +643,61 @@ const Settings = () => {
         </Grid>
       </TabPanel>
 
-      {/* Save Button */}
       <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
         <Button variant="contained" size="large" onClick={handleSave}>
           Save Settings
         </Button>
       </Box>
 
-      <Dialog open={Boolean(opsNote)} onClose={() => setOpsNote(null)} maxWidth="sm" fullWidth>
-        <DialogTitle>{opsNote?.title}</DialogTitle>
+      <Dialog open={Boolean(dialog)} onClose={() => setDialog(null)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          {dialog === 'auto' && 'Auto backup'}
+          {dialog === 'location' && 'Backup location'}
+          {dialog === 'retention' && 'Retention'}
+        </DialogTitle>
         <DialogContent>
-          <Typography sx={{ mt: 1 }}>{opsNote?.text}</Typography>
+          {dialog === 'auto' && (
+            <Box sx={{ pt: 1 }}>
+              <Switch
+                checked={Boolean(draft.autoEnabled)}
+                onChange={(e) => setDraft((prev) => ({ ...prev, autoEnabled: e.target.checked }))}
+              />
+              {' '}Enabled
+              <TextField
+                fullWidth
+                type="time"
+                label="Local time"
+                value={draft.autoTime || '02:00'}
+                onChange={(e) => setDraft((prev) => ({ ...prev, autoTime: e.target.value }))}
+                sx={{ mt: 2 }}
+                helperText="Runs once a day at this time only while Flask is running."
+              />
+            </Box>
+          )}
+          {dialog === 'location' && (
+            <TextField
+              fullWidth
+              sx={{ mt: 1 }}
+              label="Folder under instance/"
+              value={draft.folder || 'backups'}
+              onChange={(e) => setDraft((prev) => ({ ...prev, folder: e.target.value }))}
+              helperText="Relative folder only, for example backups. System paths are rejected."
+            />
+          )}
+          {dialog === 'retention' && (
+            <TextField
+              fullWidth
+              sx={{ mt: 1 }}
+              type="number"
+              label="Keep backups (days)"
+              value={draft.retentionDays || 30}
+              onChange={(e) => setDraft((prev) => ({ ...prev, retentionDays: parseInt(e.target.value, 10) || 1 }))}
+            />
+          )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpsNote(null)}>Close</Button>
+          <Button onClick={() => setDialog(null)}>Cancel</Button>
+          <Button variant="contained" onClick={saveBackupDraft}>Save</Button>
         </DialogActions>
       </Dialog>
     </PageShell>

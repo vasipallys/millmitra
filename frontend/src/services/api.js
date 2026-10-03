@@ -36,6 +36,10 @@ api.interceptors.response.use(
       error.userMessage = data.error_id
         ? `${data.message} (ref ${data.error_id})`
         : data.message;
+    } else if (typeof data?.error === 'string' && data.error.trim()) {
+      error.userMessage = data.error;
+    } else if (error.response?.status === 401 && isAuthCall) {
+      error.userMessage = 'Username or password is not recognized';
     } else if (!error.response) {
       error.userMessage = 'Cannot reach the mill server. Confirm it is running on port 5000.';
     } else {

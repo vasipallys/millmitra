@@ -208,7 +208,6 @@ const QualityControl = () => {
       quality_score: 88.0,
       moisture_content: 12.4,
       broken_percentage: 4.1,
-      foreign_matter: 0.3,
       variety: selectedVariety,
       batch_id: batchId || 'preview',
       grain_analysis: { broken_percentage: 4.1, average_length: 6.8 },

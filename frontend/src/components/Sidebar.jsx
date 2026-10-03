@@ -12,6 +12,10 @@ import {
   Divider,
   Chip,
 } from '@mui/material';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import SecurityIcon from '@mui/icons-material/Security';
+import { useI18n } from '../i18n/I18nContext';
+import { can } from '../utils/permissions';
 import {
   Dashboard as DashboardIcon,
   Agriculture as FarmersIcon,
@@ -26,91 +30,38 @@ import {
   HighQuality as QualityIcon,
   PsychologyAlt as FinancialIntelligenceIcon,
   Gavel as ComplianceIcon,
+  AccountTree as MillFlowIcon,
 } from '@mui/icons-material';
 
 const drawerWidth = 240;
 
 const coreMenuItems = [
-  {
-    text: 'Dashboard',
-    icon: <DashboardIcon />,
-    path: '/dashboard',
-    description: 'Overview & Analytics'
-  },
-  {
-    text: 'Farmers',
-    icon: <FarmersIcon />,
-    path: '/farmers',
-    description: 'Farmer Management'
-  },
-  {
-    text: 'Inventory',
-    icon: <InventoryIcon />,
-    path: '/inventory',
-    description: 'Stock Management'
-  },
-  {
-    text: 'Production',
-    icon: <ProductionIcon />,
-    path: '/production',
-    description: 'Mill Operations'
-  },
-  {
-    text: 'Sales',
-    icon: <SalesIcon />,
-    path: '/sales',
-    description: 'Sales & Orders'
-  },
-  {
-    text: 'Finance',
-    icon: <FinanceIcon />,
-    path: '/finance',
-    description: 'Financial Management'
-  },
-  {
-    text: 'Customers',
-    icon: <CustomersIcon />,
-    path: '/customers',
-    description: 'Customer Relations'
-  },
-  {
-    text: 'Settings',
-    icon: <SettingsIcon />,
-    path: '/settings',
-    description: 'System Configuration'
-  },
+  { textKey: 'dashboard', descKey: 'navDashboard', icon: <DashboardIcon />, path: '/dashboard', permission: 'dashboard' },
+  { textKey: 'millFlow', descKey: 'navMillFlow', icon: <MillFlowIcon />, path: '/mill-flow', permission: 'mill_flow' },
+  { textKey: 'farmers', descKey: 'navFarmers', icon: <FarmersIcon />, path: '/farmers', permission: 'farmers' },
+  { textKey: 'inventory', descKey: 'navInventory', icon: <InventoryIcon />, path: '/inventory', permission: 'inventory' },
+  { textKey: 'production', descKey: 'navProduction', icon: <ProductionIcon />, path: '/production', permission: 'production' },
+  { textKey: 'sales', descKey: 'navSales', icon: <SalesIcon />, path: '/sales', permission: 'sales' },
+  { textKey: 'finance', descKey: 'navFinance', icon: <FinanceIcon />, path: '/finance', permission: 'finance' },
+  { textKey: 'customers', descKey: 'navCustomers', icon: <CustomersIcon />, path: '/customers', permission: 'customers' },
+  { textKey: 'settings', descKey: 'navSettings', icon: <SettingsIcon />, path: '/settings', permission: 'settings' },
+  { textKey: 'users', descKey: 'navUsers', icon: <AdminPanelSettingsIcon />, path: '/users', permission: 'users' },
+  { textKey: 'access', descKey: 'navAccess', icon: <SecurityIcon />, path: '/access', permission: 'users' },
 ];
 
 const previewMenuItems = [
-  {
-    text: 'Analytics',
-    icon: <AnalyticsIcon />,
-    path: '/analytics',
-    description: 'Mill records'
-  },
-  {
-    text: 'Quality Control',
-    icon: <QualityIcon />,
-    path: '/quality-control',
-    description: 'Live tests'
-  },
-  {
-    text: 'Financial Intelligence',
-    icon: <FinancialIntelligenceIcon />,
-    path: '/financial-intelligence',
-    description: 'Invoices & aging'
-  },
-  {
-    text: 'Compliance & GST',
-    icon: <ComplianceIcon />,
-    path: '/compliance-gst',
-    description: 'Invoice GST preview'
-  },
+  { textKey: 'analytics', descKey: 'navDashboard', icon: <AnalyticsIcon />, path: '/analytics', permission: 'preview' },
+  { textKey: 'qualityControl', descKey: 'navProduction', icon: <QualityIcon />, path: '/quality-control', permission: 'quality' },
+  { textKey: 'financialIntelligence', descKey: 'navFinance', icon: <FinancialIntelligenceIcon />, path: '/financial-intelligence', permission: 'preview' },
+  { textKey: 'complianceGst', descKey: 'navFinance', icon: <ComplianceIcon />, path: '/compliance-gst', permission: 'preview' },
 ];
 
 const Sidebar = ({ open, onClose, user }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useI18n();
+  const visibleCore = coreMenuItems.filter((item) => can(user, item.permission));
+  const visiblePreview = previewMenuItems.filter((item) => can(user, item.permission));
 
   const handleNavigation = (path) => {
     navigate(path);
@@ -141,7 +92,7 @@ const Sidebar = ({ open, onClose, user }) => {
       {/* User Info */}
       <Box sx={{ p: 2, bgcolor: 'grey.50' }}>
         <Typography variant="subtitle2" color="text.primary">
-          Welcome, {user?.username || 'User'}
+          {t('welcome')}, {user?.username || 'User'}
         </Typography>
         <Chip 
           label={user?.role || 'Operator'} 
@@ -157,8 +108,8 @@ const Sidebar = ({ open, onClose, user }) => {
       {/* Navigation Menu */}
       <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
         <List sx={{ pt: 1 }}>
-          {coreMenuItems.map((item) => (
-            <ListItem key={item.text} disablePadding>
+          {visibleCore.map((item) => (
+            <ListItem key={item.path} disablePadding>
               <ListItemButton
                 onClick={() => handleNavigation(item.path)}
                 selected={isActive(item.path)}
@@ -190,8 +141,8 @@ const Sidebar = ({ open, onClose, user }) => {
                   {item.icon}
                 </ListItemIcon>
                 <ListItemText
-                  primary={item.text}
-                  secondary={item.description}
+                  primary={t(item.textKey)}
+                  secondary={t(item.descKey)}
                   primaryTypographyProps={{
                     fontSize: '0.9rem',
                     fontWeight: isActive(item.path) ? 600 : 400,
@@ -205,13 +156,15 @@ const Sidebar = ({ open, onClose, user }) => {
             </ListItem>
           ))}
         </List>
+        {visiblePreview.length > 0 && (
+        <>
         <Divider sx={{ my: 1 }} />
         <Typography variant="caption" color="text.secondary" sx={{ px: 2 }}>
-          Preview · mill records by default
+          {t('previewGroup')}
         </Typography>
         <List dense>
-          {previewMenuItems.map((item) => (
-            <ListItem key={item.text} disablePadding>
+          {visiblePreview.map((item) => (
+            <ListItem key={item.path} disablePadding>
               <ListItemButton
                 onClick={() => handleNavigation(item.path)}
                 selected={isActive(item.path)}
@@ -221,8 +174,8 @@ const Sidebar = ({ open, onClose, user }) => {
                   {item.icon}
                 </ListItemIcon>
                 <ListItemText
-                  primary={item.text}
-                  secondary={item.description}
+                  primary={t(item.textKey)}
+                  secondary={t(item.descKey)}
                   primaryTypographyProps={{ fontSize: '0.85rem' }}
                   secondaryTypographyProps={{ fontSize: '0.7rem' }}
                 />
@@ -230,6 +183,8 @@ const Sidebar = ({ open, onClose, user }) => {
             </ListItem>
           ))}
         </List>
+        </>
+        )}
       </Box>
 
       {/* AI Status */}

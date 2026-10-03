@@ -37,25 +37,20 @@ Without one system, remaining paddy, rice output, and outstanding bills drift ap
 
 ## 3. Who uses it
 
-Anyone with a login can open every sidebar item. A few actions are role-gated (for example **Approve/Verify** on a farmer).
+Each login has **one role**. The sidebar hides modules the role cannot use. The mill server enforces the same matrix on mutating APIs and on finance/user reads. Admin **Users** (`/users`) and **Access** (`/access`) manage accounts and the stored permission grid.
 
-| Role at the mill | Typical MillMitra use | Role stored on the account |
+| Role at the mill | Typical MillMitra use | Account |
 | --- | --- | --- |
-| Owner / mill manager | Dashboard, farmer verification, stock and money review | `admin` or `manager` |
-| Gate / office staff | Register farmer, record procurement, add stock, customers, invoices, payments | `admin`, `manager`, or `operator` |
-| Floor operator | New batch, Start Batch, Pause/Resume, Mark Complete | `operator` |
-| Lab / quality | **Quality Test** on a production batch (not the Preview Quality Control page) | any login; use Production |
-| Sales / accounts | Customers, **Sales → New Order**, Finance invoices and payments | any login |
+| Owner | All modules, user admin, Access matrix | `admin` / `admin123` |
+| Mill manager | Operations + finance; no user admin | `manager` / `manager123` |
+| Floor operator | Mill flow, farmers, inventory, production | `operator` / `operator123` |
+| Lab / quality | Production view + quality tests; Quality Control page | `quality` / `quality123` (`quality_control`) |
+| Sales | Customers, **Sales → New Order**, invoices | `sales` / `sales123` |
+| Accounts | Finance, invoices, payments; customers read | `accountant` / `accountant123` |
 
-After `python migrate_db.py`, these accounts exist if they were not already created:
+These accounts are created on app startup if missing (existing passwords are not reset). Emails such as `admin@ricemill.com` also work. Change these passwords on a real mill PC.
 
-| Username | Typical password | Role |
-| --- | --- | --- |
-| `admin` | `admin123` | admin |
-| `manager` | `manager123` | manager |
-| `operator` | `operator123` | operator |
-
-You can also sign in with the matching email (for example `admin@ricemill.com`). Change these passwords on a real mill PC.
+Language: English, Hindi, Telugu on the login card and navbar (`localStorage` `millmitra.language`).
 
 ---
 
@@ -82,6 +77,22 @@ Product stock (milled rice)
                               ▼
                          Dashboard
 ```
+
+### 4.0 Mill flow (guided)
+
+Office and floor staff can run the same live chain from **Mill flow** (`/mill-flow`, sidebar **Mill flow** / **Run the mill**) instead of jumping across five modules.
+
+The start page shows a **Suggested next step** from mill records (paddy, open batches, product stock, unpaid invoices). It is a fixed rule, not a language model.
+
+| Step | What it records | Live APIs |
+| --- | --- | --- |
+| Receive paddy | Farmer if needed + paddy lot | `POST /farmer/register`, `POST /inventory/paddy` |
+| Start batch | Planned batch then start (deducts paddy) | `POST /production/batches`, `POST /production/batches/:id/start` |
+| Quality & complete | Optional lab numbers; rice kg → product stock | `POST /production/quality-tests`, `POST /production/batches/:id/complete` |
+| Sell | Customer if needed + sales order | `POST /sales/customers`, `POST /sales/orders` |
+| Invoice & pay | Invoice lines + payment | `POST /finance/invoices`, `POST /finance/payments` |
+
+Quality may be skipped. Stock rules are the same as Inventory / Production / Finance: starting a batch deducts paddy; completing with rice kg increases product stock; invoices still require a customer and matching product lines.
 
 ### 4.1 Farmer procurement
 
@@ -175,13 +186,13 @@ Cards **Total Revenue**, **Total Expenses**, **Net Profit**, **Outstanding Recei
 4. When money arrives: **Record Payment**.
 5. **Logout** on a shared PC (avatar → **Logout**).
 
-Skip Preview sidebar items for operational numbers.
+For official numbers stay on Dashboard, Mill flow, Inventory, Production, Sales, and Finance. Preview pages open on **mill records**; use **View sample** only for a demonstration.
 
 ---
 
 ## 6. What is live vs preview / sample
 
-The sidebar splits **core** items from a **Preview** group (chip **Sample**).
+The sidebar splits **core** items from a **Preview** group. Preview pages default to **live mill records**. Use **View sample** / **View actual** on that page if you need a demonstration. There is no “Sample-only by default” chip.
 
 | Screen / feature | Status | Use for mill-of-record? |
 | --- | --- | --- |
@@ -193,11 +204,11 @@ The sidebar splits **core** items from a **Preview** group (chip **Sample**).
 | Customers (add, list, orders) | Live | Yes |
 | Finance (invoices, payments, summary, aging) | Live | Yes (operational, not statutory) |
 | Settings (business info, save) | Live (browser + server mill-settings) | Yes for mill name/GST/address you type |
-| Analytics (sidebar) | Preview / sample charts | No |
-| Quality Control (sidebar) | Preview camera / sample tests | No — use Production Quality Test |
-| Financial Intelligence | Preview | No — use Finance |
+| Analytics (sidebar) | Preview; mill records by default | Operational lists still on Dashboard / Finance |
+| Quality Control (sidebar) | Preview camera / tests; mill records by default | Official lab tests: Production Quality Test |
+| Financial Intelligence | Preview; mill records by default | Official money: Finance |
 | Compliance & GST | Preview; does not file GST | No |
-| Analytics reporting (`/analytics-reporting`) | Not in sidebar; treat as sample unless you confirm figures | No by default |
+| Analytics reporting (`/analytics-reporting`) | Not in sidebar; same live/sample toggle | No by default |
 | Quotations / leads | Not enabled (API returns not implemented) | No |
 | Voice and Biometric login tabs | Experimental | No — use **Password** |
 | Voice microphone / floating voice control | Optional, not required | No |
@@ -247,7 +258,7 @@ Quantities are **kg**. Money is **₹**.
 - **Older databases** may miss farmer/contract columns; lists often still work.
 - **Login Voice / Biometric** are not for daily use.
 - **AI banners** (typo suggestions, insights) are optional; empty or wrong ones do not block save/load.
-- **Sidebar does not hide by role.** Training matters more than the menu list.
+- **Roles hide the sidebar and the API.** Training still matters; do not share the admin password.
 - Change default passwords if this mill is in real use.
 
 ---

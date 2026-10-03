@@ -134,6 +134,8 @@ def add_paddy():
         )
         db.session.add(stock)
         db.session.commit()
+        from services.notification_service import paddy_stock_added
+        paddy_stock_added(stock)
         return jsonify({
             'success': True,
             'stock': stock.to_dict(),
@@ -540,6 +542,9 @@ def create_transaction():
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
+    if movement_type == 'out' and stock_kind == 'product':
+        from services.notification_service import notify_low_product_stock
+        notify_low_product_stock(stock)
     return jsonify({
         'success': True,
         'transaction': movement.to_dict(),

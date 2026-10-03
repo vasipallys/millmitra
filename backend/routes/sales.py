@@ -272,6 +272,8 @@ def create_sales_order():
     db.session.add(order)
     customer.update_business_metrics(order.total_amount)
     db.session.commit()
+    from services.notification_service import sales_order_created
+    sales_order_created(order, customer)
 
     return jsonify({
         'success': True,
