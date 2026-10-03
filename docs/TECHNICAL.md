@@ -186,6 +186,7 @@ Prefix `/api` unless noted. JWT required except login, username suggest, OTP ver
 
 | Method | Path | Purpose |
 | --- | --- | --- |
+| POST | `/extract-id` | Multipart image → `{ fields, notes }`. JWT + farmers. Does not create a farmer or store the image. OCR optional (`pytesseract` + Tesseract binary) |
 | POST | `/register` | Create farmer (name, phone, village, district, state required) |
 | GET | `/list` | List farmers |
 | GET | `/<id>` | Farmer detail |

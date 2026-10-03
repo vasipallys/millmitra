@@ -32,6 +32,7 @@ import { can, storedUser } from '../utils/permissions';
 import { PageHeader, PageLoading, PageShell } from '../components/common/PageChrome';
 import { useI18n } from '../i18n/I18nContext';
 import LookupSelect from '../components/common/LookupSelect';
+import IdDocumentCapture from '../components/farmer/IdDocumentCapture';
 import { useLookup } from '../hooks/useLookup';
 import {
   isOpenBatch,
@@ -708,6 +709,20 @@ const ReceiveStep = ({
         </Grid>
       ) : (
         <>
+          <Grid item xs={12}>
+            <IdDocumentCapture
+              onExtracted={(mapped) => {
+                setNewFarmer((current) => ({
+                  ...current,
+                  name: mapped.name || current.name,
+                  phone: mapped.phone || current.phone,
+                  village: mapped.village || current.village,
+                  district: mapped.district || current.district,
+                  state: mapped.state || current.state,
+                }));
+              }}
+            />
+          </Grid>
           <Grid item xs={12} sm={6}>
             <TextField fullWidth required label={t('farmerName')} value={newFarmer.name} onChange={(e) => setNewFarmer({ ...newFarmer, name: e.target.value })} />
           </Grid>

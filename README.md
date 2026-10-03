@@ -173,8 +173,8 @@ Browser spans (`millmitra-web`) and Flask spans (`millmitra-api`) share one W3C 
 Jaeger / collector on the standard OTLP HTTP port: `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318`. Turn off: `OTEL_ENABLED=false` and `VITE_OTEL_ENABLED=false`.
 
 ```powershell
-pip install arize-phoenix
-phoenix serve
+# Use backend\venv arize-phoenix 20.19.0 (`.\venv\Scripts\phoenix.exe serve`); 12.x with FastAPI 0.100 crashes on idp_name FieldInfo.
+.\venv\Scripts\phoenix.exe serve
 ```
 
 Open http://127.0.0.1:6006. Restart Flask (`cd backend` then `.\venv\Scripts\python.exe app.py`) and Vite. Sign in as `admin` / `admin123`. In Phoenix look for a `millmitra-web` HTTP span for `/auth/login` whose child is `millmitra-api` `POST /api/auth/login`. Mill flow saves chain the same way (browser parent, Flask child). A down collector must not 500 login.

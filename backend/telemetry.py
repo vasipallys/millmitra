@@ -15,6 +15,7 @@ DEFAULT_SERVICE = 'millmitra-api'
 _PROVIDER = None
 _SQLA_INSTRUMENTED = False
 _EXPORT_WARNED = False
+_PROXY_WARNED = False
 _PROXY_HITS = defaultdict(deque)
 _PROXY_LIMIT = 60
 _PROXY_WINDOW_SEC = 60.0
@@ -230,21 +231,57 @@ def _register_proxy(app):
             return ('', 429)
         if not otel_enabled(app):
             return ('', 204)
+        target = _traces_url(otel_endpoint(app))
         try:
             import requests
             body = request.get_data(cache=False) or b''
             if len(body) > 1_000_000:
                 return ('', 413)
-            content_type = request.content_type or 'application/json'
-            target = _traces_url(otel_endpoint(app))
+            incoming = request.headers.get('Content-Type') or request.content_type or ''
+            if 'protobuf' in incoming.lower():
+                content_type = 'application/x-protobuf'
+            elif incoming.startswith('application/json'):
+                content_type = incoming
+            else:
+                # Browser OTLP HTTP exporter sends JSON; Phoenix accepts JSON or protobuf.
+                content_type = 'application/json'
             forwarded = requests.post(
                 target,
                 data=body,
-                headers={'Content-Type': content_type},
+                headers={
+                    'Content-Type': content_type,
+                    'Accept': request.headers.get('Accept') or '*/*',
+                },
                 timeout=3,
             )
+            if forwarded.status_code >= 400:
+                _log_proxy_issue(
+                    'collector_rejected status=%s url=%s content_type=%s',
+                    forwarded.status_code,
+                    target,
+                    content_type,
+                )
             status = forwarded.status_code if forwarded.status_code < 500 else 202
             return ('', status)
-        except Exception:
-            logger.warning('otel_proxy_forward_failed')
+        except (OSError, ConnectionError) as exc:
+            _log_proxy_issue(
+                'collector unreachable at %s (%s). start with `phoenix serve`',
+                target,
+                type(exc).__name__,
+            )
             return ('', 202)
+        except Exception as exc:
+            _log_proxy_issue(
+                'collector unreachable at %s (%s). start with `phoenix serve`',
+                target,
+                type(exc).__name__,
+            )
+            return ('', 202)
+
+
+def _log_proxy_issue(message, *args):
+    global _PROXY_WARNED
+    if _PROXY_WARNED:
+        return
+    logger.warning(message, *args)
+    _PROXY_WARNED = True

@@ -11,6 +11,7 @@ import { useToastNotifications } from '../../hooks/useToastNotifications';
 import ValidationErrorDisplay, { useValidation } from '../common/ValidationErrorDisplay';
 import { useI18n } from '../../i18n/I18nContext';
 import LookupSelect from '../common/LookupSelect';
+import IdDocumentCapture from './IdDocumentCapture';
 
 const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
   const { t } = useI18n();
@@ -526,6 +527,21 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
           warnings={validation.warnings}
           title={t('valFormTitle')}
           onClose={() => validation.clearAll()}
+        />
+
+        <IdDocumentCapture
+          onExtracted={(mapped) => {
+            const next = { ...formik.values, ...mapped };
+            if (mapped.surveyNumber) {
+              const note = `Survey/passbook: ${mapped.surveyNumber}`;
+              next.notes = formik.values.notes && !formik.values.notes.includes(note)
+                ? `${formik.values.notes}\n${note}`
+                : (formik.values.notes || note);
+              delete next.surveyNumber;
+            }
+            delete next.address;
+            formik.setValues(next);
+          }}
         />
 
         <Box sx={{ mb: 3 }}>

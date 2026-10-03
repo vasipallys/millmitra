@@ -1,6 +1,16 @@
 import api from './api';
 
 export const farmerService = {
+  extractId: async (file) => {
+    const form = new FormData();
+    form.append('image', file);
+    const response = await api.post('/farmer/extract-id', form, {
+      timeout: 60000,
+      headers: { 'Content-Type': undefined },
+    });
+    return response.data;
+  },
+
   // Farmer registration and management
   registerFarmer: async (farmerData) => {
     const response = await api.post('/farmer/register', farmerData);

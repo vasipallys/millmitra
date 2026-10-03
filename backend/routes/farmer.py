@@ -20,6 +20,41 @@ except ImportError:
     farmer_service = None
     ai_farmer = None
 
+@farmer_bp.route('/extract-id', methods=['POST'])
+@jwt_required()
+def extract_farmer_id():
+    """Fill farmer form fields from an ID photo. Does not create a farmer or store the image."""
+    user = current_user()
+    if not user:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    upload = request.files.get('image') or request.files.get('file')
+    if upload is None:
+        return jsonify({
+            'success': False,
+            'fields': {},
+            'extracted': {},
+            'notes': 'Choose a JPG, PNG, or WebP image.',
+            'message': 'Choose a JPG, PNG, or WebP image.',
+        }), 400
+    from services.id_extract_service import (
+        MAX_IMAGE_BYTES,
+        extract_id_document,
+        filename_allowed,
+    )
+    if not filename_allowed(upload.filename, upload.mimetype):
+        return jsonify({
+            'success': False,
+            'fields': {},
+            'extracted': {},
+            'notes': 'Use a JPG, PNG, or WebP image.',
+            'message': 'Use a JPG, PNG, or WebP image.',
+        }), 400
+    payload = upload.read(MAX_IMAGE_BYTES + 1)
+    result = extract_id_document(payload, filename=upload.filename or '')
+    status = 200 if result.get('success', True) else 400
+    return jsonify(result), status
+
+
 @farmer_bp.route('/register', methods=['POST'])
 @jwt_required()
 def register_farmer():

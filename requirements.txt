@@ -59,7 +59,6 @@ en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_
 # --------------------------
 openai
 google-generativeai
-google-cloud-aiplatform
 google-cloud-storage
 langchain
 langchain-community
