@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { farmerService } from '../services/farmerService';
 import { useToastNotifications } from '../hooks/useToastNotifications';
 import RegisterFarmerDialog from '../components/farmer/RegisterFarmerDialog';
+import { metadataService } from '../services/metadataService';
 import FarmerEditRequestsDialog from '../components/farmer/FarmerEditRequestsDialog';
 import CreateContractDialog from '../components/farmer/CreateContractDialog';
 import RecordProcurementDialog from '../components/farmer/RecordProcurementDialog';
@@ -135,7 +136,15 @@ const Farmers = () => {
   );
 
   // Mutations
-  const registerFarmerMutation = useMutation(farmerService.registerFarmer, {
+  const registerFarmerMutation = useMutation(async (payload) => {
+    const { custom_fields, ...rest } = payload || {};
+    const data = await farmerService.registerFarmer(rest);
+    const recordId = data.farmer?.id;
+    if (recordId && custom_fields && Object.keys(custom_fields).length) {
+      await metadataService.saveValues('farmer', recordId, custom_fields);
+    }
+    return data;
+  }, {
     onSuccess: (data) => {
       queryClient.invalidateQueries('farmers');
       setRegisterDialogOpen(false);

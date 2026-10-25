@@ -13,6 +13,11 @@ from models.gst_filing import GstFilingRecord  # noqa: F401
 from models.saved_report import SavedReport  # noqa: F401
 from models.lookup import LookupOption  # noqa: F401
 from models.tenant import Tenant, TenantMembership  # noqa: F401
+from models.metadata import (  # noqa: F401
+    CustomFieldValue, DashboardLayout, EntityDefinition, FieldDefinition,
+    FormLayout, MetadataRecord, TranslatedText, ViewDefinition,
+)
+from models.iiot import Device, Discrepancy, IiotAudit, MachineTelemetry  # noqa: F401
 
 # Import all blueprints
 from routes.auth import auth_bp
@@ -22,8 +27,6 @@ from routes.quality_vision import quality_vision_bp
 from routes.financial_intelligence import financial_intelligence_bp
 from routes.compliance_gst import compliance_gst_bp
 from routes.analytics_reporting import analytics_reporting_bp
-from routes.farmer import farmer_bp
-from routes.inventory import inventory_bp
 from routes.production import production_bp
 from routes.sales import sales_bp
 from routes.finance import finance_bp
@@ -66,9 +69,6 @@ def create_app(config_overrides=None):
     app.register_blueprint(financial_intelligence_bp, url_prefix='/api/financial-intelligence')
     app.register_blueprint(compliance_gst_bp, url_prefix='/api/compliance/gst')
     app.register_blueprint(analytics_reporting_bp, url_prefix='/api/analytics/reporting')
-    # Farmer routes enabled
-    app.register_blueprint(farmer_bp, url_prefix='/api/farmer')
-    app.register_blueprint(inventory_bp, url_prefix='/api/inventory')
     app.register_blueprint(production_bp, url_prefix='/api/production')
     app.register_blueprint(sales_bp, url_prefix='/api/sales')
     app.register_blueprint(finance_bp, url_prefix='/api/finance')
@@ -85,6 +85,24 @@ def create_app(config_overrides=None):
     app.register_blueprint(lookups_bp, url_prefix='/api')
     app.register_blueprint(tenants_bp, url_prefix='/api')
     app.register_blueprint(grok_bp, url_prefix='/api/ai')
+
+    from kernel.events import BUS, KafkaAdapter, RedisStreamsAdapter
+    from kernel.registry import boot_kernel
+    from kernel.tenant_router import register_tenant_router
+    boot_kernel(app)
+    register_tenant_router(app)
+    kafka_servers = app.config.get('KAFKA_BOOTSTRAP_SERVERS')
+    if kafka_servers:
+        try:
+            BUS.use(KafkaAdapter(kafka_servers))
+        except Exception:
+            app.logger.info('event_bus_kafka_unavailable')
+    redis_url = app.config.get('REDIS_URL')
+    if redis_url and not kafka_servers:
+        try:
+            BUS.use(RedisStreamsAdapter(redis_url))
+        except Exception:
+            app.logger.info('event_bus_redis_unavailable')
 
     from telemetry import init_telemetry
     from observability import init_observability
@@ -112,6 +130,8 @@ def create_app(config_overrides=None):
             ensure_user_memberships(ensure_default_tenant())
             ensure_role_permissions()
             ensure_lookup_options()
+            from services.iiot_service import ensure_demo_device
+            ensure_demo_device(ensure_default_tenant())
         except Exception:
             app.logger.exception('startup_schema_failed')
             try:
@@ -120,7 +140,9 @@ def create_app(config_overrides=None):
                 pass
         if not app.config.get('TESTING'):
             from services.mill_settings_service import start_backup_scheduler
+            from services.iiot_mqtt import start_mqtt_subscriber
             start_backup_scheduler(app)
+            start_mqtt_subscriber(app)
 
     return app
 

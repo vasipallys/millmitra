@@ -26,7 +26,7 @@ This guide is for mill operators, managers, and office staff. It describes MillM
 13. [Sales](#13-sales)
 14. [Finance: invoices and payments](#14-finance-invoices-and-payments)
 15. [Analytics](#15-analytics)
-16. [Other screens](#16-other-screens)
+16. [Other screens](#16-other-screens) (IIoT, Form builder, Dashboard builder, Dynamic forms)
 17. [Common tasks](#17-common-tasks)
 18. [Field meanings and validation](#18-field-meanings-and-validation)
 19. [Typical mill day](#19-typical-mill-day)
@@ -811,6 +811,26 @@ You can type company name, GST number, address, and similar fields and click **S
 ### 16.5 Notifications
 
 The bell lists in-app notices. You can open the full **Notifications** page from the top bar flow. Categories may include farmers, payments, quality, inventory, and production, depending on what the mill has generated.
+
+### 16.6 IIoT
+
+Sidebar **IIoT** (`/iiot`). Admin, manager, and operator can open it. You see devices, latest readings, a **Manual entry** form (reason required), and discrepancies. If a manual value is far from the sensor for the same metric, a discrepancy opens. **Resolve** needs the reconciliation permission (admin/manager).
+
+Offline: if the network drops, manual rows queue on this computer. The **Sync queued** button and going back online send them. The count on the button is the queue.
+
+Demo without hardware: from `backend/` run `python scripts/simulate_telemetry.py` (HTTP ingest, no MQTT broker required).
+
+### 16.7 Form builder
+
+Sidebar **Form builder** (`/form-builder`). Needs the **metadata** permission (admin, and manager by default). Pick farmer / customer / product, add fields (type, labels in English / Hindi / Telugu, required, lookup group), reorder, **Save**. Those fields appear as **Custom fields** on Register Farmer and Add Customer.
+
+### 16.8 Dashboard builder
+
+Sidebar **Dashboard builder** (`/dashboard-builder`). Add, remove, or reorder live dashboard widgets and sizes. The same layout is used when you click **Customize** on the Dashboard.
+
+### 16.9 Dynamic forms
+
+`/forms/:entity` (sidebar **Dynamic forms** opens `/forms/inspection`) lists and creates records for a metadata-defined entity. Any signed-in user with Dashboard access can open it. This is not a replacement for Farmers / Customers (those stay Formik). Use it for extra tenant-defined lists. Records stay on the signed-in mill.
 
 ---
 

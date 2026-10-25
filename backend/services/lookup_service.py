@@ -373,6 +373,19 @@ def group_is_locked(group_key):
     return group_key in LOCKED_GROUPS
 
 
+def _sync_lookup_translations(row):
+    try:
+        from kernel.translations import upsert_text
+        upsert_text('lookup', row.id, 'label', 'en', row.label_en)
+        if row.label_hi:
+            upsert_text('lookup', row.id, 'label', 'hi', row.label_hi)
+        if row.label_te:
+            upsert_text('lookup', row.id, 'label', 'te', row.label_te)
+        db.session.commit()
+    except Exception:
+        pass
+
+
 def create_option(data):
     group_key = str(data.get('group_key') or '').strip()
     value = str(data.get('value') or '').strip()
@@ -396,6 +409,7 @@ def create_option(data):
     )
     db.session.add(row)
     db.session.commit()
+    _sync_lookup_translations(row)
     return row, None
 
 
@@ -421,6 +435,7 @@ def update_option(row, data):
             return None, 'That value already exists in this list'
         row.value = new_value
     db.session.commit()
+    _sync_lookup_translations(row)
     return row, None
 
 

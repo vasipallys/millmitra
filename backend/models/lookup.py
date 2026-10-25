@@ -25,16 +25,30 @@ class LookupOption(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def to_public(self):
+        labels = {
+            'en': self.label_en or self.value,
+            'hi': self.label_hi or self.label_en or self.value,
+            'te': self.label_te or self.label_en or self.value,
+        }
+        label = self.label_en
+        try:
+            from flask import has_request_context, request
+            from kernel.translations import get_text
+            lang = 'en'
+            if has_request_context():
+                lang = (request.args.get('lang') or 'en')[:8]
+            text = get_text('lookup', self.id, 'label', lang)
+            if text:
+                label = text
+                labels[lang] = text
+        except Exception:
+            pass
         return {
             'id': self.id,
             'group_key': self.group_key,
             'value': self.value,
-            'label': self.label_en,
-            'labels': {
-                'en': self.label_en or self.value,
-                'hi': self.label_hi or self.label_en or self.value,
-                'te': self.label_te or self.label_en or self.value,
-            },
+            'label': label,
+            'labels': labels,
             'sort_order': self.sort_order,
             'is_active': bool(self.is_active),
             'is_locked': bool(self.is_locked),

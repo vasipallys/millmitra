@@ -156,7 +156,7 @@ const Navbar = ({ onMenuClick, onLogout, user, onUserChange }) => {
           color="inherit"
           aria-label="menu"
           onClick={onMenuClick}
-          sx={{ mr: 2 }}
+          sx={{ me: 2 }}
         >
           <MenuIcon />
         </IconButton>

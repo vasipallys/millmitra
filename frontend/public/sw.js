@@ -238,13 +238,14 @@ async function cacheFirstStrategy(request) {
 }
 
 self.addEventListener('sync', (event) => {
-  if (event.tag === 'background-sync') {
+  if (event.tag === 'background-sync' || event.tag === 'mm-iiot-manual') {
     event.waitUntil(syncOfflineData());
   }
 });
 
 async function syncOfflineData() {
-  return undefined;
+  const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+  windows.forEach((client) => client.postMessage({ type: 'MM_SYNC_IIOT' }));
 }
 
 self.addEventListener('push', (event) => {

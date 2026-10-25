@@ -19,6 +19,9 @@ PERMISSIONS = (
     'users',
     'lookups',
     'preview',
+    'metadata',
+    'iiot',
+    'reconciliation',
 )
 
 ROLES = (
@@ -33,7 +36,7 @@ ROLES = (
 DEFAULT_MATRIX = {
     'admin': list(PERMISSIONS),
     'manager': [p for p in PERMISSIONS if p not in ('users', 'lookups')],
-    'operator': ['dashboard', 'mill_flow', 'farmers', 'inventory', 'production', 'settings'],
+    'operator': ['dashboard', 'mill_flow', 'farmers', 'inventory', 'production', 'settings', 'iiot'],
     'quality_control': ['dashboard', 'production', 'quality', 'settings'],
     'quality_controller': ['dashboard', 'production', 'quality', 'settings'],
     'sales': ['dashboard', 'customers', 'sales', 'finance', 'settings'],
@@ -49,6 +52,7 @@ PUBLIC_PREFIXES = (
     '/api/auth/voice-login',
     '/api/auth/biometric-login',
     '/api/telemetry',
+    '/api/iiot/ingest',
 )
 
 SENSITIVE_READ = {
@@ -206,6 +210,28 @@ def permission_for_path(path, method):
         return 'lookups'
     if path.startswith('/api/lookups'):
         return 'lookups' if write else None
+    if path.startswith('/api/metadata'):
+        read_ok = (
+            '/values/' in path
+            or '/forms/' in path
+            or '/records/' in path
+            or path.endswith('/entities')
+            or path.endswith('/fields')
+            or path.endswith('/views')
+            or path.endswith('/dashboard-layout')
+            or '/dashboard-layout' in path
+        )
+        if not write:
+            return None
+        if '/values/' in path or '/records/' in path or '/dashboard-layout' in path:
+            return None
+        if read_ok and not write:
+            return None
+        return 'metadata'
+    if path.startswith('/api/iiot'):
+        if '/discrepan' in path or '/reconcil' in path:
+            return 'reconciliation' if write else 'iiot'
+        return 'iiot'
     if path.startswith('/api/tenants') or path.startswith('/api/telemetry') or path.startswith('/api/ai'):
         return None
     if path.startswith('/api/auth/me') or path.startswith('/api/auth/logout') or path.startswith('/api/notifications'):

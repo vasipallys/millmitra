@@ -304,11 +304,23 @@ class ProductStock(db.Model):
         
         return recommendations
 
+    def _translated_description(self):
+        try:
+            from flask import has_request_context, request
+            from kernel.translations import get_text
+            lang = 'en'
+            if has_request_context():
+                lang = (request.args.get('lang') or 'en')[:8]
+            return get_text('product', self.id, 'description', lang) or self.product_name
+        except Exception:
+            return self.product_name
+
     def to_dict(self):
         return {
             'id': self.id,
             'product_id': self.product_id,
             'product_name': self.product_name,
+            'description': self._translated_description(),
             'product_type': self.product_type,
             'variety': self.variety,
             'grade': self.grade,

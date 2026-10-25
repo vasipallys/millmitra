@@ -8,6 +8,7 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { useI18n } from '../../i18n/I18nContext';
 import LookupSelect from '../common/LookupSelect';
+import CustomFieldsSection from '../metadata/CustomFieldsSection';
 
 const validationSchema = Yup.object({
   name: Yup.string().required('Customer name is required'),
@@ -19,6 +20,7 @@ const validationSchema = Yup.object({
 
 const CreateCustomerDialog = ({ open, onClose, onSubmit }) => {
   const { t } = useI18n();
+  const [customValues, setCustomValues] = useState({});
   const [aiAnalysis, setAiAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -42,7 +44,7 @@ const CreateCustomerDialog = ({ open, onClose, onSubmit }) => {
     onSubmit: async (values) => {
       try {
         setLoading(true);
-        const result = await onSubmit(values);
+        const result = await onSubmit({ ...values, custom_fields: customValues });
         setAiAnalysis(result.ai_analysis);
         if (result.success) {
           handleClose();
@@ -287,6 +289,7 @@ const CreateCustomerDialog = ({ open, onClose, onSubmit }) => {
               />
             </Grid>
           </Grid>
+          <CustomFieldsSection entity="customer" values={customValues} onChange={setCustomValues} />
         </DialogContent>
         
         <DialogActions>

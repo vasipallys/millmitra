@@ -53,6 +53,10 @@ python-multipart==0.0.12
 
 # Optional local services (app already falls back if Redis is down)
 redis==5.2.0
+# MQTT client — subscriber starts only when MQTT_BROKER_URL is set
+paho-mqtt>=2.1.0
+# Kafka adapter — lazy-imported; app starts without it. Optional: pip install kafka-python-ng
+# kafka-python-ng>=2.2.2
 APScheduler==3.11.0
 psutil>=6.1.0
 

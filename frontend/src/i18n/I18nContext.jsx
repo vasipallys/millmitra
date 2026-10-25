@@ -1,10 +1,11 @@
-import { createContext, useContext, useMemo, useState } from 'react';
-import { LOCALES, translations } from './translations';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { LOCALES, localeDir, translations } from './translations';
 
 const STORAGE_KEY = 'millmitra.language';
 
 const I18nContext = createContext({
   locale: 'en',
+  dir: 'ltr',
   setLocale: () => {},
   t: (key) => key,
   roleLabel: (role) => role || '',
@@ -35,8 +36,17 @@ export function I18nProvider({ children }) {
     }
   };
 
+  const dir = localeDir(locale);
+
+  useEffect(() => {
+    document.documentElement.lang = locale;
+    document.documentElement.dir = dir;
+    document.body.dir = dir;
+  }, [locale, dir]);
+
   const value = useMemo(() => ({
     locale,
+    dir,
     setLocale,
     locales: LOCALES,
     t: (key, vars) => {
@@ -58,7 +68,7 @@ export function I18nProvider({ children }) {
       const key = `status_${String(status).toLowerCase()}`;
       return translations[locale]?.[key] || translations.en[key] || String(status).replace(/_/g, ' ');
     },
-  }), [locale]);
+  }), [locale, dir]);
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }

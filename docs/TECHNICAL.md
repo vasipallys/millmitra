@@ -323,6 +323,24 @@ Slug rule (`services/tenant_service.py`): normalized lower-case `[a-z0-9-]+`, mu
 
 Requests log `method`, `path`, `status`, `duration_ms`, and `request_id` (no passwords or tokens). Unexpected 500s return `{ success: false, message, error_id }` and log the traceback.
 
+### Metadata (`/api/metadata`, permission `metadata` for writes)
+
+Kernel-registered. Tenant-scoped entity/field/form/custom-value/translation/dashboard-layout APIs. Custom fields attach to `farmer`, `customer`, `product` by `record_id`. Standalone metadata records: `GET/POST /api/metadata/records/<entity>` (JWT + tenant; used by `/forms/:entity`). Form-layout writes need `metadata`; record and custom-value writes are JWT + tenant so operators can save custom fields.
+
+### IIoT (`/api/iiot`)
+
+| Method | Path | Auth | Purpose |
+| --- | --- | --- | --- |
+| GET | `/devices`, `/readings`, `/discrepancies` | JWT + `iiot` | Devices, latest rows, discrepancies |
+| POST | `/devices` | JWT + `iiot` | Register a device (returns token) |
+| POST | `/ingest` | **device token** (`X-Device-Token`) | Edge/gateway reading. No JWT. |
+| POST | `/manual` | JWT + `iiot` | Manual reading with `reason` |
+| POST | `/discrepancies/<id>/resolve` | JWT + `reconciliation` | Supervisor resolve |
+
+MQTT subscriber starts only if `MQTT_BROKER_URL` is set. Event bus is in-process; Redis Streams if `REDIS_URL` is set; Kafka if `KAFKA_BOOTSTRAP_SERVERS` is set (`kafka-python-ng` / `kafka-python`, lazy import). The Kafka adapter is unit-tested with a fake producer; **it is not integration-tested without a broker**. Device tokens are never returned from `GET /devices` and are compared with `hmac.compare_digest`. Simulator: `backend/scripts/simulate_telemetry.py`. Postgres smoke (not run here): `backend/scripts/check_tenant_db.py`. Tailwind coexist (`tw-` prefix, preflight off) is scoped to new composable pages only.
+
+Farmer and inventory blueprints are registered by `backend/modules/*/plugin.py` through `kernel.registry.boot_kernel`. URLs stay `/api/farmer` and `/api/inventory`.
+
 Registered but **not** mill-of-record: biometric, quality-vision, financial-intelligence, compliance/gst, analytics/reporting, supply-chain, logistics, compliance, quality (standards), session extras. Preview UI may call them; they must not be treated as source of truth.
 
 ---

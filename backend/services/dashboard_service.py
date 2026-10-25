@@ -284,6 +284,18 @@ class SmartDashboardService:
             'dashboard': preferences
         })
         user.set_preferences(current_prefs)
+        try:
+            import json
+            from models.metadata import DashboardLayout
+            from services.tenant_scope import stamp_tenant, tq
+            widgets = preferences.get('widgets') if isinstance(preferences, dict) else preferences
+            row = tq(DashboardLayout).filter_by(user_id=user.id).first()
+            if row is None:
+                row = stamp_tenant(DashboardLayout(user_id=user.id))
+                db.session.add(row)
+            row.widgets_json = json.dumps(widgets if widgets is not None else [])
+        except Exception:
+            pass
         db.session.commit()
     
     # Helper methods

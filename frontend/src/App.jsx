@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { useI18n } from './i18n/I18nContext';
+import RtlCache from './i18n/RtlCache';
 import { CssBaseline, Box, CircularProgress, Typography } from '@mui/material';
 import { QueryClient, QueryClientProvider } from 'react-query';
 
@@ -32,6 +34,10 @@ import MillFlow from './pages/MillFlow';
 import Users from './pages/Users';
 import Access from './pages/Access';
 import Lookups from './pages/Lookups';
+import Iiot from './pages/Iiot';
+import FormBuilder from './pages/FormBuilder';
+import DashboardBuilder from './pages/DashboardBuilder';
+import DynamicEntity from './pages/DynamicEntity';
 import RequireAccess from './components/RequireAccess';
 import { permissionForPath } from './utils/permissions';
 
@@ -39,8 +45,7 @@ import { permissionForPath } from './utils/permissions';
 import { authService } from './services/authService';
 import { recordNavigation } from './telemetry';
 
-// Create theme
-const theme = createTheme({
+const themeOptions = {
   palette: {
     primary: {
       main: '#2E7D32', // Green for rice/agriculture theme
@@ -108,7 +113,7 @@ const theme = createTheme({
       },
     },
   },
-});
+};
 
 // Create QueryClient instance
 const queryClient = new QueryClient({
@@ -140,6 +145,8 @@ function App() {
 }
 
 function AppContent() {
+  const { dir, t } = useI18n();
+  const directedTheme = createTheme({ ...themeOptions, direction: dir });
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -192,7 +199,8 @@ function AppContent() {
 
   if (loading) {
     return (
-      <ThemeProvider theme={theme}>
+      <RtlCache dir={dir}>
+      <ThemeProvider theme={directedTheme}>
         <CssBaseline />
         <Box
           display="flex"
@@ -207,24 +215,28 @@ function AppContent() {
         >
           <CircularProgress />
           <Typography variant="body2" color="text.secondary">
-            Opening MillMitra…
+            {t('openingApp')}
           </Typography>
         </Box>
       </ThemeProvider>
+      </RtlCache>
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <ThemeProvider theme={theme}>
+      <RtlCache dir={dir}>
+      <ThemeProvider theme={directedTheme}>
         <CssBaseline />
         <Login onLogin={handleLogin} />
       </ThemeProvider>
+      </RtlCache>
     );
   }
 
   return (
-    <ThemeProvider theme={theme}>
+    <RtlCache dir={dir}>
+    <ThemeProvider theme={directedTheme}>
       <CssBaseline />
       <AssistantProvider>
       <Box sx={{ display: 'flex', minHeight: '100vh' }}>
@@ -282,6 +294,10 @@ function AppContent() {
               <Route path="/users" element={<Guard user={user}><Users currentUser={user} /></Guard>} />
               <Route path="/access" element={<Guard user={user}><Access /></Guard>} />
               <Route path="/lookups" element={<Guard user={user}><Lookups /></Guard>} />
+              <Route path="/iiot" element={<Guard user={user}><Iiot /></Guard>} />
+              <Route path="/form-builder" element={<Guard user={user}><FormBuilder /></Guard>} />
+              <Route path="/dashboard-builder" element={<Guard user={user}><DashboardBuilder /></Guard>} />
+              <Route path="/forms/:entity" element={<Guard user={user}><DynamicEntity /></Guard>} />
             </Routes>
           </Box>
         </Box>
@@ -291,6 +307,7 @@ function AppContent() {
       </Box>
       </AssistantProvider>
     </ThemeProvider>
+    </RtlCache>
   );
 }
 

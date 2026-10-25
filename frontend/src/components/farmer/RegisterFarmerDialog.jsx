@@ -13,10 +13,12 @@ import { useI18n } from '../../i18n/I18nContext';
 import LookupSelect from '../common/LookupSelect';
 import IdDocumentCapture, { mapExtractedFields } from './IdDocumentCapture';
 import { useAssistantFill } from '../../assistant/AssistantBridge';
+import CustomFieldsSection from '../metadata/CustomFieldsSection';
 
 const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
   const { t } = useI18n();
   const [activeStep, setActiveStep] = useState(0);
+  const [customValues, setCustomValues] = useState({});
   const [aiVerification, setAiVerification] = useState(null);
   const toast = useToastNotifications();
   const validation = useValidation();
@@ -162,7 +164,8 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
           ...values,
           village: values.village || 'Not Specified',
           district: values.district || 'Not Specified',
-          state: values.state || 'Not Specified'
+          state: values.state || 'Not Specified',
+          custom_fields: customValues,
         };
 
         console.log('Submitting farmer registration:', submissionData);
@@ -578,6 +581,9 @@ const RegisterFarmerDialog = ({ open, onClose, onSubmit, loading = false }) => {
 
         <form onSubmit={formik.handleSubmit}>
           {renderStepContent(activeStep)}
+          {activeStep === steps.length - 1 && (
+            <CustomFieldsSection entity="farmer" values={customValues} onChange={setCustomValues} />
+          )}
         </form>
       </DialogContent>
 

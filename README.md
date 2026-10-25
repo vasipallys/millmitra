@@ -183,6 +183,27 @@ More in [docs/TECHNICAL.md](docs/TECHNICAL.md#11-opentelemetry).
 
 ---
 
+## Composable ERP (kernel, metadata, IIoT)
+
+MillMitra now has a plugin kernel plus metadata and IIoT modules. Flask + MUI are unchanged. See:
+
+- [docs/COMPOSABLE_ERP_PHASE1.md](docs/COMPOSABLE_ERP_PHASE1.md) — gap assessment
+- [docs/COMPOSABLE_ERP_PHASE2.md](docs/COMPOSABLE_ERP_PHASE2.md) — locked stack
+- [docs/COMPOSABLE_ERP_PHASES_3_5.md](docs/COMPOSABLE_ERP_PHASES_3_5.md) — what was built, env vars, simulator, remaining limits
+
+Sidebar **IIoT** (`/iiot`) is for device readings and manual entry. **Form builder** (`/form-builder`) is admin/metadata. **Dashboard builder** (`/dashboard-builder`) saves widget layout. **Dynamic forms** (`/forms/:entity`) is tenant-scoped record entry (existing mill forms stay Formik). Restart Flask after pulling these changes so `/api/iiot` and `/api/metadata` exist.
+
+Language **اردو** sets `document.dir=rtl` and switches the MUI Emotion RTL cache so Sidebar/Navbar mirror. Optional Kafka: set `KAFKA_BOOTSTRAP_SERVERS` (lazy `kafka-python-ng`; app starts without it).
+
+Optional telemetry simulator (HTTP ingest, no Mosquitto required):
+
+```powershell
+cd D:\GenAi\millmitra\backend
+.\venv\Scripts\python.exe scripts\simulate_telemetry.py
+```
+
+---
+
 ## Verify (engineers)
 
 ```powershell
@@ -194,7 +215,7 @@ npm run test:e2e
 
 ```powershell
 cd backend
-.\venv\Scripts\python.exe -c "from app import create_app; create_app(); print('ok')"
+.\venv\Scripts\python.exe -m unittest discover -s tests -p "test_*.py"
 ```
 
 ---

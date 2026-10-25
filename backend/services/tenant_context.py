@@ -129,6 +129,11 @@ def bind_tenant(user, path=''):
     g.tenant = tenant
     g.membership = membership
     g.tenant_role = membership.role
+    try:
+        from kernel.tenant_router import ROUTER
+        ROUTER.bind_request(tenant)
+    except Exception:
+        pass
     return None
 
 
@@ -137,3 +142,36 @@ def issue_tenant_claims(user, tenant_id):
     if not membership:
         return None
     return {'tenant_id': membership.tenant_id}
+
+
+class TenantContext:
+    """Request-scoped mill identity on Flask `g`."""
+
+    @property
+    def tenant_id(self):
+        return current_tenant_id()
+
+    @property
+    def tenant(self):
+        return current_tenant()
+
+    @property
+    def membership(self):
+        return current_membership()
+
+    @property
+    def role(self):
+        return current_tenant_role()
+
+    def bind(self, user, path=''):
+        error = bind_tenant(user, path)
+        if error is None and current_tenant() is not None:
+            try:
+                from kernel.tenant_router import ROUTER
+                ROUTER.bind_request(current_tenant())
+            except Exception:
+                pass
+        return error
+
+
+CTX = TenantContext()

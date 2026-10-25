@@ -22,6 +22,8 @@ import InteractionDialog from '../components/InteractionDialog';
 import { getApiErrorMessage } from '../utils/apiError';
 import { PageHeader, PageShell, QueryErrorAlert } from '../components/common/PageChrome';
 import LookupSelect, { LookupFilterSelect } from '../components/common/LookupSelect';
+import CustomFieldsSection from '../components/metadata/CustomFieldsSection';
+import { metadataService } from '../services/metadataService';
 
 const Customers = () => {
   const { t } = useI18n();
@@ -56,7 +58,15 @@ const Customers = () => {
   // Mutations
   const [actionError, setActionError] = useState('');
 
-  const createCustomerMutation = useMutation(customerService.createCustomer, {
+  const createCustomerMutation = useMutation(async (payload) => {
+    const { custom_fields, ...rest } = payload || {};
+    const data = await customerService.createCustomer(rest);
+    const recordId = data.customer?.id || data.id;
+    if (recordId && custom_fields && Object.keys(custom_fields).length) {
+      await metadataService.saveValues('customer', recordId, custom_fields);
+    }
+    return data;
+  }, {
     onSuccess: () => {
       queryClient.invalidateQueries('customers');
       setAddCustomerOpen(false);
@@ -391,10 +401,11 @@ const emptyCustomerForm = () => ({
 const AddCustomerForm = ({ onSubmit, loading, onCancel }) => {
   const { t } = useI18n();
   const [formData, setFormData] = useState(emptyCustomerForm);
+  const [customValues, setCustomValues] = useState({});
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    onSubmit({ ...formData, custom_fields: customValues });
   };
 
   const handleChange = (field) => (e) => {
@@ -509,6 +520,7 @@ const AddCustomerForm = ({ onSubmit, loading, onCancel }) => {
           />
         </Grid>
       </Grid>
+      <CustomFieldsSection entity="customer" values={customValues} onChange={setCustomValues} />
       <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
         <Button type="button" onClick={onCancel} disabled={loading}>
           {t('cancel')}

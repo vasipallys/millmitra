@@ -63,6 +63,14 @@ def create_notification(
         link=link,
         created_at=datetime.utcnow(),
     )
+    from services.tenant_scope import stamp_tenant
+    stamp_tenant(row)
+    if not getattr(row, 'tenant_id', None):
+        from models.tenant import Tenant
+        from services.tenant_migration import DEFAULT_SLUG
+        default = Tenant.query.filter_by(slug=DEFAULT_SLUG).first()
+        if default:
+            row.tenant_id = default.id
     db.session.add(row)
     db.session.commit()
     publish(row.to_dict(), owner_id=row.user_id)

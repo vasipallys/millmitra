@@ -10,6 +10,7 @@ import {
   Settings, Refresh, Insights
 } from '@mui/icons-material';
 import { dashboardService } from '../services/dashboardService';
+import { metadataService } from '../services/metadataService';
 import { farmerService } from '../services/farmerService';
 import { inventoryService } from '../services/inventoryService';
 import { productionService } from '../services/productionService';
@@ -61,6 +62,12 @@ const Dashboard = () => {
     { refetchInterval: 60000 }
   );
 
+  const { data: savedLayout } = useQuery(
+    'dashboard-layout',
+    () => metadataService.getDashboardLayout(),
+    { retry: false }
+  );
+
   const { data: insights } = useQuery(
     'dashboard-insights',
     () => dashboardService.getInsights(),
@@ -88,6 +95,21 @@ const Dashboard = () => {
     () => productionService.getBatches({ per_page: 20 }),
     { enabled: can(user, 'production'), retry: false }
   );
+
+  const visibleWidgets = useMemo(() => {
+    const live = widgets?.widgets || [];
+    const saved = savedLayout?.layout?.widgets || [];
+    if (!saved.length) return live;
+    const order = saved.map((item) => (typeof item === 'string' ? item : item.id));
+    const sizes = Object.fromEntries(saved.map((item) => (
+      typeof item === 'string' ? [item, 6] : [item.id, item.size || 6]
+    )));
+    const filtered = order
+      .map((id) => live.find((widget) => widget.id === id))
+      .filter(Boolean)
+      .map((widget) => ({ ...widget, size: sizes[widget.id] || widget.size || 6 }));
+    return filtered.length ? filtered : live;
+  }, [widgets, savedLayout]);
 
   const nextAction = useMemo(() => {
     const farmers = unwrapList(farmersPayload, ['farmers', 'items']);
@@ -134,7 +156,8 @@ const Dashboard = () => {
     }));
     const list = fromApi.length ? fromApi : DEFAULT_WIDGETS;
     setAvailableWidgets(list);
-    setSelectedWidgets(list.map((widget) => widget.id));
+    const savedIds = (savedLayout?.layout?.widgets || []).map((item) => (typeof item === 'string' ? item : item.id));
+    setSelectedWidgets(savedIds.length ? savedIds : list.map((widget) => widget.id));
     setCustomizeError('');
     setCustomizeOpen(true);
   };
@@ -143,9 +166,14 @@ const Dashboard = () => {
     setCustomizeSaving(true);
     setCustomizeError('');
     try {
-      await dashboardService.saveCustomization({ widgets: selectedWidgets });
+      const persisted = selectedWidgets.map((id) => ({ id, size: 6 }));
+      await Promise.all([
+        dashboardService.saveCustomization({ widgets: selectedWidgets }),
+        metadataService.saveDashboardLayout(persisted),
+      ]);
       setCustomizeOpen(false);
       queryClient.invalidateQueries('dashboard-widgets');
+      queryClient.invalidateQueries('dashboard-layout');
     } catch (err) {
       setCustomizeError(getApiErrorMessage(err, 'Could not save dashboard layout'));
     } finally {
@@ -266,14 +294,14 @@ const Dashboard = () => {
 
       {/* Smart Widgets */}
       <Grid container spacing={3}>
-        {(!widgets?.widgets || widgets.widgets.length === 0) && (
+        {(!visibleWidgets || visibleWidgets.length === 0) && (
           <Grid item xs={12}>
             <Alert severity="info">
-              No widgets yet. Production, inventory, and sales data will appear here as you use the mill.
+              {t('noWidgetsYet')}
             </Alert>
           </Grid>
         )}
-        {widgets?.widgets?.map((widget, index) => (
+        {visibleWidgets.map((widget, index) => (
           <Grid item xs={12} md={widget.size || 6} key={widget.id}>
             <SmartWidget widget={widget} />
           </Grid>

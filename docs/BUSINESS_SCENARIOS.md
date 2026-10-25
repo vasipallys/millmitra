@@ -127,6 +127,24 @@ E2E that covers the automated prefix: `mill-flow.spec.js` (receive), `farmer.spe
 - **Must never happen:** A still-valid token in `localStorage` that reopens the mill on refresh without a password.
 - **Playwright:** `e2e/logout.spec.js`
 
+### 11. IIoT manual entry and offline queue
+
+- **Who:** Operator or admin on `/iiot`.
+- **Goal:** Record a lab/manual reading with a reason; queue it if offline.
+- **Steps:** Sign in as admin → IIoT → value + reason → Save. Optionally DevTools Offline then Save, then Sync queued.
+- **Expected:** A `manual` reading appears. If it differs from a recent sensor value beyond tolerance, a discrepancy row opens. Offline rows increment the queued count and do not double-submit after reconnect.
+- **Must never happen:** Device list showing tokens; ingest with mill A’s token writing mill B’s device id; operator resolving discrepancies.
+- **Playwright:** `e2e/iiot.spec.js`
+
+### 12. Custom fields and form builder
+
+- **Who:** Admin (metadata).
+- **Goal:** Add a tenant field and see it on farmer registration / dynamic forms.
+- **Steps:** Form builder → add field → Save. Open Register Farmer last step or `/forms/farmer`.
+- **Expected:** **Form layout saved**. Custom fields section renders. Dynamic form save creates a tenant-scoped record.
+- **Must never happen:** Another mill seeing or overwriting this layout.
+- **Playwright:** `e2e/form-builder.spec.js`, `e2e/dynamic-form.spec.js`
+
 ---
 
 ## Roles at a glance (default mill)
@@ -158,5 +176,9 @@ Cross-tenant rule for every scenario: records (farmers, stock, lookups, invoices
 | `frontend/e2e/farmer.spec.js` | 8 |
 | `frontend/e2e/sales.spec.js` | 9 |
 | `frontend/e2e/logout.spec.js` | 10 |
+| `frontend/e2e/iiot.spec.js` | 11 |
+| `frontend/e2e/form-builder.spec.js` | 12 |
+| `frontend/e2e/dynamic-form.spec.js` | 12 |
+| `frontend/e2e/dashboard-mui-stable.spec.js` | Tailwind coexist / MUI font check |
 | `frontend/e2e/helpers/auth.js` | Login helper / API session (no secrets beyond demo accounts) |
 | `frontend/e2e/global-setup.js` | Fail fast if UI or API is down |

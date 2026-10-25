@@ -36,6 +36,18 @@ TENANT_TABLES = (
     'gst_filing_records',
     'saved_reports',
     'role_permissions',
+    'entity_definitions',
+    'field_definitions',
+    'form_layouts',
+    'view_definitions',
+    'custom_field_values',
+    'translated_texts',
+    'dashboard_layouts',
+    'iiot_devices',
+    'machine_telemetry',
+    'iiot_discrepancies',
+    'iiot_audit',
+    'metadata_records',
 )
 
 
@@ -183,6 +195,8 @@ def migrate_tenant_schema():
         _add_column('users', 'is_platform_admin BOOLEAN DEFAULT 0')
     if 'users' in _table_names() and 'is_platform_admin' not in _columns('users'):
         raise RuntimeError('users.is_platform_admin is still missing after ALTER')
+    if 'tenants' in _table_names() and 'db_url' not in _columns('tenants'):
+        _add_column('tenants', 'db_url VARCHAR(400)')
 
     for table in TENANT_TABLES:
         if table not in _table_names():
@@ -191,6 +205,19 @@ def migrate_tenant_schema():
             _add_column(table, 'tenant_id VARCHAR(36)')
         if 'tenant_id' in _columns(table):
             _ensure_index(table, f'ix_{table}_tenant_id', 'tenant_id')
+
+    if 'machine_telemetry' in _table_names():
+        _ensure_index(
+            'machine_telemetry',
+            'ix_telemetry_tenant_device_time',
+            'tenant_id, device_id, time',
+        )
+    if 'iiot_discrepancies' in _table_names():
+        _ensure_index(
+            'iiot_discrepancies',
+            'ix_discrepancy_tenant_device',
+            'tenant_id, device_id',
+        )
 
     tenant = ensure_default_tenant()
     for table in TENANT_TABLES:

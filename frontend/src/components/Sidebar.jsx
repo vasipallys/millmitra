@@ -15,6 +15,10 @@ import {
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import SecurityIcon from '@mui/icons-material/Security';
 import ListAltIcon from '@mui/icons-material/ListAlt';
+import DeviceHubIcon from '@mui/icons-material/DeviceHub';
+import ViewQuiltIcon from '@mui/icons-material/ViewQuilt';
+import WidgetsIcon from '@mui/icons-material/Widgets';
+import { useTheme } from '@mui/material/styles';
 import { useI18n } from '../i18n/I18nContext';
 import { can } from '../utils/permissions';
 import {
@@ -49,6 +53,10 @@ const coreMenuItems = [
   { textKey: 'users', descKey: 'navUsers', icon: <AdminPanelSettingsIcon />, path: '/users', permission: 'users' },
   { textKey: 'access', descKey: 'navAccess', icon: <SecurityIcon />, path: '/access', permission: 'users' },
   { textKey: 'lookupsTitle', descKey: 'navLookups', icon: <ListAltIcon />, path: '/lookups', permission: 'lookups' },
+  { textKey: 'iiot', descKey: 'navIiot', icon: <DeviceHubIcon />, path: '/iiot', permission: 'iiot' },
+  { textKey: 'formBuilder', descKey: 'navFormBuilder', icon: <ViewQuiltIcon />, path: '/form-builder', permission: 'metadata' },
+  { textKey: 'dashboardBuilder', descKey: 'navDashboardBuilder', icon: <WidgetsIcon />, path: '/dashboard-builder', permission: 'dashboard' },
+  { textKey: 'dynamicForms', descKey: 'navDynamicForms', icon: <ViewQuiltIcon />, path: '/forms/inspection', permission: 'dashboard' },
 ];
 
 const previewMenuItems = [
@@ -62,6 +70,8 @@ const Sidebar = ({ open, onClose, user }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useI18n();
+  const theme = useTheme();
+  const side = theme.direction === 'rtl' ? 'right' : 'left';
   const visibleCore = coreMenuItems.filter((item) => can(user, item.permission));
   const visiblePreview = previewMenuItems.filter((item) => can(user, item.permission));
 
@@ -73,7 +83,7 @@ const Sidebar = ({ open, onClose, user }) => {
   };
 
   const isActive = (path) => {
-    return location.pathname.startsWith(path);
+    return location.pathname === path || location.pathname.startsWith(`${path}/`);
   };
 
   const drawerContent = (
@@ -81,7 +91,7 @@ const Sidebar = ({ open, onClose, user }) => {
       {/* Header */}
       <Box sx={{ p: 2, bgcolor: 'primary.main', color: 'white' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-          <AIIcon sx={{ mr: 1 }} />
+          <AIIcon sx={{ me: 1 }} />
           <Typography variant="h6" component="div">
             {t('appName')}
           </Typography>
@@ -120,8 +130,8 @@ const Sidebar = ({ open, onClose, user }) => {
                   mx: 1,
                   mb: 0.5,
                   borderRadius: 2,
-                  borderLeft: '4px solid',
-                  borderLeftColor: isActive(item.path) ? 'primary.dark' : 'transparent',
+                  borderInlineStart: '4px solid',
+                  borderInlineStartColor: isActive(item.path) ? 'primary.dark' : 'transparent',
                   minHeight: 44,
                   '&.Mui-selected': {
                     bgcolor: 'primary.main',
@@ -179,8 +189,8 @@ const Sidebar = ({ open, onClose, user }) => {
                   mx: 1,
                   mb: 0.5,
                   borderRadius: 2,
-                  borderLeft: '4px solid',
-                  borderLeftColor: isActive(item.path) ? 'primary.main' : 'transparent',
+                  borderInlineStart: '4px solid',
+                  borderInlineStartColor: isActive(item.path) ? 'primary.main' : 'transparent',
                   minHeight: 40,
                 }}
               >
@@ -213,18 +223,19 @@ const Sidebar = ({ open, onClose, user }) => {
   return (
     <Drawer
       variant="persistent"
-      anchor="left"
+      anchor={side}
       open={open}
+      data-testid="sidebar"
       sx={{
-        width: open ? drawerWidth : 0, // Dynamic width based on open state
+        width: open ? drawerWidth : 0,
         flexShrink: 0,
-        transition: 'width 0.3s ease-in-out', // Smooth width transition
+        transition: 'width 0.3s ease-in-out',
         '& .MuiDrawer-paper': {
           width: drawerWidth,
           boxSizing: 'border-box',
-          borderRight: '1px solid',
+          borderInlineEnd: '1px solid',
           borderColor: 'divider',
-          transition: 'transform 0.3s ease-in-out', // Smooth transform transition
+          transition: 'transform 0.3s ease-in-out',
         },
       }}
     >

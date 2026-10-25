@@ -26,6 +26,7 @@ class Tenant(db.Model):
     locale = db.Column(db.String(12), default='en')
     currency = db.Column(db.String(8), default='INR')
     logo_url = db.Column(db.String(400))
+    db_url = db.Column(db.String(400))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

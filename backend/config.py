@@ -47,6 +47,11 @@ class Config:
 
     # Redis configuration
     REDIS_URL = os.environ.get('REDIS_URL') or None
+    MQTT_BROKER_URL = os.environ.get('MQTT_BROKER_URL') or None
+    KAFKA_BOOTSTRAP_SERVERS = os.environ.get('KAFKA_BOOTSTRAP_SERVERS') or None
+    IOT_DEMO_TOKEN = os.environ.get('IOT_DEMO_TOKEN') or 'demo-device-token'
+    IOT_RECONCILE_TOLERANCE = float(os.environ.get('IOT_RECONCILE_TOLERANCE') or 0.5)
+    IOT_RECONCILE_WINDOW_MINUTES = int(os.environ.get('IOT_RECONCILE_WINDOW_MINUTES') or 60)
     
     # Celery configuration
     CELERY_BROKER_URL = REDIS_URL
