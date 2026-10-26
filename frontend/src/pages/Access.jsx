@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Alert, Checkbox, Table, TableBody, TableCell, TableHead, TableRow } from '@mui/material';
+import { Alert, Checkbox } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { PageHeader, PageLoading, PageShell } from '../components/common/PageChrome';
+import DataTable from '../components/common/DataTable';
 import { userAdminService } from '../services/userAdminService';
 import { getApiErrorMessage } from '../utils/apiError';
 import { useI18n } from '../i18n/I18nContext';
@@ -26,41 +27,36 @@ export default function Access() {
   const roles = matrixQuery.data?.roles || [];
   const permissions = matrixQuery.data?.permissions || [];
   const matrix = matrixQuery.data?.matrix || {};
+  const rows = roles.map((role) => ({ id: role, role, ...matrix[role] }));
 
   return (
     <PageShell>
-      <PageHeader title={t('accessTitle')} subtitle={t('accessSubtitle')} />
+      <PageHeader title={t('accessTitle')} subtitle={t('accessSubtitle')} pageKey="access" />
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell>{t('role')}</TableCell>
-            {permissions.map((perm) => (
-              <TableCell key={perm} align="center">{t(`perm_${perm}`) === `perm_${perm}` ? perm : t(`perm_${perm}`)}</TableCell>
-            ))}
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {roles.map((role) => (
-            <TableRow key={role}>
-              <TableCell>{roleLabel(role)}</TableCell>
-              {permissions.map((perm) => (
-                <TableCell key={`${role}-${perm}`} align="center">
-                  <Checkbox
-                    checked={Boolean(matrix[role]?.[perm])}
-                    onChange={(event) => saveMutation.mutate({
-                      role,
-                      permission: perm,
-                      allowed: event.target.checked,
-                    })}
-                    inputProps={{ 'aria-label': `${role} ${perm}` }}
-                  />
-                </TableCell>
-              ))}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <DataTable
+        testId="access-matrix"
+        rows={rows}
+        searchKeys={['role']}
+        emptyTitle={t('noRows')}
+        columns={[
+          { field: 'role', label: t('role'), render: (row) => roleLabel(row.role) },
+          ...permissions.map((perm) => ({
+            field: perm,
+            label: t(`perm_${perm}`) === `perm_${perm}` ? perm : t(`perm_${perm}`),
+            render: (row) => (
+              <Checkbox
+                checked={Boolean(matrix[row.role]?.[perm])}
+                onChange={(event) => saveMutation.mutate({
+                  role: row.role,
+                  permission: perm,
+                  allowed: event.target.checked,
+                })}
+                inputProps={{ 'aria-label': `${row.role} ${perm}` }}
+              />
+            ),
+          })),
+        ]}
+      />
     </PageShell>
   );
 }

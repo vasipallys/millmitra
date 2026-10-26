@@ -128,7 +128,7 @@ const BatchCard = ({
               />
             </Box>
           </Box>
-          <IconButton onClick={handleMenuClick} size="small">
+          <IconButton onClick={handleMenuClick} size="small" aria-label="More actions">
             <MoreVert />
           </IconButton>
         </Box>

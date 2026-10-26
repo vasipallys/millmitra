@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
   Grid, Card, CardContent, Typography, Box, Button, Chip,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField,
   Alert, LinearProgress,
   Tabs, Tab, IconButton, Tooltip, Paper
@@ -20,6 +19,9 @@ import ReorderAlerts from '../components/ReorderAlerts';
 import InventoryAnalytics from '../components/InventoryAnalytics';
 import StockMovementDialog from '../components/StockMovementDialog';
 import { PageHeader, PageShell, QueryErrorAlert } from '../components/common/PageChrome';
+import DataTable from '../components/common/DataTable';
+import StatusChip from '../components/common/StatusChip';
+import { formatDate, formatINR, formatQty } from '../utils/format';
 import LookupSelect from '../components/common/LookupSelect';
 import { useAssistantFill, useAssistantOpen } from '../assistant/AssistantBridge';
 
@@ -213,6 +215,7 @@ const Inventory = () => {
       <PageHeader
         title={t('inventoryTitle')}
         subtitle={t('inventorySubtitle')}
+        pageKey="inventory"
         actions={
           <>
             <Button
@@ -318,7 +321,7 @@ const Inventory = () => {
                   <Typography color="textSecondary" gutterBottom>
                     Low Stock Items
                   </Typography>
-                  <Typography variant="h5" fontWeight="bold" color="warning.main">
+                  <Typography variant="h5" fontWeight="bold" sx={{ color: '#9a3412' }}>
                     {reorderAlerts?.alerts?.length || 0}
                   </Typography>
                 </Box>
@@ -777,62 +780,31 @@ const AddStockDialog = ({ open, onClose, stockType, onStockTypeChange, onSubmit,
 };
 
 const StockMovementsTab = () => {
+  const { t } = useI18n();
   const { data: movements, isLoading } = useQuery(
     'stock-movements',
     () => inventoryService.getStockMovements(),
     { refetchInterval: 60000 }
   );
 
-  if (isLoading) return <LinearProgress />;
-
   return (
     <Card>
       <CardContent>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Date</TableCell>
-                <TableCell>Type</TableCell>
-                <TableCell>Reference</TableCell>
-                <TableCell>Quantity</TableCell>
-                <TableCell>Value</TableCell>
-                <TableCell>Notes</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {(!movements?.movements || movements.movements.length === 0) && (
-                <TableRow>
-                  <TableCell colSpan={6} align="center">
-                    <Typography color="text.secondary" sx={{ py: 3 }}>
-                      No stock movements recorded yet
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              )}
-              {movements?.movements?.map((movement) => (
-                <TableRow key={movement.id}>
-                  <TableCell>
-                    {new Date(movement.created_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={movement.movement_type}
-                      color={movement.movement_type === 'in' ? 'success' : 'error'}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>{movement.reference_type}</TableCell>
-                  <TableCell>{movement.quantity} kg</TableCell>
-                  <TableCell>
-                    {movement.total_value ? `₹${movement.total_value.toFixed(2)}` : '-'}
-                  </TableCell>
-                  <TableCell>{movement.notes || '-'}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <DataTable
+          testId="stock-movements"
+          rows={movements?.movements || []}
+          loading={isLoading}
+          searchKeys={['movement_type', 'reference_type', 'notes']}
+          emptyTitle={t('noStockMovements')}
+          columns={[
+            { field: 'created_at', label: t('date'), render: (row) => formatDate(row.created_at) },
+            { field: 'movement_type', label: t('movementType'), render: (row) => <StatusChip status={row.movement_type} /> },
+            { field: 'reference_type', label: t('reference') },
+            { field: 'quantity', label: t('quantity'), render: (row) => formatQty(row.quantity, 'kg') },
+            { field: 'total_value', label: t('value'), render: (row) => formatINR(row.total_value) },
+            { field: 'notes', label: t('notes'), render: (row) => row.notes || '—' },
+          ]}
+        />
       </CardContent>
     </Card>
   );

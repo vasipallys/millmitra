@@ -1,15 +1,11 @@
 import { useState } from 'react';
 import {
-  Grid, Card, CardContent, Typography, Box, Button, Chip,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+  Grid, Card, CardContent, Typography, Box, Button,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField,
   Alert, LinearProgress,
   Tabs, Tab
 } from '@mui/material';
-import {
-  Add, PlayArrow, Stop, Visibility, Assessment, Settings,
-  CheckCircle, Warning, Error, Schedule, TrendingUp
-} from '@mui/icons-material';
+import { Add } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { productionService } from '../services/productionService';
 import BatchCard from '../components/BatchCard';
@@ -18,6 +14,9 @@ import ProductionAnalytics from '../components/ProductionAnalytics';
 import AIRecommendations from '../components/AIRecommendations';
 import { getApiErrorMessage } from '../utils/apiError';
 import { PageEmpty, PageHeader, PageShell, QueryErrorAlert } from '../components/common/PageChrome';
+import DataTable from '../components/common/DataTable';
+import StatusChip from '../components/common/StatusChip';
+import { formatQty } from '../utils/format';
 import { useI18n } from '../i18n/I18nContext';
 import LookupSelect from '../components/common/LookupSelect';
 
@@ -157,31 +156,12 @@ const Production = () => {
     setBatchDetailsOpen(true);
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'completed': return 'success';
-      case 'in_progress': return 'primary';
-      case 'planned': return 'warning';
-      case 'cancelled': return 'error';
-      default: return 'default';
-    }
-  };
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'completed': return <CheckCircle />;
-      case 'in_progress': return <PlayArrow />;
-      case 'planned': return <Schedule />;
-      case 'cancelled': return <Error />;
-      default: return null;
-    }
-  };
-
   return (
     <PageShell>
       <PageHeader
         title={t('productionTitle')}
         subtitle={t('productionSubtitle')}
+        pageKey="production"
         actions={
           <Button variant="contained" startIcon={<Add />} onClick={() => setCreateBatchOpen(true)}>
             {t('newBatch')}
@@ -299,101 +279,46 @@ const Production = () => {
       {activeTab === 1 && (
         <Card>
           <CardContent>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Batch Number</TableCell>
-                    <TableCell>Variety</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Input (kg)</TableCell>
-                    <TableCell>Output (kg)</TableCell>
-                    <TableCell>Efficiency</TableCell>
-                    <TableCell>Quality</TableCell>
-                    <TableCell>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {!(batches?.batches?.length) && (
-                    <TableRow>
-                      <TableCell colSpan={8}>
-                        <PageEmpty
-                          title={t('noBatchesYet')}
-                          description={t('noBatchesHint')}
-                          action={
-                            <Button variant="contained" startIcon={<Add />} onClick={() => setCreateBatchOpen(true)} sx={{ minHeight: 40 }}>
-                              {t('newBatch')}
-                            </Button>
-                          }
-                        />
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  {batches?.batches?.map((batch) => (
-                    <TableRow key={batch.id}>
-                      <TableCell>{batch.batch_number}</TableCell>
-                      <TableCell>{batch.paddy_variety}</TableCell>
-                      <TableCell>
-                        <Chip
-                          icon={getStatusIcon(batch.status)}
-                          label={statusLabel(batch.status)}
-                          color={getStatusColor(batch.status)}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>{batch.input_quantity}</TableCell>
-                      <TableCell>{batch.output_quantity || '-'}</TableCell>
-                      <TableCell>
-                        {batch.efficiency_score ? `${batch.efficiency_score.toFixed(1)}%` : '-'}
-                      </TableCell>
-                      <TableCell>
-                        {batch.current_quality_score ? `${batch.current_quality_score.toFixed(1)}%` : '-'}
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                          <Button size="small" startIcon={<Visibility />} onClick={() => handleViewBatch(batch)} sx={{ minHeight: 40 }}>
-                            View
-                          </Button>
-                          {batch.status === 'planned' && (
-                            <Button size="small" startIcon={<PlayArrow />} onClick={() => handleStartBatch(batch.id)} sx={{ minHeight: 40 }}>
-                              Start
-                            </Button>
-                          )}
-                          {batch.status === 'paused' && (
-                            <Button size="small" startIcon={<PlayArrow />} onClick={() => handleResumeBatch(batch.id)} sx={{ minHeight: 40 }}>
-                              Resume
-                            </Button>
-                          )}
-                          {batch.status === 'in_progress' && (
-                            <Button size="small" startIcon={<Stop />} onClick={() => handlePauseBatch(batch.id)} sx={{ minHeight: 40 }}>
-                              Pause
-                            </Button>
-                          )}
-                          {(batch.status === 'in_progress' || batch.status === 'paused') && (
-                            <>
-                              <Button
-                                size="small"
-                                startIcon={<Assessment />}
-                                onClick={() => {
-                                  setSelectedBatch(batch);
-                                  setQualityTestOpen(true);
-                                }}
-                                sx={{ minHeight: 40 }}
-                              >
-                                Quality
-                              </Button>
-                              <Button size="small" startIcon={<CheckCircle />} onClick={() => handleOpenComplete(batch)} sx={{ minHeight: 40 }}>
-                                Complete
-                              </Button>
-                            </>
-                          )}
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            <DataTable
+              testId="production-batches"
+              rows={batches?.batches || []}
+              searchKeys={['batch_number', 'paddy_variety', 'status']}
+              emptyTitle={t('noBatchesYet')}
+              emptyDescription={t('noBatchesHint')}
+              emptyAction={(
+                <Button variant="contained" startIcon={<Add />} onClick={() => setCreateBatchOpen(true)} sx={{ minHeight: 40 }}>
+                  {t('newBatch')}
+                </Button>
+              )}
+              columns={[
+                { field: 'batch_number', label: t('batchNumber') },
+                { field: 'paddy_variety', label: t('variety') },
+                { field: 'status', label: t('status'), render: (batch) => <StatusChip status={batch.status} label={statusLabel(batch.status)} /> },
+                { field: 'input_quantity', label: t('inputKg'), render: (batch) => formatQty(batch.input_quantity, 'kg') },
+                { field: 'output_quantity', label: t('outputKg'), render: (batch) => formatQty(batch.output_quantity, 'kg') },
+                { field: 'efficiency_score', label: t('efficiency'), render: (batch) => (batch.efficiency_score ? `${batch.efficiency_score.toFixed(1)}%` : '—') },
+                { field: 'current_quality_score', label: t('quality'), render: (batch) => (batch.current_quality_score ? `${batch.current_quality_score.toFixed(1)}%` : '—') },
+              ]}
+              rowActions={[
+                { label: t('view'), onClick: (batch) => handleViewBatch(batch) },
+                { label: t('start'), disabled: (batch) => batch?.status !== 'planned', onClick: (batch) => handleStartBatch(batch.id) },
+                { label: t('resume'), disabled: (batch) => batch?.status !== 'paused', onClick: (batch) => handleResumeBatch(batch.id) },
+                { label: t('pause'), disabled: (batch) => batch?.status !== 'in_progress', onClick: (batch) => handlePauseBatch(batch.id) },
+                {
+                  label: t('quality'),
+                  disabled: (batch) => !['in_progress', 'paused'].includes(batch?.status),
+                  onClick: (batch) => {
+                    setSelectedBatch(batch);
+                    setQualityTestOpen(true);
+                  },
+                },
+                {
+                  label: t('complete'),
+                  disabled: (batch) => !['in_progress', 'paused'].includes(batch?.status),
+                  onClick: (batch) => handleOpenComplete(batch),
+                },
+              ]}
+            />
           </CardContent>
         </Card>
       )}

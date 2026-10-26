@@ -13,7 +13,6 @@ import {
   IconButton,
   Collapse,
   Alert,
-  Divider,
   LinearProgress,
   Dialog,
   DialogTitle,
@@ -33,8 +32,9 @@ import {
   Schedule,
   Refresh
 } from '@mui/icons-material';
+import { useI18n } from '../i18n/I18nContext';
 
-const normalizeRec = (item, index) => {
+const normalizeRec = (item, index, t) => {
   if (typeof item === 'string') {
     return {
       id: index,
@@ -55,7 +55,7 @@ const normalizeRec = (item, index) => {
   return {
     id: rec.id || rec.title || index,
     category: rec.category || rec.type || 'mill',
-    title: rec.title || rec.message || rec.recommendation || 'Mill suggestion',
+    title: rec.title || rec.message || rec.recommendation || t('millSuggestion'),
     summary: rec.summary || rec.description || rec.recommendation || rec.message || '',
     priority: rec.priority || 'medium',
     confidence: Number(rec.confidence) || 0,
@@ -69,6 +69,7 @@ const normalizeRec = (item, index) => {
 };
 
 const AIRecommendations = ({ recommendations: incoming, context = 'production', refreshInterval = 300000 }) => {
+  const { t } = useI18n();
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(!incoming);
   const [expandedRec, setExpandedRec] = useState(null);
@@ -77,7 +78,7 @@ const AIRecommendations = ({ recommendations: incoming, context = 'production', 
 
   useEffect(() => {
     if (Array.isArray(incoming)) {
-      setRecommendations(incoming.map(normalizeRec));
+      setRecommendations(incoming.map((item, index) => normalizeRec(item, index, t)));
       setLoading(false);
       return undefined;
     }
@@ -92,7 +93,7 @@ const AIRecommendations = ({ recommendations: incoming, context = 'production', 
       const { productionService } = await import('../services/productionService');
       const payload = await productionService.getRecommendations();
       const rows = payload?.recommendations || [];
-      setRecommendations(rows.map(normalizeRec));
+      setRecommendations(rows.map((item, index) => normalizeRec(item, index, t)));
     } catch (error) {
       setRecommendations([]);
     } finally {
@@ -136,7 +137,7 @@ const AIRecommendations = ({ recommendations: incoming, context = 'production', 
   };
 
   const handleImplement = (recommendation) => {
-    setImplementNote(`${recommendation.title} is a preview checklist, not an automated mill change. Apply the steps on Production or Quality if they match live data.`);
+    setImplementNote(t('aiPreviewNote', { title: recommendation.title }));
   };
 
   if (loading) {
@@ -145,11 +146,11 @@ const AIRecommendations = ({ recommendations: incoming, context = 'production', 
         <CardContent>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
             <Psychology color="primary" />
-            <Typography variant="h6">AI Recommendations</Typography>
+            <Typography variant="h6">{t('aiRecommendations')}</Typography>
           </Box>
-          <LinearProgress />
+          <LinearProgress aria-label={t('loadingRecommendations')} />
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            Analyzing data and generating recommendations...
+            {t('analyzingRecommendations')}
           </Typography>
         </CardContent>
       </Card>
@@ -162,34 +163,36 @@ const AIRecommendations = ({ recommendations: incoming, context = 'production', 
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Psychology color="primary" />
-            <Typography variant="h6">AI Recommendations</Typography>
+            <Typography variant="h6">{t('aiRecommendations')}</Typography>
             <Chip 
-              label={`${recommendations.length} suggestions`} 
+              label={t('suggestionCount', { count: recommendations.length })} 
               size="small" 
               color="primary" 
               variant="outlined" 
             />
           </Box>
-          <IconButton onClick={loadRecommendations} size="small">
+          <IconButton onClick={loadRecommendations} size="small" aria-label={t('refreshRecommendations')}>
             <Refresh />
           </IconButton>
         </Box>
 
         {recommendations.length === 0 ? (
           <Alert severity="info">
-            No AI recommendations available for {context} at the moment. 
-            The system is continuously analyzing data to provide insights.
+            {t('noAiRecommendations', { context })}
           </Alert>
         ) : (
-          <List sx={{ p: 0 }}>
+          <Box>
             {recommendations.map((rec) => (
               <Box key={rec.id} sx={{ mb: 1 }}>
-                <ListItem
+                <Box
                   sx={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
                     border: 1,
                     borderColor: 'divider',
                     borderRadius: 1,
                     cursor: 'pointer',
+                    p: 1,
                     '&:hover': {
                       bgcolor: 'action.hover'
                     }
@@ -209,19 +212,22 @@ const AIRecommendations = ({ recommendations: incoming, context = 'production', 
                         </Typography>
                         <Chip 
                           label={rec.priority.toUpperCase()} 
-                          size="small" 
-                          color={getPriorityColor(rec.priority)}
+                          size="small"
+                          sx={rec.priority === 'high'
+                            ? { bgcolor: '#fee2e2', color: '#991b1b' }
+                            : { bgcolor: '#fff7ed', color: '#9a3412' }}
                         />
                         <Chip 
-                          label={`${(rec.confidence * 100).toFixed(0)}% confidence`} 
+                          label={t('percentConfidence', { n: (rec.confidence * 100).toFixed(0) })} 
                           size="small" 
                           variant="outlined"
+                          sx={{ color: '#0d47a1', borderColor: '#90caf9' }}
                         />
                         <Chip 
-                          label={`${rec.impact} impact`} 
+                          label={t('impactWord', { n: rec.impact })} 
                           size="small" 
-                          color={getImpactColor(rec.impact)}
                           variant="outlined"
+                          sx={{ color: '#0d47a1', borderColor: '#90caf9' }}
                         />
                       </Box>
                     }
@@ -231,21 +237,21 @@ const AIRecommendations = ({ recommendations: incoming, context = 'production', 
                           {rec.summary}
                         </Typography>
                         <Typography variant="caption" component="span" display="block" color="text.secondary">
-                          Implementation: {rec.implementation_time} | Expected: {rec.expected_benefit}
+                          {t('implementationColon', { time: rec.implementation_time })} | {t('expectedColon', { value: rec.expected_benefit })}
                         </Typography>
                       </Box>
                     }
                   />
-                  <IconButton size="small" aria-label={expandedRec === rec.id ? 'Collapse recommendation' : 'Expand recommendation'}>
+                  <IconButton size="small" aria-label={expandedRec === rec.id ? t('collapseRecommendation') : t('expandRecommendation')}>
                     {expandedRec === rec.id ? <ExpandLess /> : <ExpandMore />}
                   </IconButton>
-                </ListItem>
+                </Box>
 
                 <Collapse in={expandedRec === rec.id} timeout="auto" unmountOnExit>
                   <Box sx={{ pl: 4, pr: 2, pb: 2 }}>
                     {/* Details */}
                     <Typography variant="subtitle2" gutterBottom>
-                      Analysis Details:
+                      {t('analysisDetails')}
                     </Typography>
                     <List dense>
                       {rec.details.map((detail, index) => (
@@ -260,7 +266,7 @@ const AIRecommendations = ({ recommendations: incoming, context = 'production', 
 
                     {/* Implementation Steps */}
                     <Typography variant="subtitle2" gutterBottom sx={{ mt: 2 }}>
-                      Implementation Steps:
+                      {t('implementationSteps')}
                     </Typography>
                     <List dense>
                       {rec.steps.map((step, index) => (
@@ -282,7 +288,7 @@ const AIRecommendations = ({ recommendations: incoming, context = 'production', 
                     {rec.metrics && (
                       <Box sx={{ mt: 2 }}>
                         <Typography variant="subtitle2" gutterBottom>
-                          Expected Impact:
+                          {t('expectedImpact')}
                         </Typography>
                         <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
                           {Object.entries(rec.metrics).map(([key, value]) => (
@@ -311,14 +317,14 @@ const AIRecommendations = ({ recommendations: incoming, context = 'production', 
                           onClick={() => handleImplement(rec)}
                           color={getPriorityColor(rec.priority)}
                         >
-                          Implement
+                          {t('implement')}
                         </Button>
                         <Button
                           variant="outlined"
                           size="small"
                           onClick={() => setDetailRec(rec)}
                         >
-                          More Details
+                          {t('moreDetails')}
                         </Button>
                       </Box>
                     </Box>
@@ -326,19 +332,19 @@ const AIRecommendations = ({ recommendations: incoming, context = 'production', 
                 </Collapse>
               </Box>
             ))}
-          </List>
+          </Box>
         )}
 
         {/* Summary */}
         {recommendations.length > 0 && (
           <Box sx={{ mt: 2, p: 2, bgcolor: 'primary.50', borderRadius: 1 }}>
             <Typography variant="subtitle2" gutterBottom>
-              Recommendation Summary
+              {t('recommendationSummary')}
             </Typography>
             <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
               <Box>
                 <Typography variant="body2" color="text.secondary">
-                  High Priority
+                  {t('highPriority')}
                 </Typography>
                 <Typography variant="h6" color="error.main">
                   {recommendations.filter(r => r.priority === 'high').length}
@@ -346,7 +352,7 @@ const AIRecommendations = ({ recommendations: incoming, context = 'production', 
               </Box>
               <Box>
                 <Typography variant="body2" color="text.secondary">
-                  Avg Confidence
+                  {t('avgConfidence')}
                 </Typography>
                 <Typography variant="h6" color="primary.main">
                   {(recommendations.reduce((sum, r) => sum + r.confidence, 0) / recommendations.length * 100).toFixed(0)}%
@@ -354,7 +360,7 @@ const AIRecommendations = ({ recommendations: incoming, context = 'production', 
               </Box>
               <Box>
                 <Typography variant="body2" color="text.secondary">
-                  Quick Wins
+                  {t('quickWins')}
                 </Typography>
                 <Typography variant="h6" color="success.main">
                   {recommendations.filter((r) => String(r?.implementation_time || '').toLowerCase().includes('hour')).length}
@@ -372,17 +378,17 @@ const AIRecommendations = ({ recommendations: incoming, context = 'production', 
           <Typography variant="body2" sx={{ mt: 1 }}>{detailRec?.expected_benefit}</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDetailRec(null)}>Close</Button>
+          <Button onClick={() => setDetailRec(null)}>{t('close')}</Button>
         </DialogActions>
       </Dialog>
 
       <Dialog open={Boolean(implementNote)} onClose={() => setImplementNote('')} maxWidth="sm" fullWidth>
-        <DialogTitle>Preview recommendation</DialogTitle>
+        <DialogTitle>{t('previewRecommendation')}</DialogTitle>
         <DialogContent>
           <Typography sx={{ mt: 1 }}>{implementNote}</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setImplementNote('')}>Close</Button>
+          <Button onClick={() => setImplementNote('')}>{t('close')}</Button>
         </DialogActions>
       </Dialog>
     </Card>

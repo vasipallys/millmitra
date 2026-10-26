@@ -5,10 +5,9 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Container, Typography, Box, Card, CardContent, Grid, Tabs, Tab,
-  List, ListItem, ListItemText, ListItemAvatar, ListItemSecondaryAction,
+  Typography, Box, Card, Grid, Tabs, Tab,
   Avatar, IconButton, Chip, Button, TextField, FormControl, InputLabel,
-  Select, MenuItem, Divider, Badge, Tooltip, Dialog, DialogTitle,
+  Select, MenuItem, Tooltip, Dialog, DialogTitle,
   DialogContent, DialogActions, Checkbox, FormControlLabel
 } from '@mui/material';
 import {
@@ -20,6 +19,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import notificationService from '../services/notificationService';
 import { useI18n } from '../i18n/I18nContext';
+import { PageHeader, PageShell } from '../components/common/PageChrome';
 
 const NotificationsPage = () => {
   const { t } = useI18n();
@@ -168,30 +168,26 @@ const NotificationsPage = () => {
   );
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Badge badgeContent={unreadCount} color="error">
-            <Notifications sx={{ mr: 2, fontSize: 32 }} />
-          </Badge>
-          <Typography variant="h4" component="h1">
-            Notifications
-          </Typography>
-        </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Tooltip title="Refresh">
-            <IconButton aria-label="Refresh notifications" onClick={() => notificationService.fetchNotifications()}>
-              <Refresh />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Settings">
-            <IconButton aria-label="Notification settings" onClick={() => setSettingsOpen(true)}>
-              <SettingsIcon />
-            </IconButton>
-          </Tooltip>
-        </Box>
-      </Box>
+    <PageShell>
+      <PageHeader
+        title={t('notificationsTitle')}
+        subtitle={t('notificationsSubtitle')}
+        pageKey="notifications"
+        actions={(
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Tooltip title={t('refresh')}>
+              <IconButton aria-label={t('refresh')} onClick={() => notificationService.fetchNotifications()}>
+                <Refresh />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title={t('settings')}>
+              <IconButton aria-label={t('settings')} onClick={() => setSettingsOpen(true)}>
+                <SettingsIcon />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        )}
+      />
 
       <Card>
         {/* Tabs */}
@@ -214,7 +210,7 @@ const NotificationsPage = () => {
               <TextField
                 fullWidth
                 size="small"
-                placeholder="Search notifications..."
+                label={t('searchTable')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 InputProps={{
@@ -229,6 +225,7 @@ const NotificationsPage = () => {
                   value={filterCategory}
                   onChange={(e) => setFilterCategory(e.target.value)}
                   label="Category"
+                  inputProps={{ 'aria-label': 'Category' }}
                 >
                   <MenuItem value="all">All Categories</MenuItem>
                   <MenuItem value="farmer_management">Farmer Management</MenuItem>
@@ -248,6 +245,7 @@ const NotificationsPage = () => {
                   value={filterPriority}
                   onChange={(e) => setFilterPriority(e.target.value)}
                   label="Priority"
+                  inputProps={{ 'aria-label': 'Priority' }}
                 >
                   <MenuItem value="all">All Priorities</MenuItem>
                   <MenuItem value="high">High</MenuItem>
@@ -313,91 +311,81 @@ const NotificationsPage = () => {
               </Typography>
             </Box>
           ) : (
-            <List sx={{ p: 0 }}>
-              <ListItem>
+            <Box>
+              <Box sx={{ px: 2, py: 1 }}>
                 <FormControlLabel
                   control={
                     <Checkbox
                       checked={selectedNotifications.length === filteredNotifications.length}
                       indeterminate={selectedNotifications.length > 0 && selectedNotifications.length < filteredNotifications.length}
                       onChange={handleSelectAll}
+                      inputProps={{ 'aria-label': 'Select all notifications' }}
                     />
                   }
                   label="Select All"
                 />
-              </ListItem>
-              <Divider />
+              </Box>
               
-              {filteredNotifications.map((notification, index) => (
-                <React.Fragment key={notification.id}>
-                  <ListItem
-                    button
-                    onClick={() => handleNotificationClick(notification)}
-                    sx={{
-                      bgcolor: notification.read ? 'transparent' : 'action.hover',
-                      '&:hover': { bgcolor: 'action.selected' }
-                    }}
-                  >
+              {filteredNotifications.map((notification) => (
+                <Box
+                  key={notification.id}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    px: 2,
+                    py: 1.5,
+                    borderTop: 1,
+                    borderColor: 'divider',
+                    bgcolor: notification.read ? 'transparent' : 'action.hover',
+                  }}
+                >
                     <Checkbox
                       checked={selectedNotifications.includes(notification.id)}
                       onChange={() => handleSelectNotification(notification.id)}
-                      onClick={(e) => e.stopPropagation()}
+                      inputProps={{ 'aria-label': `Select ${notification.title}` }}
                       sx={{ mr: 1 }}
                     />
-                    <ListItemAvatar>
-                      <Avatar sx={{ bgcolor: `${getPriorityColor(notification.priority)}.main` }}>
-                        {getCategoryIcon(notification.category)}
-                      </Avatar>
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Typography 
-                            variant="subtitle2" 
-                            sx={{ fontWeight: notification.read ? 'normal' : 'bold' }}
-                          >
-                            {notification.title}
-                          </Typography>
-                          <Chip
-                            label={notification.severity || notification.priority}
-                            size="small"
-                            color={getPriorityColor(notification.severity || notification.priority)}
-                            variant="outlined"
-                          />
-                          <Chip
-                            label={(notification.category || 'system').replace('_', ' ')}
-                            size="small"
-                            variant="outlined"
-                          />
-                        </Box>
-                      }
-                      secondary={
-                        <React.Fragment>
-                          <span style={{ display: 'block', marginBottom: '4px', color: 'rgba(0, 0, 0, 0.6)' }}>
-                            {notification.message || notification.body}
-                          </span>
-                          <span style={{ fontSize: '0.75rem', color: 'rgba(0, 0, 0, 0.6)' }}>
-                            {formatTimeAgo(notification.timestamp || notification.created_at)}
-                          </span>
-                        </React.Fragment>
-                      }
-                    />
-                    <ListItemSecondaryAction>
-                      <IconButton
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          notificationService.deleteNotification(notification.id);
-                        }}
-                      >
-                        <Delete />
-                      </IconButton>
-                    </ListItemSecondaryAction>
-                  </ListItem>
-                  {index < filteredNotifications.length - 1 && <Divider />}
-                </React.Fragment>
+                    <Avatar sx={{ bgcolor: `${getPriorityColor(notification.priority)}.main`, mr: 1 }}>
+                      {getCategoryIcon(notification.category)}
+                    </Avatar>
+                    <Box sx={{ flex: 1, cursor: 'pointer' }} onClick={() => handleNotificationClick(notification)}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                        <Typography 
+                          variant="subtitle2" 
+                          sx={{ fontWeight: notification.read ? 'normal' : 'bold' }}
+                        >
+                          {notification.title}
+                        </Typography>
+                        <Chip
+                          label={notification.severity || notification.priority}
+                          size="small"
+                          variant="outlined"
+                          sx={{ color: '#9a3412', borderColor: '#fdba74' }}
+                        />
+                        <Chip
+                          label={(notification.category || 'system').replace('_', ' ')}
+                          size="small"
+                          variant="outlined"
+                          sx={{ color: '#424242', borderColor: '#9e9e9e' }}
+                        />
+                      </Box>
+                      <Typography variant="body2" sx={{ color: '#424242', mt: 0.5 }}>
+                        {notification.message || notification.body}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: '#424242' }}>
+                        {formatTimeAgo(notification.timestamp || notification.created_at)}
+                      </Typography>
+                    </Box>
+                    <IconButton
+                      size="small"
+                      aria-label={`Delete ${notification.title}`}
+                      onClick={() => notificationService.deleteNotification(notification.id)}
+                    >
+                      <Delete />
+                    </IconButton>
+                </Box>
               ))}
-            </List>
+            </Box>
           )}
         </Box>
       </Card>
@@ -417,7 +405,7 @@ const NotificationsPage = () => {
           <Button onClick={() => setSettingsOpen(false)}>{t('close')}</Button>
         </DialogActions>
       </Dialog>
-    </Container>
+    </PageShell>
   );
 };
 

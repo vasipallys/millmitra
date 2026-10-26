@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
   Grid, Card, CardContent, Typography, Box, Button,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Paper, Chip, Dialog, DialogTitle, DialogContent, DialogActions
+  Paper, Dialog, DialogTitle, DialogContent, DialogActions
 } from '@mui/material';
 import {
   TrendingUp, TrendingDown, AccountBalance, Receipt,
-  Payment, Assessment, Add, Visibility
+  Payment, Assessment, Add
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { financeService } from '../services/financeService';
@@ -14,7 +13,10 @@ import CreateInvoiceDialog from '../components/finance/CreateInvoiceDialog';
 import RecordPaymentDialog from '../components/finance/RecordPaymentDialog';
 import CashFlowChart from '../components/finance/CashFlowChart';
 import { getApiErrorMessage } from '../utils/apiError';
-import { PageEmpty, PageHeader, PageShell, QueryErrorAlert } from '../components/common/PageChrome';
+import { PageHeader, PageShell, QueryErrorAlert } from '../components/common/PageChrome';
+import StatusChip from '../components/common/StatusChip';
+import DataTable from '../components/common/DataTable';
+import { formatDate, formatINR } from '../utils/format';
 import { useI18n } from '../i18n/I18nContext';
 import { useAssistantOpen } from '../assistant/AssistantBridge';
 
@@ -81,28 +83,14 @@ const Finance = () => {
     }
   });
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'paid': return 'success';
-      case 'pending': return 'warning';
-      case 'overdue': return 'error';
-      case 'partial': return 'info';
-      default: return 'default';
-    }
-  };
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR'
-    }).format(amount);
-  };
+  const formatCurrency = (amount) => formatINR(amount);
 
   return (
     <PageShell>
       <PageHeader
         title={t('financeTitle')}
         subtitle={t('financeSubtitle')}
+        pageKey="finance"
         actions={
           <>
             <Button
@@ -263,61 +251,29 @@ const Finance = () => {
               <Typography variant="h6" gutterBottom>
                 Recent Invoices
               </Typography>
-              {!recentInvoices?.invoices?.length && (
-                <PageEmpty
-                  title={t('noInvoicesYet')}
-                  description={t('noInvoicesHint')}
-                  action={
-                    <Button variant="contained" startIcon={<Add />} onClick={() => setCreateInvoiceOpen(true)}>
-                      {t('createInvoice')}
-                    </Button>
-                  }
-                />
-              )}
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Invoice #</TableCell>
-                      <TableCell>Customer</TableCell>
-                      <TableCell>Date</TableCell>
-                      <TableCell>Due Date</TableCell>
-                      <TableCell>Amount</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {(recentInvoices?.invoices || []).map((invoice) => (
-                      <TableRow key={invoice.id}>
-                        <TableCell>{invoice.invoice_number}</TableCell>
-                        <TableCell>{invoice.customer?.name || invoice.customer_name || '—'}</TableCell>
-                        <TableCell>{new Date(invoice.invoice_date).toLocaleDateString()}</TableCell>
-                        <TableCell>{new Date(invoice.due_date).toLocaleDateString()}</TableCell>
-                        <TableCell>{formatCurrency(invoice.total_amount)}</TableCell>
-                        <TableCell>
-                          <Chip
-                            label={invoice.status}
-                            color={getStatusColor(invoice.status)}
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            size="small"
-                            startIcon={<Visibility />}
-                            aria-label={`View invoice ${invoice.invoice_number}`}
-                            onClick={() => setSelectedInvoice(invoice)}
-                            sx={{ minHeight: 40 }}
-                          >
-                            {t('view')}
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+              <DataTable
+                testId="finance-invoices"
+                rows={recentInvoices?.invoices || []}
+                searchKeys={['invoice_number', 'customer_name', 'status']}
+                emptyTitle={t('noInvoicesYet')}
+                emptyDescription={t('noInvoicesHint')}
+                emptyAction={(
+                  <Button variant="contained" startIcon={<Add />} onClick={() => setCreateInvoiceOpen(true)}>
+                    {t('createInvoice')}
+                  </Button>
+                )}
+                columns={[
+                  { field: 'invoice_number', label: t('invoiceNo') },
+                  { field: 'customer_name', label: t('customers'), render: (invoice) => invoice.customer?.name || invoice.customer_name || '—' },
+                  { field: 'invoice_date', label: t('date'), render: (invoice) => formatDate(invoice.invoice_date) },
+                  { field: 'due_date', label: t('dueDate'), render: (invoice) => formatDate(invoice.due_date) },
+                  { field: 'total_amount', label: t('amount'), render: (invoice) => formatCurrency(invoice.total_amount) },
+                  { field: 'status', label: t('status'), render: (invoice) => <StatusChip status={invoice.status} /> },
+                ]}
+                rowActions={[
+                  { label: t('view'), onClick: (invoice) => setSelectedInvoice(invoice) },
+                ]}
+              />
             </CardContent>
           </Card>
         </Grid>

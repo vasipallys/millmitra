@@ -8,13 +8,6 @@ import {
   Button,
   ButtonGroup,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Chip,
   Alert,
   CircularProgress,
 } from '@mui/material';
@@ -44,6 +37,9 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import DemoBanner from '../components/DemoBanner';
+import { PageHeader, PageShell } from '../components/common/PageChrome';
+import DataTable from '../components/common/DataTable';
+import StatusChip from '../components/common/StatusChip';
 import PreviewModeToggle from '../components/PreviewModeToggle';
 import { usePreviewMode } from '../hooks/usePreviewMode';
 import { useI18n } from '../i18n/I18nContext';
@@ -78,25 +74,25 @@ const Analytics = () => {
     {
       id: 1,
       type: 'opportunity',
-      title: 'Production Optimization',
-      description: 'AI detected 15% efficiency improvement potential in evening shift',
-      impact: 'High',
+      title: t('insightProdTitle'),
+      description: t('insightProdBody'),
+      impact: t('highPriority'),
       confidence: 92,
     },
     {
       id: 2,
       type: 'warning',
-      title: 'Quality Trend Alert',
-      description: 'Slight decline in quality metrics for Basmati rice production',
-      impact: 'Medium',
+      title: t('insightQualityTitle'),
+      description: t('insightQualityBody'),
+      impact: t('mediumPriority'),
       confidence: 87,
     },
     {
       id: 3,
       type: 'success',
-      title: 'Customer Retention',
-      description: 'Customer satisfaction increased by 8% this month',
-      impact: 'High',
+      title: t('insightRetainTitle'),
+      description: t('insightRetainBody'),
+      impact: t('highPriority'),
       confidence: 95,
     },
   ];
@@ -238,37 +234,23 @@ const Analytics = () => {
   const formatCurrency = (value) => `₹${(value / 1000).toFixed(0)}K`;
 
   return (
-    <Box>
+    <PageShell>
       <DemoBanner title={t('businessAnalytics')} mode={mode} />
-      {/* Header */}
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-        <Typography variant="h4" component="h1" fontWeight="bold">
-          Business Analytics
-        </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-        <PreviewModeToggle mode={mode} onChange={setMode} />
-        <ButtonGroup variant="outlined">
-          <Button
-            variant={timeRange === '7d' ? 'contained' : 'outlined'}
-            onClick={() => setTimeRange('7d')}
-          >
-            7 Days
-          </Button>
-          <Button
-            variant={timeRange === '30d' ? 'contained' : 'outlined'}
-            onClick={() => setTimeRange('30d')}
-          >
-            30 Days
-          </Button>
-          <Button
-            variant={timeRange === '90d' ? 'contained' : 'outlined'}
-            onClick={() => setTimeRange('90d')}
-          >
-            90 Days
-          </Button>
-        </ButtonGroup>
-        </Box>
-      </Box>
+      <PageHeader
+        title={t('businessAnalytics')}
+        subtitle={t('analyticsPageSubtitle')}
+        pageKey="analytics"
+        actions={(
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+            <PreviewModeToggle mode={mode} onChange={setMode} />
+            <ButtonGroup variant="outlined">
+              <Button variant={timeRange === '7d' ? 'contained' : 'outlined'} onClick={() => setTimeRange('7d')}>{t('days7')}</Button>
+              <Button variant={timeRange === '30d' ? 'contained' : 'outlined'} onClick={() => setTimeRange('30d')}>{t('days30')}</Button>
+              <Button variant={timeRange === '90d' ? 'contained' : 'outlined'} onClick={() => setTimeRange('90d')}>{t('days90')}</Button>
+            </ButtonGroup>
+          </Box>
+        )}
+      />
 
       {loadError && (
         <Alert severity="warning" sx={{ mb: 2 }}>{loadError}</Alert>
@@ -281,14 +263,14 @@ const Analytics = () => {
         sx={{ mb: 3 }}
       >
         <Typography variant="subtitle2">
-          {isSample ? 'Sample insights' : 'Mill record snapshot'}
+          {isSample ? t('sampleInsights') : t('millRecordSnapshot')}
         </Typography>
         <Typography variant="body2">
           {isSample
-            ? `${aiInsights.length} demonstration insights`
+            ? t('demoInsightCount', { n: aiInsights.length })
             : aiInsights.length
-              ? `${aiInsights.length} notes from dashboard records`
-              : 'No dashboard notes yet. Charts stay empty until production, sales, or invoices exist.'}
+              ? t('notesFromRecords', { n: aiInsights.length })
+              : t('noDashboardNotes')}
         </Typography>
       </Alert>
 
@@ -300,7 +282,7 @@ const Analytics = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
                   <Typography color="textSecondary" gutterBottom variant="body2">
-                    Overall Efficiency
+                    {t('overallEfficiency')}
                   </Typography>
                     <Typography variant="h4" component="div" color="success.main">
                     {Number(performanceMetrics.efficiency || 0).toFixed(1)}%
@@ -308,7 +290,7 @@ const Analytics = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                     <TrendingUpIcon color="success" sx={{ fontSize: 16, mr: 0.5 }} />
                     <Typography variant="body2" color="success.main">
-                      {isSample ? '+2.3% from last month' : 'From completed production batches'}
+                      {isSample ? t('fromLastMonth', { n: '+2.3%' }) : t('fromCompletedBatches')}
                     </Typography>
                   </Box>
                 </Box>
@@ -318,6 +300,7 @@ const Analytics = () => {
                   size={60}
                   thickness={4}
                   sx={{ color: 'success.main' }}
+                  aria-label={`Overall efficiency ${Number(performanceMetrics.efficiency || 0).toFixed(1)} percent`}
                 />
               </Box>
             </CardContent>
@@ -329,7 +312,7 @@ const Analytics = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
                   <Typography color="textSecondary" gutterBottom variant="body2">
-                    Profit Margin
+                    {t('profitMargin')}
                   </Typography>
                     <Typography variant="h4" component="div" color="primary.main">
                     {Number(performanceMetrics.profitMargin || 0).toFixed(1)}%
@@ -337,7 +320,7 @@ const Analytics = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                     <TrendingUpIcon color="success" sx={{ fontSize: 16, mr: 0.5 }} />
                     <Typography variant="body2" color="success.main">
-                      {isSample ? '+1.8% from last month' : 'Revenue vs profit from Finance'}
+                      {isSample ? t('fromLastMonth', { n: '+1.8%' }) : t('revenueVsProfit')}
                     </Typography>
                   </Box>
                 </Box>
@@ -347,6 +330,7 @@ const Analytics = () => {
                   size={60}
                   thickness={4}
                   sx={{ color: 'primary.main' }}
+                  aria-label={`Profit margin ${Number(performanceMetrics.profitMargin || 0).toFixed(1)} percent`}
                 />
               </Box>
             </CardContent>
@@ -358,7 +342,7 @@ const Analytics = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
                   <Typography color="textSecondary" gutterBottom variant="body2">
-                    {performanceMetrics.pendingLabel || 'Pending / total orders'}
+                    {performanceMetrics.pendingLabel || t('pendingTotalOrders')}
                   </Typography>
                   <Typography variant="h4" component="div" color="info.main">
                     {isSample ? `${performanceMetrics.pendingOrders}%` : performanceMetrics.pendingOrders}
@@ -366,7 +350,7 @@ const Analytics = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                     <TrendingUpIcon color="success" sx={{ fontSize: 16, mr: 0.5 }} />
                     <Typography variant="body2" color="success.main">
-                      {isSample ? '+5.2% from last month' : 'From Dashboard / Sales'}
+                      {isSample ? t('fromLastMonth', { n: '+5.2%' }) : t('fromDashboardSales')}
                     </Typography>
                   </Box>
                 </Box>
@@ -376,6 +360,7 @@ const Analytics = () => {
                   size={60}
                   thickness={4}
                   sx={{ color: 'info.main' }}
+                  aria-label={performanceMetrics.pendingLabel || 'Pending orders'}
                 />
               </Box>
             </CardContent>
@@ -387,7 +372,7 @@ const Analytics = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
                   <Typography color="textSecondary" gutterBottom variant="body2">
-                    Quality Score
+                    {t('quality')}
                   </Typography>
                   <Typography variant="h4" component="div" color="warning.main">
                     {Number(performanceMetrics.qualityScore || 0).toFixed(1)}%
@@ -395,7 +380,7 @@ const Analytics = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                     <TrendingDownIcon color="error" sx={{ fontSize: 16, mr: 0.5 }} />
                     <Typography variant="body2" color={isSample ? 'error.main' : 'text.secondary'}>
-                      {isSample ? '-0.8% from last month' : 'From quality tests / dashboard'}
+                      {isSample ? t('fromLastMonth', { n: '-0.8%' }) : t('fromQualityTests')}
                     </Typography>
                   </Box>
                 </Box>
@@ -405,6 +390,7 @@ const Analytics = () => {
                   size={60}
                   thickness={4}
                   sx={{ color: 'warning.main' }}
+                  aria-label={`Quality score ${Number(performanceMetrics.qualityScore || 0).toFixed(1)} percent`}
                 />
               </Box>
             </CardContent>
@@ -556,83 +542,33 @@ const Analytics = () => {
         <CardContent>
           <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
             <AIIcon sx={{ mr: 1 }} />
-            {isSample ? 'Sample insights' : 'Record notes'}
+            {isSample ? t('sampleInsights') : t('recordNotes')}
           </Typography>
-          {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            <TableContainer component={Paper} elevation={0}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Type</TableCell>
-                    <TableCell>Insight</TableCell>
-                    <TableCell>Impact</TableCell>
-                    <TableCell>Confidence</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {!aiInsights.length && (
-                    <TableRow>
-                      <TableCell colSpan={4}>
-                        <Typography variant="body2" color="text.secondary">No notes from mill records yet.</Typography>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  {aiInsights.map((insight) => (
-                    <TableRow key={insight.id}>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          {getInsightIcon(insight.type)}
-                          <Chip
-                            label={insight.type}
-                            color={getInsightColor(insight.type)}
-                            size="small"
-                            sx={{ ml: 1 }}
-                          />
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="subtitle2">{insight.title}</Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {insight.description}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={insight.impact}
-                          color={insight.impact === 'High' ? 'error' : insight.impact === 'Medium' ? 'warning' : 'default'}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {insight.confidence == null ? (
-                          <Typography variant="body2" color="text.secondary">—</Typography>
-                        ) : (
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <CircularProgress
-                            variant="determinate"
-                            value={insight.confidence}
-                            size={24}
-                            thickness={4}
-                          />
-                          <Typography variant="body2" sx={{ ml: 1 }}>
-                            {insight.confidence}%
-                          </Typography>
-                        </Box>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
+          <DataTable
+            testId="analytics-insights"
+            rows={aiInsights}
+            loading={loading}
+            searchKeys={['type', 'title', 'description', 'impact']}
+            emptyTitle={t('noRecordsYet')}
+            columns={[
+              { field: 'type', label: t('movementType'), render: (row) => <StatusChip status={row.type} /> },
+              {
+                field: 'title',
+                label: t('activity'),
+                render: (row) => (
+                  <Box>
+                    <Typography variant="subtitle2">{row.title}</Typography>
+                    <Typography variant="body2" color="text.secondary">{row.description}</Typography>
+                  </Box>
+                ),
+              },
+              { field: 'impact', label: t('priority'), render: (row) => <StatusChip status={String(row.impact || '').toLowerCase()} label={row.impact} /> },
+              { field: 'confidence', label: t('confidence'), render: (row) => (row.confidence == null ? '—' : `${row.confidence}%`) },
+            ]}
+          />
         </CardContent>
       </Card>
-    </Box>
+    </PageShell>
   );
 };
 

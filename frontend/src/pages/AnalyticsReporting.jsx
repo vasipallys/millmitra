@@ -12,12 +12,6 @@ import {
   Alert,
   CircularProgress,
   Chip,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   TextField,
   MenuItem,
   Dialog,
@@ -51,6 +45,9 @@ import {
 } from '@mui/icons-material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart as RechartsBarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, AreaChart, Area } from 'recharts';
 import DemoBanner from '../components/DemoBanner';
+import { PageHeader, PageShell } from '../components/common/PageChrome';
+import DataTable from '../components/common/DataTable';
+import { formatDate } from '../utils/format';
 import PreviewModeToggle from '../components/PreviewModeToggle';
 import { usePreviewMode } from '../hooks/usePreviewMode';
 import { useI18n } from '../i18n/I18nContext';
@@ -153,19 +150,19 @@ const AnalyticsReporting = () => {
   const mockInsights = [
     {
       category: 'production_efficiency',
-      insight: 'Total production volume indicates high operational capacity',
+      insight: t('insightProdBody'),
       confidence: 0.85,
       priority_level: 'high'
     },
     {
       category: 'quality_performance',
-      insight: 'Quality consistency is excellent with 91% average score',
+      insight: t('insightQualityBody'),
       confidence: 0.90,
       priority_level: 'high'
     },
     {
       category: 'financial_health',
-      insight: 'Revenue generation shows strong performance with 18.5% profit margin',
+      insight: t('insightRevBody'),
       confidence: 0.88,
       priority_level: 'medium'
     }
@@ -392,25 +389,19 @@ const AnalyticsReporting = () => {
   }
 
   return (
-    <Box>
+    <PageShell>
       <DemoBanner title={t('reporting')} mode={mode} />
       {pageMessage && (
         <Alert severity={pageMessage.severity} sx={{ mb: 2 }} onClose={() => setPageMessage(null)}>
           {pageMessage.text}
         </Alert>
       )}
-      {/* Header */}
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
-        <Box>
-          <Typography variant="h4" component="h1" fontWeight="bold">
-            Analytics & Reporting
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Mill records from Dashboard, Production, Quality tests, and Finance. Sample is opt-in.
-          </Typography>
-        </Box>
-        <PreviewModeToggle mode={mode} onChange={setMode} />
-      </Box>
+      <PageHeader
+        title={t('reporting')}
+        subtitle={t('analyticsReportSubtitle')}
+        pageKey="reporting"
+        actions={<PreviewModeToggle mode={mode} onChange={setMode} />}
+      />
 
       {/* Quick Actions */}
       <Box sx={{ mb: 3 }}>
@@ -488,9 +479,8 @@ const AnalyticsReporting = () => {
                 </Typography>
                 <Chip 
                   label={dashboardData?.trends?.quality_trend} 
-                  color="info" 
                   size="small" 
-                  sx={{ mt: 1 }}
+                  sx={{ mt: 1, bgcolor: '#e3f2fd', color: '#0d47a1' }}
                 />
               </CardContent>
             </Card>
@@ -739,58 +729,38 @@ const AnalyticsReporting = () => {
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  Generated Reports
+                  {t('generatedReports')}
                 </Typography>
-                <TableContainer>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Report ID</TableCell>
-                        <TableCell>Type</TableCell>
-                        <TableCell>Generated</TableCell>
-                        <TableCell>Language</TableCell>
-                        <TableCell>Confidence</TableCell>
-                        <TableCell>Actions</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {reports.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={6} align="center">
-                            <Typography variant="body2" color="text.secondary">
-                              No reports generated yet. Click "Generate Report" to create your first report.
-                            </Typography>
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        reports.map((report) => (
-                          <TableRow key={report.report_id}>
-                            <TableCell>{report.report_id}</TableCell>
-                            <TableCell>{report.title}</TableCell>
-                            <TableCell>{new Date(report.generated_at).toLocaleDateString()}</TableCell>
-                            <TableCell>{report.language}</TableCell>
-                            <TableCell>{report.confidence_score}%</TableCell>
-                            <TableCell>
-                              <Button size="small" startIcon={<Visibility />} sx={{ mr: 1 }} onClick={() => setViewReport(report)}>
-                                View
-                              </Button>
-                              <Button
-                                size="small"
-                                startIcon={<GetApp />}
-                                onClick={() => {
-                                  downloadJson(`${report.report_id}.json`, report);
-                                  setPageMessage({ severity: 'success', text: `Downloaded ${report.report_id}` });
-                                }}
-                              >
-                                Download
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+                <DataTable
+                  testId="generated-reports"
+                  rows={reports}
+                  searchKeys={['report_id', 'title', 'language']}
+                  emptyTitle={t('noReportsYet')}
+                  emptyDescription={t('noReportsHint')}
+                  getRowId={(row) => row.report_id}
+                  columns={[
+                    { field: 'report_id', label: t('reportId') },
+                    { field: 'title', label: t('movementType') },
+                    { field: 'generated_at', label: t('generated'), render: (row) => formatDate(row.generated_at) },
+                    { field: 'language', label: t('language') },
+                    { field: 'confidence_score', label: t('confidence'), render: (row) => `${row.confidence_score}%` },
+                  ]}
+                  rowActions={[
+                    { label: t('view'), onClick: (row) => setViewReport(row) },
+                    {
+                      label: t('download'),
+                      onClick: (row) => {
+                        const blob = new Blob([JSON.stringify(row, null, 2)], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `${row.report_id}.json`;
+                        link.click();
+                        URL.revokeObjectURL(url);
+                      },
+                    },
+                  ]}
+                />
               </CardContent>
             </Card>
           </Grid>
@@ -903,7 +873,7 @@ const AnalyticsReporting = () => {
           <Button onClick={() => setViewReport(null)}>{t('close')}</Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </PageShell>
   );
 };
 

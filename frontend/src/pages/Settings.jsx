@@ -34,6 +34,7 @@ import { getApiErrorMessage } from '../utils/apiError';
 import { downloadBlob, filenameFromDisposition } from '../utils/downloadFile';
 import { PageHeader, PageShell } from '../components/common/PageChrome';
 import { useI18n } from '../i18n/I18nContext';
+import { useComfort } from '../ux/ComfortContext';
 
 const emptySettings = {
   notifications: {
@@ -88,6 +89,7 @@ const TabPanel = ({ children, value, index }) => (
 
 const Settings = () => {
   const { t } = useI18n();
+  const { comfort, setComfort } = useComfort();
   const [activeTab, setActiveTab] = useState(0);
   const [saveMessage, setSaveMessage] = useState('');
   const [saveError, setSaveError] = useState('');
@@ -272,6 +274,7 @@ const Settings = () => {
       <PageHeader
         title={t('settingsTitle')}
         subtitle={t('settingsSubtitle')}
+        pageKey="settings"
       />
       {saveMessage && <Alert severity="success" sx={{ mb: 2 }} role="status">{saveMessage}</Alert>}
       {saveError && <Alert severity="error" sx={{ mb: 2 }} role="alert">{saveError}</Alert>}
@@ -287,6 +290,18 @@ const Settings = () => {
       </Paper>
 
       <TabPanel value={activeTab} index={0}>
+        <Card sx={{ mb: 2 }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>{t('comfortMode')}</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>{t('comfortModeHelp')}</Typography>
+            <Switch
+              checked={comfort}
+              onChange={(event) => setComfort(event.target.checked)}
+              inputProps={{ 'aria-label': t('comfortMode') }}
+              data-testid="comfort-mode"
+            />
+          </CardContent>
+        </Card>
         {!meta.can_edit_business && (
           <Alert severity="info" sx={{ mb: 2 }}>{t('onlyAdminBusiness')}</Alert>
         )}

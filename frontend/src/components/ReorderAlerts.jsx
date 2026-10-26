@@ -4,10 +4,6 @@ import {
   CardContent,
   Typography,
   Box,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
   Chip,
   Button,
   Alert,
@@ -18,7 +14,6 @@ import {
   DialogActions,
   TextField,
   Grid,
-  Divider
 } from '@mui/material';
 import {
   Warning,
@@ -29,8 +24,10 @@ import {
   TrendingDown,
   Schedule
 } from '@mui/icons-material';
+import { useI18n } from '../i18n/I18nContext';
 
 const ReorderAlerts = ({ onReorder, autoRefresh = true, sourceAlerts }) => {
+  const { t } = useI18n();
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -136,7 +133,7 @@ const ReorderAlerts = ({ onReorder, autoRefresh = true, sourceAlerts }) => {
   const handleReorderSubmit = async () => {
     const quantity = parseInt(reorderForm.quantity, 10);
     if (!Number.isFinite(quantity) || quantity <= 0) {
-      setSubmitError('Quantity must be greater than 0');
+      setSubmitError(t('quantityMustBePositive'));
       return;
     }
     try {
@@ -187,13 +184,13 @@ const ReorderAlerts = ({ onReorder, autoRefresh = true, sourceAlerts }) => {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <ShoppingCart color="warning" />
               <Typography variant="h6">
-                Reorder Alerts
+                {t('reorderAlerts')}
               </Typography>
               {alerts.length > 0 && (
                 <Chip 
-                  label={`${alerts.length} items`} 
-                  color="warning" 
-                  size="small" 
+                  label={t('itemsCount', { count: alerts.length })} 
+                  size="small"
+                  sx={{ bgcolor: '#fff7ed', color: '#9a3412' }}
                 />
               )}
             </Box>
@@ -202,113 +199,110 @@ const ReorderAlerts = ({ onReorder, autoRefresh = true, sourceAlerts }) => {
               size="small" 
               disabled={loading}
             >
-              Refresh
+              {t('refresh')}
             </Button>
           </Box>
 
           {alerts.length === 0 ? (
             <Alert severity="success">
-              All inventory levels are above reorder points. No immediate action required.
+              {t('noReorderNow')}
             </Alert>
           ) : (
-            <List sx={{ p: 0 }}>
-              {alerts.map((alert, index) => (
-                <React.Fragment key={alert.id}>
-                  <ListItem
-                    sx={{
-                      border: 1,
-                      borderColor: `${getPriorityColor(alert.priority)}.main`,
-                      borderRadius: 1,
-                      mb: 1,
-                      bgcolor: `${getPriorityColor(alert.priority)}.50`
-                    }}
-                  >
-                    <ListItemIcon>
-                      {getPriorityIcon(alert.priority)}
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                          <Typography variant="subtitle2">
-                            {alert.product_name}
-                          </Typography>
-                          <Chip 
-                            label={alert.priority.toUpperCase()} 
-                            color={getPriorityColor(alert.priority)}
-                            size="small"
-                          />
-                          <Chip 
-                            label={`${alert.days_remaining} days left`} 
-                            size="small" 
-                            variant="outlined"
-                          />
-                        </Box>
-                      }
-                      secondary={
-                        <Box sx={{ mt: 1 }}>
-                          <Typography variant="body2" gutterBottom>
-                            Current: {alert.current_stock} {alert.unit} | 
-                            Reorder Level: {alert.reorder_level} {alert.unit} | 
-                            Consumption: {alert.consumption_rate} {alert.unit}/day
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Supplier: {alert.supplier} | 
-                            Unit Cost: {formatCurrency(alert.unit_cost)} | 
-                            Recommended Order: {calculateRecommendedQuantity(alert)} {alert.unit}
-                          </Typography>
-                        </Box>
-                      }
-                    />
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, ml: 2 }}>
-                      <Button
-                        variant="contained"
-                        color={getPriorityColor(alert.priority)}
+            <Box>
+              {alerts.map((alert) => (
+                <Box
+                  key={alert.id}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    border: 1,
+                    borderColor: `${getPriorityColor(alert.priority)}.main`,
+                    borderRadius: 1,
+                    mb: 1,
+                    p: 1.5,
+                    bgcolor: `${getPriorityColor(alert.priority)}.50`
+                  }}
+                >
+                  <Box sx={{ mr: 1, mt: 0.5 }}>{getPriorityIcon(alert.priority)}</Box>
+                  <Box sx={{ flex: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                      <Typography variant="subtitle2">
+                        {alert.product_name}
+                      </Typography>
+                      <Chip
+                        label={alert.priority.toUpperCase()}
                         size="small"
-                        startIcon={<Add />}
-                        onClick={() => handleReorderClick(alert)}
-                      >
-                        Reorder
-                      </Button>
-                      <IconButton
+                        sx={alert.priority === 'high'
+                          ? { bgcolor: '#fee2e2', color: '#991b1b' }
+                          : { bgcolor: '#fff7ed', color: '#9a3412' }}
+                      />
+                      <Chip
+                        label={t('daysLeft', { days: alert.days_remaining })}
                         size="small"
-                        onClick={() => dismissAlert(alert.id)}
-                      >
-                        <Close fontSize="small" />
-                      </IconButton>
+                        variant="outlined"
+                        sx={{ color: '#424242', borderColor: '#9e9e9e' }}
+                      />
                     </Box>
-                  </ListItem>
-                  {index < alerts.length - 1 && <Divider sx={{ my: 1 }} />}
-                </React.Fragment>
+                    <Typography variant="body2" sx={{ mt: 1, color: '#424242' }}>
+                      {t('currentStockLabel')}: {alert.current_stock} {alert.unit} |
+                      {t('reorderLevel')}: {alert.reorder_level} {alert.unit} |
+                      {t('consumptionDay')}: {alert.consumption_rate} {alert.unit}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#424242' }}>
+                      {t('supplierLabel')}: {alert.supplier} |
+                      {t('unitCost')}: {formatCurrency(alert.unit_cost)} |
+                      {t('recommendedOrder')}: {calculateRecommendedQuantity(alert)} {alert.unit}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, ml: 2 }}>
+                    <Button
+                      variant="contained"
+                      color={getPriorityColor(alert.priority)}
+                      size="small"
+                      startIcon={<Add />}
+                      onClick={() => handleReorderClick(alert)}
+                    >
+                      {t('reorder')}
+                    </Button>
+                    <IconButton
+                      size="small"
+                      aria-label={t('dismissNamed', { name: alert.product_name })}
+                      onClick={() => dismissAlert(alert.id)}
+                    >
+                      <Close fontSize="small" />
+                    </IconButton>
+                  </Box>
+                </Box>
               ))}
-            </List>
+            </Box>
           )}
 
           {/* Summary */}
           {alerts.length > 0 && (
             <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
               <Typography variant="subtitle2" gutterBottom>
-                Reorder Summary
+                {t('reorderSummary')}
               </Typography>
               <Grid container spacing={2}>
                 <Grid item xs={4}>
                   <Typography variant="body2" color="text.secondary">
-                    High Priority
+                    {t('highPriority')}
                   </Typography>
-                  <Typography variant="h6" color="error.main">
+                  <Typography variant="h6" sx={{ color: '#991b1b' }}>
                     {alerts.filter(a => a.priority === 'high').length}
                   </Typography>
                 </Grid>
                 <Grid item xs={4}>
                   <Typography variant="body2" color="text.secondary">
-                    Medium Priority
+                    {t('mediumPriority')}
                   </Typography>
-                  <Typography variant="h6" color="warning.main">
+                  <Typography variant="h6" sx={{ color: '#9a3412' }}>
                     {alerts.filter(a => a.priority === 'medium').length}
                   </Typography>
                 </Grid>
                 <Grid item xs={4}>
                   <Typography variant="body2" color="text.secondary">
-                    Total Est. Cost
+                    {t('totalEstCost')}
                   </Typography>
                   <Typography variant="h6" color="primary.main">
                     {formatCurrency(
@@ -327,7 +321,7 @@ const ReorderAlerts = ({ onReorder, autoRefresh = true, sourceAlerts }) => {
       {/* Reorder Dialog */}
       <Dialog open={reorderDialog.open} onClose={() => setReorderDialog({ open: false, item: null })} maxWidth="sm" fullWidth>
         <DialogTitle>
-          Create Reorder Request
+          {t('createReorderRequest')}
           {reorderDialog.item && (
             <Typography variant="subtitle2" color="text.secondary">
               {reorderDialog.item.product_name}
@@ -339,19 +333,19 @@ const ReorderAlerts = ({ onReorder, autoRefresh = true, sourceAlerts }) => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Quantity"
+                label={t('quantity')}
                 type="number"
                 value={reorderForm.quantity}
                 onChange={(e) => setReorderForm(prev => ({ ...prev, quantity: e.target.value }))}
                 inputProps={{ min: 1 }}
                 required
-                helperText={reorderDialog.item ? `Unit: ${reorderDialog.item.unit}` : ''}
+                helperText={reorderDialog.item ? t('unitColon', { unit: reorderDialog.item.unit }) : ''}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Supplier"
+                label={t('supplierLabel')}
                 value={reorderForm.supplier}
                 onChange={(e) => setReorderForm(prev => ({ ...prev, supplier: e.target.value }))}
                 required
@@ -360,7 +354,7 @@ const ReorderAlerts = ({ onReorder, autoRefresh = true, sourceAlerts }) => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Expected Delivery"
+                label={t('expectedDelivery')}
                 type="date"
                 value={reorderForm.expected_delivery}
                 onChange={(e) => setReorderForm(prev => ({ ...prev, expected_delivery: e.target.value }))}
@@ -371,21 +365,21 @@ const ReorderAlerts = ({ onReorder, autoRefresh = true, sourceAlerts }) => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Estimated Cost"
+                label={t('totalEstCost')}
                 value={reorderDialog.item ? formatCurrency(parseInt(reorderForm.quantity || 0) * reorderDialog.item.unit_cost) : ''}
                 disabled
-                helperText="Calculated automatically"
+                helperText={t('calculatedAutomatically')}
               />
             </Grid>
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Notes"
+                label={t('notes')}
                 multiline
                 rows={3}
                 value={reorderForm.notes}
                 onChange={(e) => setReorderForm(prev => ({ ...prev, notes: e.target.value }))}
-                placeholder="Additional notes for the reorder..."
+                placeholder={t('reorderNotesHint')}
               />
             </Grid>
           </Grid>
@@ -393,14 +387,14 @@ const ReorderAlerts = ({ onReorder, autoRefresh = true, sourceAlerts }) => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setReorderDialog({ open: false, item: null })}>
-            Cancel
+            {t('cancel')}
           </Button>
           <Button 
             onClick={handleReorderSubmit} 
             variant="contained"
             disabled={!reorderForm.quantity || !reorderForm.supplier || !reorderForm.expected_delivery}
           >
-            Submit Reorder
+            {t('submitReorder')}
           </Button>
         </DialogActions>
       </Dialog>

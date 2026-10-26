@@ -39,6 +39,9 @@ import FormBuilder from './pages/FormBuilder';
 import DashboardBuilder from './pages/DashboardBuilder';
 import DynamicEntity from './pages/DynamicEntity';
 import RequireAccess from './components/RequireAccess';
+import CommandPalette, { useCommandPalette } from './components/CommandPalette';
+import MobileBottomNav from './components/MobileBottomNav';
+import { ComfortProvider, useComfort } from './ux/ComfortContext';
 import { permissionForPath } from './utils/permissions';
 
 // Services
@@ -86,6 +89,7 @@ const themeOptions = {
           borderRadius: 8,
           textTransform: 'none',
           fontWeight: 500,
+          minHeight: 44,
         },
       },
       defaultProps: {
@@ -105,6 +109,17 @@ const themeOptions = {
     MuiDialog: {
       defaultProps: {
         fullWidth: true,
+      },
+      styleOverrides: {
+        paper: {
+          '@media (max-width:600px)': {
+            margin: 0,
+            width: '100%',
+            maxHeight: '100%',
+            height: '100%',
+            borderRadius: 0,
+          },
+        },
       },
     },
     MuiTooltip: {
@@ -138,7 +153,9 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
-        <AppContent />
+        <ComfortProvider>
+          <AppContent />
+        </ComfortProvider>
       </ToastProvider>
     </QueryClientProvider>
   );
@@ -146,16 +163,34 @@ function App() {
 
 function AppContent() {
   const { dir, t } = useI18n();
-  const directedTheme = createTheme({ ...themeOptions, direction: dir });
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => (
+    typeof window !== 'undefined' ? window.innerWidth >= 900 : true
+  ));
   const [user, setUser] = useState(null);
   const location = useLocation();
+  const palette = useCommandPalette();
+  const { comfort, setComfort } = useComfort();
+  const directedTheme = createTheme({
+    ...themeOptions,
+    direction: dir,
+    typography: {
+      ...themeOptions.typography,
+      fontSize: comfort ? 16 : 14,
+    },
+    spacing: comfort ? 10 : 8,
+  });
 
   useEffect(() => {
     checkAuthStatus();
   }, []);
+
+  useEffect(() => {
+    if (typeof user?.preferences?.comfort_mode === 'boolean') {
+      setComfort(user.preferences.comfort_mode, false);
+    }
+  }, [user?.preferences?.comfort_mode]);
 
   useEffect(() => {
     recordNavigation(location.pathname);
@@ -239,7 +274,7 @@ function AppContent() {
     <ThemeProvider theme={directedTheme}>
       <CssBaseline />
       <AssistantProvider>
-      <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+      <Box sx={{ display: 'flex', minHeight: '100vh', pb: { xs: 7, md: 0 }, overflowX: 'hidden', maxWidth: '100%' }}>
         {/* Sidebar */}
         <Sidebar
           open={sidebarOpen}
@@ -263,6 +298,7 @@ function AppContent() {
             onLogout={handleLogout}
             user={user}
             onUserChange={setUser}
+            onOpenSearch={() => palette.setOpen(true)}
           />
           
           {/* Page Content */}
@@ -304,6 +340,8 @@ function AppContent() {
         
         <AssistantOverlay />
         <PWAInstallPrompt />
+        <CommandPalette open={palette.open} onClose={() => palette.setOpen(false)} />
+        <MobileBottomNav onOpenMenu={() => setSidebarOpen(true)} />
       </Box>
       </AssistantProvider>
     </ThemeProvider>

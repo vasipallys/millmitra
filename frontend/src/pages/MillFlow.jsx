@@ -483,6 +483,7 @@ const MillFlow = () => {
       <PageHeader
         title={t('millFlowTitle')}
         subtitle={t('millFlowSubtitle')}
+        pageKey="millFlow"
         actions={
           phase === 'wizard' ? (
             <Button aria-label="Back to mill flow start" onClick={() => { setPhase('home'); setError(''); }}>

@@ -9,8 +9,8 @@ export default function RequireAccess({ user, permission, children }) {
   }
   return (
     <Box sx={{ p: 3, maxWidth: 560 }}>
+      <Typography variant="h4" component="h1" sx={{ mb: 2 }}>{t('deniedTitle')}</Typography>
       <Alert severity="warning" role="alert">
-        <Typography variant="h6">{t('deniedTitle')}</Typography>
         <Typography variant="body2">{t('deniedBody')}</Typography>
       </Alert>
     </Box>

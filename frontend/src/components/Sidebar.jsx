@@ -7,6 +7,7 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  ListSubheader,
   Typography,
   Box,
   Divider,
@@ -19,6 +20,7 @@ import DeviceHubIcon from '@mui/icons-material/DeviceHub';
 import ViewQuiltIcon from '@mui/icons-material/ViewQuilt';
 import WidgetsIcon from '@mui/icons-material/Widgets';
 import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import { useI18n } from '../i18n/I18nContext';
 import { can } from '../utils/permissions';
 import {
@@ -40,30 +42,62 @@ import {
 
 const drawerWidth = 240;
 
-const coreMenuItems = [
-  { textKey: 'dashboard', descKey: 'navDashboard', icon: <DashboardIcon />, path: '/dashboard', permission: 'dashboard' },
-  { textKey: 'millFlow', descKey: 'navMillFlow', icon: <MillFlowIcon />, path: '/mill-flow', permission: 'mill_flow' },
-  { textKey: 'farmers', descKey: 'navFarmers', icon: <FarmersIcon />, path: '/farmers', permission: 'farmers' },
-  { textKey: 'inventory', descKey: 'navInventory', icon: <InventoryIcon />, path: '/inventory', permission: 'inventory' },
-  { textKey: 'production', descKey: 'navProduction', icon: <ProductionIcon />, path: '/production', permission: 'production' },
-  { textKey: 'sales', descKey: 'navSales', icon: <SalesIcon />, path: '/sales', permission: 'sales' },
-  { textKey: 'finance', descKey: 'navFinance', icon: <FinanceIcon />, path: '/finance', permission: 'finance' },
-  { textKey: 'customers', descKey: 'navCustomers', icon: <CustomersIcon />, path: '/customers', permission: 'customers' },
-  { textKey: 'settings', descKey: 'navSettings', icon: <SettingsIcon />, path: '/settings', permission: 'settings' },
-  { textKey: 'users', descKey: 'navUsers', icon: <AdminPanelSettingsIcon />, path: '/users', permission: 'users' },
-  { textKey: 'access', descKey: 'navAccess', icon: <SecurityIcon />, path: '/access', permission: 'users' },
-  { textKey: 'lookupsTitle', descKey: 'navLookups', icon: <ListAltIcon />, path: '/lookups', permission: 'lookups' },
-  { textKey: 'iiot', descKey: 'navIiot', icon: <DeviceHubIcon />, path: '/iiot', permission: 'iiot' },
-  { textKey: 'formBuilder', descKey: 'navFormBuilder', icon: <ViewQuiltIcon />, path: '/form-builder', permission: 'metadata' },
-  { textKey: 'dashboardBuilder', descKey: 'navDashboardBuilder', icon: <WidgetsIcon />, path: '/dashboard-builder', permission: 'dashboard' },
-  { textKey: 'dynamicForms', descKey: 'navDynamicForms', icon: <ViewQuiltIcon />, path: '/forms/inspection', permission: 'dashboard' },
-];
-
-const previewMenuItems = [
-  { textKey: 'analytics', descKey: 'navDashboard', icon: <AnalyticsIcon />, path: '/analytics', permission: 'preview' },
-  { textKey: 'qualityControl', descKey: 'navProduction', icon: <QualityIcon />, path: '/quality-control', permission: 'quality' },
-  { textKey: 'financialIntelligence', descKey: 'navFinance', icon: <FinancialIntelligenceIcon />, path: '/financial-intelligence', permission: 'preview' },
-  { textKey: 'complianceGst', descKey: 'navFinance', icon: <ComplianceIcon />, path: '/compliance-gst', permission: 'preview' },
+const MENU_GROUPS = [
+  {
+    key: 'navGroupDaily',
+    items: [
+      { textKey: 'dashboard', descKey: 'navDashboard', icon: <DashboardIcon />, path: '/dashboard', permission: 'dashboard' },
+      { textKey: 'millFlow', descKey: 'navMillFlow', icon: <MillFlowIcon />, path: '/mill-flow', permission: 'mill_flow' },
+      { textKey: 'farmers', descKey: 'navFarmers', icon: <FarmersIcon />, path: '/farmers', permission: 'farmers' },
+      { textKey: 'iiot', descKey: 'navIiot', icon: <DeviceHubIcon />, path: '/iiot', permission: 'iiot' },
+    ],
+  },
+  {
+    key: 'navGroupOps',
+    items: [
+      { textKey: 'inventory', descKey: 'navInventory', icon: <InventoryIcon />, path: '/inventory', permission: 'inventory' },
+      { textKey: 'production', descKey: 'navProduction', icon: <ProductionIcon />, path: '/production', permission: 'production' },
+    ],
+  },
+  {
+    key: 'navGroupSales',
+    items: [
+      { textKey: 'sales', descKey: 'navSales', icon: <SalesIcon />, path: '/sales', permission: 'sales' },
+      { textKey: 'customers', descKey: 'navCustomers', icon: <CustomersIcon />, path: '/customers', permission: 'customers' },
+      { textKey: 'finance', descKey: 'navFinance', icon: <FinanceIcon />, path: '/finance', permission: 'finance' },
+    ],
+  },
+  {
+    key: 'navGroupQuality',
+    items: [
+      { textKey: 'qualityControl', descKey: 'navProduction', icon: <QualityIcon />, path: '/quality-control', permission: 'quality' },
+      { textKey: 'complianceGst', descKey: 'navFinance', icon: <ComplianceIcon />, path: '/compliance-gst', permission: 'preview' },
+    ],
+  },
+  {
+    key: 'navGroupAdmin',
+    items: [
+      { textKey: 'users', descKey: 'navUsers', icon: <AdminPanelSettingsIcon />, path: '/users', permission: 'users' },
+      { textKey: 'access', descKey: 'navAccess', icon: <SecurityIcon />, path: '/access', permission: 'users' },
+      { textKey: 'lookupsTitle', descKey: 'navLookups', icon: <ListAltIcon />, path: '/lookups', permission: 'lookups' },
+      { textKey: 'formBuilder', descKey: 'navFormBuilder', icon: <ViewQuiltIcon />, path: '/form-builder', permission: 'metadata' },
+      { textKey: 'dashboardBuilder', descKey: 'navDashboardBuilder', icon: <WidgetsIcon />, path: '/dashboard-builder', permission: 'dashboard' },
+      { textKey: 'dynamicForms', descKey: 'navDynamicForms', icon: <ViewQuiltIcon />, path: '/forms/inspection', permission: 'dashboard' },
+    ],
+  },
+  {
+    key: 'navGroupSettings',
+    items: [
+      { textKey: 'settings', descKey: 'navSettings', icon: <SettingsIcon />, path: '/settings', permission: 'settings' },
+    ],
+  },
+  {
+    key: 'navGroupPreview',
+    items: [
+      { textKey: 'analytics', descKey: 'navDashboard', icon: <AnalyticsIcon />, path: '/analytics', permission: 'preview' },
+      { textKey: 'financialIntelligence', descKey: 'navFinance', icon: <FinancialIntelligenceIcon />, path: '/financial-intelligence', permission: 'preview' },
+    ],
+  },
 ];
 
 const Sidebar = ({ open, onClose, user }) => {
@@ -71,13 +105,15 @@ const Sidebar = ({ open, onClose, user }) => {
   const location = useLocation();
   const { t } = useI18n();
   const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const side = theme.direction === 'rtl' ? 'right' : 'left';
-  const visibleCore = coreMenuItems.filter((item) => can(user, item.permission));
-  const visiblePreview = previewMenuItems.filter((item) => can(user, item.permission));
+  const visibleGroups = MENU_GROUPS
+    .map((group) => ({ ...group, items: group.items.filter((item) => can(user, item.permission)) }))
+    .filter((group) => group.items.length);
 
   const handleNavigation = (path) => {
     navigate(path);
-    if (window.innerWidth < 768) {
+    if (!isDesktop) {
       onClose();
     }
   };
@@ -96,7 +132,7 @@ const Sidebar = ({ open, onClose, user }) => {
             {t('appName')}
           </Typography>
         </Box>
-        <Typography variant="body2" sx={{ opacity: 0.8 }}>
+        <Typography variant="body2">
           {t('navMillFlow')}
         </Typography>
       </Box>
@@ -110,7 +146,6 @@ const Sidebar = ({ open, onClose, user }) => {
           label={user?.role || 'Operator'} 
           size="small" 
           color="primary" 
-          variant="outlined"
           sx={{ mt: 0.5 }}
         />
       </Box>
@@ -119,8 +154,26 @@ const Sidebar = ({ open, onClose, user }) => {
 
       {/* Navigation Menu */}
       <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
-        <List sx={{ pt: 1 }}>
-          {visibleCore.map((item) => (
+        {visibleGroups.map((group) => (
+        <List
+          key={group.key}
+          sx={{ pt: 1 }}
+          subheader={(
+            <ListSubheader
+              disableSticky
+              sx={{
+                lineHeight: 2,
+                bgcolor: 'background.paper',
+                color: 'text.primary',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+              }}
+            >
+              {t(group.key)}
+            </ListSubheader>
+          )}
+        >
+          {group.items.map((item) => (
             <ListItem key={item.path} disablePadding>
               <ListItemButton
                 onClick={() => handleNavigation(item.path)}
@@ -165,55 +218,19 @@ const Sidebar = ({ open, onClose, user }) => {
                   }}
                   secondaryTypographyProps={{
                     fontSize: '0.75rem',
-                    color: isActive(item.path) ? 'rgba(255,255,255,0.7)' : 'text.secondary',
+                    color: isActive(item.path) ? 'rgba(255,255,255,0.95)' : 'text.primary',
                   }}
                 />
               </ListItemButton>
             </ListItem>
           ))}
         </List>
-        {visiblePreview.length > 0 && (
-        <>
-        <Divider sx={{ my: 1 }} />
-        <Typography variant="caption" color="text.secondary" sx={{ px: 2 }}>
-          {t('previewGroup')}
-        </Typography>
-        <List dense>
-          {visiblePreview.map((item) => (
-            <ListItem key={item.path} disablePadding>
-              <ListItemButton
-                onClick={() => handleNavigation(item.path)}
-                selected={isActive(item.path)}
-                aria-current={isActive(item.path) ? 'page' : undefined}
-                sx={{
-                  mx: 1,
-                  mb: 0.5,
-                  borderRadius: 2,
-                  borderInlineStart: '4px solid',
-                  borderInlineStartColor: isActive(item.path) ? 'primary.main' : 'transparent',
-                  minHeight: 40,
-                }}
-              >
-                <ListItemIcon sx={{ minWidth: 40, color: 'text.secondary' }}>
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={t(item.textKey)}
-                  secondary={t(item.descKey)}
-                  primaryTypographyProps={{ fontSize: '0.85rem' }}
-                  secondaryTypographyProps={{ fontSize: '0.7rem' }}
-                />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-        </>
-        )}
+        ))}
       </Box>
 
       <Box sx={{ p: 2, bgcolor: 'grey.50' }}>
         <Typography variant="subtitle2">{t('appName')}</Typography>
-        <Typography variant="caption" color="text.secondary">
+        <Typography variant="caption" color="text.primary">
           {t('sidebarHint')}
         </Typography>
       </Box>
@@ -222,11 +239,13 @@ const Sidebar = ({ open, onClose, user }) => {
 
   return (
     <Drawer
-      variant="persistent"
+      variant={isDesktop ? 'persistent' : 'temporary'}
       anchor={side}
       open={open}
+      onClose={onClose}
+      ModalProps={{ keepMounted: true }}
       data-testid="sidebar"
-      sx={{
+      sx={isDesktop ? {
         width: open ? drawerWidth : 0,
         flexShrink: 0,
         transition: 'width 0.3s ease-in-out',
@@ -237,6 +256,11 @@ const Sidebar = ({ open, onClose, user }) => {
           borderInlineEnd: '1px solid',
           borderColor: 'divider',
           transition: 'transform 0.3s ease-in-out',
+        },
+      } : {
+        '& .MuiDrawer-paper': {
+          width: drawerWidth,
+          boxSizing: 'border-box',
         },
       }}
     >

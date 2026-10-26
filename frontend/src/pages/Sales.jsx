@@ -6,21 +6,12 @@ import {
   CardContent,
   Typography,
   Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Chip,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   TextField,
   MenuItem,
-  LinearProgress,
   Alert,
 } from '@mui/material';
 import {
@@ -34,8 +25,11 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { salesAPI } from '../services/api';
 import { getApiErrorMessage } from '../utils/apiError';
-import { PageEmpty, PageHeader, PageShell, QueryErrorAlert } from '../components/common/PageChrome';
+import { PageHeader, PageShell, QueryErrorAlert } from '../components/common/PageChrome';
 import { useI18n } from '../i18n/I18nContext';
+import StatusChip from '../components/common/StatusChip';
+import DataTable from '../components/common/DataTable';
+import { formatDate, formatINR } from '../utils/format';
 import { useAssistantOpen } from '../assistant/AssistantBridge';
 
 const Sales = () => {
@@ -109,25 +103,6 @@ const Sales = () => {
     }
   );
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'delivered': return 'success';
-      case 'processing': return 'warning';
-      case 'confirmed': return 'info';
-      case 'cancelled': return 'error';
-      default: return 'default';
-    }
-  };
-
-  const getPaymentStatusColor = (status) => {
-    switch (status) {
-      case 'paid': return 'success';
-      case 'pending': return 'warning';
-      case 'overdue': return 'error';
-      default: return 'default';
-    }
-  };
-
   const formatItems = (order) => {
     const items = order.order_items || order.items;
     if (Array.isArray(items) && items.length) {
@@ -165,6 +140,7 @@ const Sales = () => {
       <PageHeader
         title={t('salesTitle')}
         subtitle={t('salesSubtitle')}
+        pageKey="sales"
         actions={
           <Button
             variant="contained"
@@ -190,7 +166,7 @@ const Sales = () => {
                     Total Revenue
                   </Typography>
                   <Typography variant="h5" component="div">
-                    ₹{Number(salesMetrics.totalRevenue).toLocaleString()}
+                    {formatINR(salesMetrics.totalRevenue)}
                   </Typography>
                 </Box>
                 <RevenueIcon color="primary" sx={{ fontSize: 40 }} />
@@ -300,60 +276,28 @@ const Sales = () => {
           <Typography variant="h6" gutterBottom>
             Recent Orders
           </Typography>
-          {isLoading && <LinearProgress />}
-          {!isLoading && !isError && orders.length === 0 && (
-            <PageEmpty
-              title={t('noSalesOrders')}
-              description={t('noSalesOrdersHint')}
-              action={
-                <Button variant="contained" startIcon={<AddIcon />} onClick={() => setOpenDialog(true)}>
-                  {t('newOrder')}
-                </Button>
-              }
-            />
-          )}
-          <TableContainer component={Paper} elevation={0}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Order ID</TableCell>
-                  <TableCell>Customer</TableCell>
-                  <TableCell>Date</TableCell>
-                  <TableCell>Items</TableCell>
-                  <TableCell>Amount</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Payment</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {orders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell>{order.order_number || order.id}</TableCell>
-                    <TableCell>{order.customer_name || order.customer || `#${order.customer_id}`}</TableCell>
-                    <TableCell>
-                      {order.order_date ? new Date(order.order_date).toLocaleDateString() : '—'}
-                    </TableCell>
-                    <TableCell>{formatItems(order)}</TableCell>
-                    <TableCell>₹{Number(order.total_amount || 0).toLocaleString()}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={order.status || 'pending'}
-                        color={getStatusColor(order.status)}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={order.payment_status || 'pending'}
-                        color={getPaymentStatusColor(order.payment_status)}
-                        size="small"
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          <DataTable
+            testId="sales-orders"
+            rows={orders}
+            loading={isLoading}
+            searchKeys={['order_number', 'customer_name', 'customer', 'status', 'payment_status']}
+            emptyTitle={t('noSalesOrders')}
+            emptyDescription={t('noSalesOrdersHint')}
+            emptyAction={(
+              <Button variant="contained" startIcon={<AddIcon />} onClick={() => setOpenDialog(true)}>
+                {t('newOrder')}
+              </Button>
+            )}
+            columns={[
+              { field: 'order_number', label: t('orderId'), render: (order) => order.order_number || order.id },
+              { field: 'customer_name', label: t('customers'), render: (order) => order.customer_name || order.customer || `#${order.customer_id}` },
+              { field: 'order_date', label: t('date'), render: (order) => formatDate(order.order_date) },
+              { field: 'items', label: t('items'), render: (order) => formatItems(order) },
+              { field: 'total_amount', label: t('amount'), render: (order) => formatINR(order.total_amount) },
+              { field: 'status', label: t('status'), render: (order) => <StatusChip status={order.status || 'pending'} /> },
+              { field: 'payment_status', label: t('paymentStatus'), render: (order) => <StatusChip status={order.payment_status || 'pending'} /> },
+            ]}
+          />
         </CardContent>
       </Card>
 

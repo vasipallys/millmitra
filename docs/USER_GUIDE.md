@@ -268,11 +268,16 @@ If switch fails, you stay on the current mill. You can also sign out and sign in
 
 After login you have:
 
-- **Left sidebar** branded **Smart Mill** — main modules
-- **Top bar** titled **Rice Mill Management System** — menu button, **mill name** chip (click to switch if you have more than one mill), **role** chip, **language**, microphone, notifications bell, avatar
-- **Main area** — the page for the module you selected
+- **Left sidebar** grouped as Daily work, Inventory and production, Sales and money, Quality and compliance, Admin, Settings (and Preview if you have it)
+- **Top bar** — menu, mill name, role, **Find a page** (magnifier or Ctrl+K), language, notifications, avatar
+- **Phone** — a bottom bar for Dashboard, Mill flow, Farmers, Inventory, and More
+- **Main area** — the page for the module you selected. The **?** next to the title is two or three short tips.
+
+**Lists** (farmers, orders, invoices, batches, quality tests, customers, users, lookups, and similar) share one pattern: a search box, a loading skeleton, an empty-state button when there are no rows, a ⋮ menu for row actions on desktop, and **cards** on a phone. Statuses use the same chips (Ready, Pending, Paid, and so on). Amounts and dates use the same ₹ and date format.
 
 The sidebar **hides** items your role cannot use. Opening a hidden path shows **You don’t have access**. The mill server also rejects forbidden saves (for example an operator creating a finance invoice).
+
+**Comfort mode** (Settings) makes text and buttons larger. It is saved on your account.
 
 | Sidebar label | Opens | What it is for | Who typically sees it |
 | --- | --- | --- | --- |
@@ -323,10 +328,10 @@ Admin **Users** (`/users`): list, create (username, password, role), change role
 
 ### What you can do
 
+- Follow **Suggested next step** or the **Getting started** list (register farmer → buy paddy → mill → sell). Hide the list when you are done; the mill remembers.
 - Read the metric cards: **Production** (kg), **Quality Score** (%), **Inventory Value** (₹), **Pending Orders**, **Active Farmers**.
 - Open any alerts listed in the alerts panel.
-- Click the refresh icon to reload.
-- Click the gear icon to open **Customize Dashboard** (widget selection). This is optional.
+- Click refresh to reload. Click customize to pick widgets.
 
 Numbers refresh on their own every few seconds to a few minutes. If a card shows `0`, that module may still be empty (no batches, no stock, no farmers yet).
 

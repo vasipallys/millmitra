@@ -5,6 +5,7 @@ import {
 } from '@mui/material';
 import { PageHeader, PageShell } from '../components/common/PageChrome';
 import { useI18n } from '../i18n/I18nContext';
+import useUnsavedGuard from '../hooks/useUnsavedGuard';
 import { metadataService } from '../services/metadataService';
 import '../composable.css';
 
@@ -28,6 +29,8 @@ export default function FormBuilder() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [dirty, setDirty] = useState(false);
+  useUnsavedGuard(dirty, t('unsavedChanges'));
 
   const load = async (key) => {
     setLoading(true);
@@ -54,6 +57,7 @@ export default function FormBuilder() {
   }, [entity]);
 
   const updateField = (index, patch) => {
+    setDirty(true);
     setFields((current) => current.map((item, i) => (i === index ? { ...item, ...patch } : item)));
   };
 
@@ -76,6 +80,7 @@ export default function FormBuilder() {
     };
     try {
       await metadataService.saveForm(entity, layout);
+      setDirty(false);
       setMessage(t('formSaved'));
     } catch (err) {
       setError(err.response?.data?.message || err.message);
@@ -84,7 +89,7 @@ export default function FormBuilder() {
 
   return (
     <PageShell>
-      <PageHeader title={t('formBuilder')} subtitle={t('formBuilderSubtitle')} />
+      <PageHeader title={t('formBuilder')} subtitle={t('formBuilderSubtitle')} pageKey="formBuilder" />
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {loading && <Typography sx={{ mb: 2 }}>{t('loading')}</Typography>}
       <Card>

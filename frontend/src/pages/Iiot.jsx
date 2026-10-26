@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   Alert, Box, Button, Card, CardContent, Dialog, DialogActions, DialogContent,
-  DialogTitle, MenuItem, Table, TableBody, TableCell, TableHead, TableRow,
-  TextField, Typography,
+  DialogTitle, MenuItem, TextField, Typography,
 } from '@mui/material';
 import { PageHeader, PageLoading, PageShell } from '../components/common/PageChrome';
+import DataTable from '../components/common/DataTable';
+import StatusChip from '../components/common/StatusChip';
 import '../composable.css';
 import { useI18n } from '../i18n/I18nContext';
 import { iiotService } from '../services/iiotService';
@@ -124,6 +125,7 @@ export default function Iiot() {
       <PageHeader
         title={t('iiot')}
         subtitle={t('iiotSubtitle')}
+        pageKey="iiot"
         actions={(
           <Button variant="outlined" onClick={syncQueued}>{t('syncNow')} ({queued})</Button>
         )}
@@ -163,91 +165,58 @@ export default function Iiot() {
       <Card sx={{ mb: 2 }}>
         <CardContent>
           <Typography variant="h6">{t('devices')}</Typography>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>{t('device')}</TableCell>
-                <TableCell>{t('location')}</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {!devices.length && (
-                <TableRow><TableCell colSpan={2}>{t('noDevices')}</TableCell></TableRow>
-              )}
-              {devices.map((device) => (
-                <TableRow key={device.device_id}>
-                  <TableCell>{device.name}</TableCell>
-                  <TableCell>{device.location}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <DataTable
+            rows={devices}
+            getRowId={(row) => row.device_id}
+            searchKeys={['name', 'location', 'device_id']}
+            emptyTitle={t('noDevices')}
+            columns={[
+              { field: 'name', label: t('device') },
+              { field: 'location', label: t('location') },
+            ]}
+          />
         </CardContent>
       </Card>
 
       <Card sx={{ mb: 2 }}>
         <CardContent>
           <Typography variant="h6">{t('latestReadings')}</Typography>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>{t('device')}</TableCell>
-                <TableCell>{t('metric')}</TableCell>
-                <TableCell>{t('value')}</TableCell>
-                <TableCell>{t('source')}</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {!readings.length && (
-                <TableRow><TableCell colSpan={4}>{t('noReadings')}</TableCell></TableRow>
-              )}
-              {readings.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell>{row.device_id}</TableCell>
-                  <TableCell>{row.metric}</TableCell>
-                  <TableCell>{row.value}</TableCell>
-                  <TableCell>{row.source}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <DataTable
+            rows={readings}
+            searchKeys={['device_id', 'metric', 'source']}
+            emptyTitle={t('noReadings')}
+            columns={[
+              { field: 'device_id', label: t('device') },
+              { field: 'metric', label: t('metric') },
+              { field: 'value', label: t('value') },
+              { field: 'source', label: t('source') },
+            ]}
+          />
         </CardContent>
       </Card>
 
       <Card>
         <CardContent>
           <Typography variant="h6">{t('discrepancies')}</Typography>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>{t('device')}</TableCell>
-                <TableCell>{t('metric')}</TableCell>
-                <TableCell>{t('sensorValue')}</TableCell>
-                <TableCell>{t('manualValue')}</TableCell>
-                <TableCell>{t('status')}</TableCell>
-                <TableCell />
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {!discrepancies.length && (
-                <TableRow><TableCell colSpan={6}>{t('noDiscrepancies')}</TableCell></TableRow>
-              )}
-              {discrepancies.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell>{row.device_id}</TableCell>
-                  <TableCell>{row.metric}</TableCell>
-                  <TableCell>{row.sensor_value}</TableCell>
-                  <TableCell>{row.manual_value}</TableCell>
-                  <TableCell>{row.status}</TableCell>
-                  <TableCell>
-                    {canResolve && row.status === 'open' && (
-                      <Button size="small" onClick={() => setResolveRow(row)}>{t('resolve')}</Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <DataTable
+            rows={discrepancies}
+            searchKeys={['device_id', 'metric', 'status']}
+            emptyTitle={t('noDiscrepancies')}
+            columns={[
+              { field: 'device_id', label: t('device') },
+              { field: 'metric', label: t('metric') },
+              { field: 'sensor_value', label: t('sensorValue') },
+              { field: 'manual_value', label: t('manualValue') },
+              { field: 'status', label: t('status'), render: (row) => <StatusChip status={row.status} /> },
+            ]}
+            rowActions={canResolve ? [
+              {
+                label: t('resolve'),
+                disabled: (row) => row?.status !== 'open',
+                onClick: (row) => setResolveRow(row),
+              },
+            ] : undefined}
+          />
         </CardContent>
       </Card>
 

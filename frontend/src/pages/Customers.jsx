@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  Grid, Card, CardContent, Typography, Box, Button, Chip,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+  Grid, Card, CardContent, Typography, Box, Button,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField,
   Select, MenuItem, FormControl, InputLabel, Alert, LinearProgress,
   Tabs, Tab, IconButton, Tooltip, Paper, Avatar, Divider
@@ -14,13 +13,14 @@ import {
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { customerService } from '../services/customerService';
 import { useI18n } from '../i18n/I18nContext';
-import CustomerCard from '../components/CustomerCard';
 import CustomerDetails from '../components/CustomerDetails';
 import OrderHistory from '../components/OrderHistory';
 import CustomerAnalytics from '../components/CustomerAnalytics';
 import InteractionDialog from '../components/InteractionDialog';
 import { getApiErrorMessage } from '../utils/apiError';
 import { PageHeader, PageShell, QueryErrorAlert } from '../components/common/PageChrome';
+import DataTable from '../components/common/DataTable';
+import StatusChip from '../components/common/StatusChip';
 import LookupSelect, { LookupFilterSelect } from '../components/common/LookupSelect';
 import CustomFieldsSection from '../components/metadata/CustomFieldsSection';
 import { metadataService } from '../services/metadataService';
@@ -117,6 +117,7 @@ const Customers = () => {
       <PageHeader
         title={t('customersTitle')}
         subtitle={t('customersSubtitle')}
+        pageKey="customers"
         actions={
           <>
             <Button variant="outlined" startIcon={<Analytics />} onClick={() => setActiveTab(3)}>
@@ -269,48 +270,50 @@ const Customers = () => {
 
       {/* Tab Content */}
       {activeTab === 0 && (
-        <Grid container spacing={3}>
-          {customersData?.customers?.map((customer) => (
-            <Grid item xs={12} md={6} lg={4} key={customer.id}>
-              <CustomerCard
-                customer={customer}
-                onSelect={() => {
-                  setSelectedCustomer(customer);
-                  setActiveTab(1);
-                }}
-                onInteraction={() => {
-                  setSelectedCustomer(customer);
-                  setInteractionOpen(true);
-                }}
-                onViewOrders={() => {
-                  setSelectedCustomer(customer);
-                  setActiveTab(2);
-                }}
-              />
-            </Grid>
-          ))}
-          {customersData?.customers?.length === 0 && (
-            <Grid item xs={12}>
-              <Paper sx={{ p: 4, textAlign: 'center' }}>
-                <Person sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
-                <Typography variant="h6" color="text.secondary">
-                  {t('noCustomersYet')}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {t('noCustomersHint')}
-                </Typography>
-                <Button
-                  variant="contained"
-                  startIcon={<Add />}
-                  onClick={() => setAddCustomerOpen(true)}
-                  sx={{ mt: 2 }}
-                >
-                  {t('addFirstCustomer')}
-                </Button>
-              </Paper>
-            </Grid>
+        <DataTable
+          testId="customers-list"
+          rows={customersData?.customers || []}
+          loading={customersLoading}
+          searchKeys={['name', 'phone', 'email', 'segment', 'status']}
+          emptyTitle={t('noCustomersYet')}
+          emptyDescription={t('noCustomersHint')}
+          emptyAction={(
+            <Button variant="contained" startIcon={<Add />} onClick={() => setAddCustomerOpen(true)}>
+              {t('addFirstCustomer')}
+            </Button>
           )}
-        </Grid>
+          columns={[
+            { field: 'name', label: t('name') },
+            { field: 'phone', label: t('phone') },
+            { field: 'email', label: t('email') },
+            { field: 'segment', label: t('segment') },
+            { field: 'status', label: t('status'), render: (row) => <StatusChip status={row.status} /> },
+          ]}
+          rowActions={[
+            {
+              label: t('view'),
+              onClick: (customer) => {
+                setSelectedCustomer(customer);
+                setActiveTab(1);
+              },
+            },
+            {
+              label: t('orders'),
+              onClick: (customer) => {
+                setSelectedCustomer(customer);
+                setActiveTab(2);
+              },
+            },
+            {
+              id: 'log',
+              label: t('activity'),
+              onClick: (customer) => {
+                setSelectedCustomer(customer);
+                setInteractionOpen(true);
+              },
+            },
+          ]}
+        />
       )}
 
       {activeTab === 1 && selectedCustomer && (

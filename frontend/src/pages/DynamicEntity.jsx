@@ -64,7 +64,7 @@ export default function DynamicEntity() {
 
   return (
     <PageShell>
-      <PageHeader title={t('dynamicForms')} subtitle={t('dynamicFormsSubtitle', { entity })} />
+      <PageHeader title={t('dynamicForms')} subtitle={t('dynamicFormsSubtitle', { entity })} pageKey="dynamicForms" />
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {message && <Alert severity="success" sx={{ mb: 2 }}>{message}</Alert>}
       <Card sx={{ mb: 2 }} className="tw-max-w-4xl">

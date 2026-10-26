@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Grid, Card, CardContent, Typography, Box, Button, Chip,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Paper, IconButton, Dialog, TextField, InputAdornment, Tabs, Tab,
   DialogTitle, DialogContent, DialogActions, Alert, MenuItem
 } from '@mui/material';
@@ -21,6 +20,9 @@ import CreateContractDialog from '../components/farmer/CreateContractDialog';
 import RecordProcurementDialog from '../components/farmer/RecordProcurementDialog';
 import { getApiErrorMessage } from '../utils/apiError';
 import { PageHeader, PageShell, QueryErrorAlert } from '../components/common/PageChrome';
+import DataTable from '../components/common/DataTable';
+import StatusChip from '../components/common/StatusChip';
+import { formatDate, formatINR, formatQty } from '../utils/format';
 import { useI18n } from '../i18n/I18nContext';
 import { useAssistantOpen } from '../assistant/AssistantBridge';
 import LookupSelect from '../components/common/LookupSelect';
@@ -159,15 +161,15 @@ const Farmers = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries(['farmers', 'farmer-analytics']);
       setContractDialogOpen(false);
-      toast.showSuccess(`Contract ${data.contract?.contract_number || 'created'} successfully`, {
+      toast.showSuccess(t('toastSaved', { item: data.contract?.contract_number || t('createContract') }), {
         module: 'farmer',
-        action: 'Create Contract'
+        action: t('createContract')
       });
     },
     onError: (error) => {
-      toast.showError(`Failed to create contract: ${error.response?.data?.message || error.message}`, {
+      toast.showError(t('toastActionFailed', { action: t('createContract'), error: error.response?.data?.message || error.message }), {
         module: 'farmer',
-        action: 'Create Contract'
+        action: t('createContract')
       });
     }
   });
@@ -176,15 +178,15 @@ const Farmers = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries(['farmers', 'farmer-analytics']);
       setProcurementDialogOpen(false);
-      toast.showSuccess(`Procurement recorded: ${data.procurement?.quantity || 'N/A'} kg`, {
+      toast.showSuccess(t('toastSaved', { item: `${data.procurement?.quantity || t('na')} kg` }), {
         module: 'farmer',
-        action: 'Record Procurement'
+        action: t('recordProcurement')
       });
     },
     onError: (error) => {
-      toast.showError(`Failed to record procurement: ${error.response?.data?.message || error.message}`, {
+      toast.showError(t('toastActionFailed', { action: t('recordProcurement'), error: error.response?.data?.message || error.message }), {
         module: 'farmer',
-        action: 'Record Procurement'
+        action: t('recordProcurement')
       });
     }
   });
@@ -384,6 +386,7 @@ const Farmers = () => {
       <PageHeader
         title={t('farmerManagement')}
         subtitle={t('farmerSubtitle')}
+        pageKey="farmers"
         actions={
           <>
             <Button variant="contained" startIcon={<PersonAdd />} onClick={() => setRegisterDialogOpen(true)}>
@@ -511,105 +514,58 @@ const Farmers = () => {
             <Typography variant="h6" gutterBottom>
               {t('allFarmers')} ({farmersData?.farmers?.length || 0})
             </Typography>
-            {farmersLoading ? (
-              <Box sx={{ textAlign: 'center', py: 4 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Loading farmers...
-                </Typography>
-              </Box>
-            ) : farmersError ? (
-              <Box sx={{ textAlign: 'center', py: 4 }}>
-                <Typography variant="body2" color="error">
-                  {getApiErrorMessage(farmersError, 'Could not load farmers')}
-                </Typography>
-              </Box>
-            ) : farmersData?.farmers?.length > 0 ? (
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>{t('farmerCode')}</TableCell>
-                      <TableCell>{t('name')}</TableCell>
-                      <TableCell>{t('phone')}</TableCell>
-                      <TableCell>{t('village')}</TableCell>
-                      <TableCell>{t('landArea')}</TableCell>
-                      <TableCell>{t('qualityRating')}</TableCell>
-                      <TableCell>{t('status')}</TableCell>
-                      <TableCell>{t('verification')}</TableCell>
-                      <TableCell>{t('actions')}</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {farmersData.farmers.map((farmer) => (
-                    <TableRow key={farmer.id}>
-                      <TableCell>{farmer.farmer_code}</TableCell>
-                      <TableCell>{farmer.name}</TableCell>
-                      <TableCell>{farmer.phone}</TableCell>
-                      <TableCell>{farmer.village}</TableCell>
-                      <TableCell>{farmer.land_area || 'N/A'} acres</TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <Typography variant="body2">
-                            {farmer.quality_rating?.toFixed(1) || '0.0'}
-                          </Typography>
-                          <TrendingUp 
-                            fontSize="small" 
-                            color={farmer.quality_rating > 3.5 ? 'success' : 'warning'}
-                            sx={{ ml: 1 }}
-                          />
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={getStatusLabel(farmer.is_active)}
-                          color={getStatusColor(farmer.is_active)}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={getVerificationLabel(farmer.is_verified)}
-                          color={getVerificationColor(farmer.is_verified)}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                          <Button size="small" startIcon={<Visibility />} onClick={() => handleViewFarmer(farmer)} sx={{ minHeight: 40 }}>
-                            View
-                          </Button>
-                          <Button size="small" startIcon={<Assignment />} onClick={() => handleEditFarmer(farmer)} sx={{ minHeight: 40 }}>
-                            Edit
-                          </Button>
-                          {!farmer.is_verified && (
-                            <Button size="small" color="success" startIcon={<Payment />} onClick={() => handleApproveFarmer(farmer)} sx={{ minHeight: 40 }}>
-                              Verify
-                            </Button>
-                          )}
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+            {farmersError ? (
+              <QueryErrorAlert error={farmersError} entity="farmers" />
             ) : (
-              <Box sx={{ textAlign: 'center', py: 4 }}>
-                <PersonAdd sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-                <Typography variant="h6" color="text.secondary" gutterBottom>
-                  No Farmers Found
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  {searchTerm ? 'No farmers match your search criteria' : 'Start by registering your first farmer'}
-                </Typography>
-                <Button
-                  variant="contained"
-                  startIcon={<PersonAdd />}
-                  onClick={() => setRegisterDialogOpen(true)}
-                >
-                  Register First Farmer
-                </Button>
-              </Box>
+              <DataTable
+                testId="farmers-list"
+                rows={farmersData?.farmers || []}
+                loading={farmersLoading}
+                searchKeys={['farmer_code', 'name', 'phone', 'village']}
+                emptyTitle={t('noFarmersFound')}
+                emptyDescription={searchTerm ? t('noFarmersMatch') : t('noFarmersHint')}
+                emptyAction={(
+                  <Button
+                    variant="contained"
+                    startIcon={<PersonAdd />}
+                    onClick={() => setRegisterDialogOpen(true)}
+                  >
+                    {t('registerFirstFarmer')}
+                  </Button>
+                )}
+                columns={[
+                  { field: 'farmer_code', label: t('farmerCode') },
+                  { field: 'name', label: t('name') },
+                  { field: 'phone', label: t('phone') },
+                  { field: 'village', label: t('village') },
+                  { field: 'land_area', label: t('landArea'), render: (farmer) => formatQty(farmer.land_area, 'acres') },
+                  {
+                    field: 'quality_rating',
+                    label: t('qualityRating'),
+                    render: (farmer) => (
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Typography variant="body2">{farmer.quality_rating?.toFixed(1) || '0.0'}</Typography>
+                        <TrendingUp
+                          fontSize="small"
+                          color={farmer.quality_rating > 3.5 ? 'success' : 'warning'}
+                          sx={{ ml: 1 }}
+                        />
+                      </Box>
+                    ),
+                  },
+                  { field: 'is_active', label: t('status'), render: (farmer) => <StatusChip status={farmer.is_active ? 'active' : 'inactive'} /> },
+                  { field: 'is_verified', label: t('verification'), render: (farmer) => <StatusChip status={farmer.is_verified ? 'verified' : 'pending'} /> },
+                ]}
+                rowActions={[
+                  { label: t('view'), onClick: (farmer) => handleViewFarmer(farmer) },
+                  { label: t('edit'), onClick: (farmer) => handleEditFarmer(farmer) },
+                  {
+                    label: t('verify'),
+                    disabled: (farmer) => Boolean(farmer?.is_verified),
+                    onClick: (farmer) => handleApproveFarmer(farmer),
+                  },
+                ]}
+              />
             )}
           </CardContent>
         </Card>
@@ -620,71 +576,34 @@ const Farmers = () => {
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              Recent Procurements
+              {t('recentProcurements')}
             </Typography>
-            {procurementsData?.procurements?.length > 0 ? (
-              <TableContainer component={Paper}>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>{t('date')}</TableCell>
-                      <TableCell>{t('farmers')}</TableCell>
-                      <TableCell>{t('variety')}</TableCell>
-                      <TableCell>{t('quantityKg')}</TableCell>
-                      <TableCell>{t('pricePerUnit')}</TableCell>
-                      <TableCell>{t('totalAmount')}</TableCell>
-                      <TableCell>{t('quality')}</TableCell>
-                      <TableCell>{t('status')}</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {procurementsData.procurements.map((procurement) => (
-                      <TableRow key={procurement.id}>
-                        <TableCell>
-                          {new Date(procurement.procurement_date).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>{procurement.farmer_name}</TableCell>
-                        <TableCell>{procurement.variety}</TableCell>
-                        <TableCell>{procurement.quantity}</TableCell>
-                        <TableCell>{formatCurrency(procurement.price_per_unit)}</TableCell>
-                        <TableCell>{formatCurrency(procurement.total_amount)}</TableCell>
-                        <TableCell>
-                          <Chip
-                            label={procurement.quality_grade || 'A'}
-                            color="success"
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={procurement.status || 'Completed'}
-                            color="success"
-                            size="small"
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            ) : (
-              <Box sx={{ textAlign: 'center', py: 4 }}>
-                <Agriculture sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-                <Typography variant="h6" color="text.secondary" gutterBottom>
-                  No Procurements Yet
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Start recording paddy procurements to see them here
-                </Typography>
+            <DataTable
+              testId="procurement-list"
+              rows={procurementsData?.procurements || []}
+              searchKeys={['farmer_name', 'variety', 'status', 'quality_grade']}
+              emptyTitle={t('noProcurementsYet')}
+              emptyDescription={t('noProcurementsHint')}
+              emptyAction={(
                 <Button
                   variant="contained"
                   startIcon={<Agriculture />}
                   onClick={() => setProcurementDialogOpen(true)}
                 >
-                  Record First Procurement
+                  {t('recordFirstProcurement')}
                 </Button>
-              </Box>
-            )}
+              )}
+              columns={[
+                { field: 'procurement_date', label: t('date'), render: (row) => formatDate(row.procurement_date) },
+                { field: 'farmer_name', label: t('farmers') },
+                { field: 'variety', label: t('variety') },
+                { field: 'quantity', label: t('quantityKg'), render: (row) => formatQty(row.quantity, 'kg') },
+                { field: 'price_per_unit', label: t('pricePerUnit'), render: (row) => formatINR(row.price_per_unit) },
+                { field: 'total_amount', label: t('totalAmount'), render: (row) => formatINR(row.total_amount) },
+                { field: 'quality_grade', label: t('quality'), render: (row) => <StatusChip status={row.quality_grade || 'A'} /> },
+                { field: 'status', label: t('status'), render: (row) => <StatusChip status={row.status || 'completed'} /> },
+              ]}
+            />
           </CardContent>
         </Card>
       </TabPanel>
@@ -696,119 +615,42 @@ const Farmers = () => {
             <Typography variant="h6" gutterBottom>
               Contract Management
             </Typography>
-            {contractsLoading ? (
-              <Box sx={{ textAlign: 'center', py: 4 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Loading contracts...
-                </Typography>
-              </Box>
-            ) : contractsError ? (
-              <Box sx={{ textAlign: 'center', py: 4 }}>
-                <Typography variant="body2" color="error">
-                  Error loading contracts: {contractsError.message}
-                </Typography>
-              </Box>
-            ) : contractsData?.contracts?.length > 0 ? (
-              <TableContainer component={Paper}>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>{t('contractId')}</TableCell>
-                      <TableCell>{t('farmers')}</TableCell>
-                      <TableCell>{t('cropType')}</TableCell>
-                      <TableCell>{t('season')}</TableCell>
-                      <TableCell>{t('quantity')}</TableCell>
-                      <TableCell>{t('basePrice')}</TableCell>
-                      <TableCell>{t('startDate')}</TableCell>
-                      <TableCell>{t('endDate')}</TableCell>
-                      <TableCell>{t('status')}</TableCell>
-                      <TableCell>{t('actions')}</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {contractsData.contracts.map((contract) => (
-                      <TableRow key={contract.id}>
-                        <TableCell>{contract.contract_number || `C-${contract.id}`}</TableCell>
-                        <TableCell>{contract.farmer_name || 'Unknown'}</TableCell>
-                        <TableCell>{contract.crop_type || contract.variety || 'Rice'}</TableCell>
-                        <TableCell>
-                          <Chip
-                            label={contract.season || contract.contract_type || 'Kharif'}
-                            color="primary"
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell>{contract.quantity_committed || 0} kg</TableCell>
-                        <TableCell>{formatCurrency(contract.base_price || contract.price_per_kg || 0)}</TableCell>
-                        <TableCell>
-                          {contract.contract_start_date ?
-                            new Date(contract.contract_start_date).toLocaleDateString() :
-                            (contract.start_date ? new Date(contract.start_date).toLocaleDateString() : 'N/A')
-                          }
-                        </TableCell>
-                        <TableCell>
-                          {contract.contract_end_date ?
-                            new Date(contract.contract_end_date).toLocaleDateString() :
-                            (contract.end_date ? new Date(contract.end_date).toLocaleDateString() : 'N/A')
-                          }
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={contract.status}
-                            color={getContractStatusColor(contract.status)}
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', gap: 1 }}>
-                            <IconButton
-                              size="small"
-                              onClick={() => handleViewContract(contract)}
-                              color="primary"
-                              title="View Contract Details"
-                            >
-                              <Visibility />
-                            </IconButton>
-                            <IconButton
-                              size="small"
-                              onClick={() => handleEditContract(contract)}
-                              color="secondary"
-                              title="Edit Contract"
-                            >
-                              <Assignment />
-                            </IconButton>
-                            <IconButton
-                              size="small"
-                              onClick={() => handleUpdateContractStatus(contract)}
-                              color="info"
-                              title="Update Status"
-                            >
-                              <TrendingUp />
-                            </IconButton>
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+            {contractsError ? (
+              <QueryErrorAlert error={contractsError} entity="contracts" />
             ) : (
-              <Box sx={{ textAlign: 'center', py: 4 }}>
-                <Assignment sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-                <Typography variant="h6" color="text.secondary" gutterBottom>
-                  No Contracts Yet
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Create farmer contracts to manage procurement agreements
-                </Typography>
-                <Button
-                  variant="contained"
-                  startIcon={<Assignment />}
-                  onClick={() => setContractDialogOpen(true)}
-                >
-                  Create First Contract
-                </Button>
-              </Box>
+              <DataTable
+                testId="contracts-list"
+                rows={contractsData?.contracts || []}
+                loading={contractsLoading}
+                searchKeys={['contract_number', 'farmer_name', 'crop_type', 'variety', 'status']}
+                emptyTitle={t('noContractsYet')}
+                emptyDescription={t('noContractsHint')}
+                emptyAction={(
+                  <Button
+                    variant="contained"
+                    startIcon={<Assignment />}
+                    onClick={() => setContractDialogOpen(true)}
+                  >
+                    {t('createFirstContract')}
+                  </Button>
+                )}
+                columns={[
+                  { field: 'contract_number', label: t('contractId'), render: (row) => row.contract_number || `C-${row.id}` },
+                  { field: 'farmer_name', label: t('farmers'), render: (row) => row.farmer_name || '—' },
+                  { field: 'crop_type', label: t('cropType'), render: (row) => row.crop_type || row.variety || 'Rice' },
+                  { field: 'season', label: t('season'), render: (row) => row.season || row.contract_type || '—' },
+                  { field: 'quantity_committed', label: t('quantity'), render: (row) => formatQty(row.quantity_committed || 0, 'kg') },
+                  { field: 'base_price', label: t('basePrice'), render: (row) => formatINR(row.base_price || row.price_per_kg || 0) },
+                  { field: 'start_date', label: t('startDate'), render: (row) => formatDate(row.contract_start_date || row.start_date) },
+                  { field: 'end_date', label: t('endDate'), render: (row) => formatDate(row.contract_end_date || row.end_date) },
+                  { field: 'status', label: t('status'), render: (row) => <StatusChip status={row.status} /> },
+                ]}
+                rowActions={[
+                  { label: t('view'), onClick: (row) => handleViewContract(row) },
+                  { label: t('edit'), onClick: (row) => handleEditContract(row) },
+                  { label: t('status'), onClick: (row) => handleUpdateContractStatus(row) },
+                ]}
+              />
             )}
           </CardContent>
         </Card>

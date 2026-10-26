@@ -8,6 +8,7 @@ import {
   Person, Inventory, Factory, Analytics,
   Settings, Notifications as NotificationIcon
 } from '@mui/icons-material';
+import { useI18n } from '../../i18n/I18nContext';
 
 // Toast Context
 const ToastContext = createContext();
@@ -63,6 +64,7 @@ const TRANSITIONS = {
 };
 
 export const ToastProvider = ({ children }) => {
+  const { t } = useI18n();
   const [toasts, setToasts] = useState([]);
 
   const showToast = useCallback((options) => {
@@ -125,72 +127,72 @@ export const ToastProvider = ({ children }) => {
   const success = useCallback((message, options = {}) => {
     return showToast({
       type: 'success',
-      title: options.title || 'Success',
+      title: options.title || t('toastSuccess'),
       message,
       ...options
     });
-  }, [showToast]);
+  }, [showToast, t]);
 
   const error = useCallback((message, options = {}) => {
     return showToast({
       type: 'error',
-      title: options.title || 'Error',
+      title: options.title || t('toastError'),
       message,
       ...options
     });
-  }, [showToast]);
+  }, [showToast, t]);
 
   const warning = useCallback((message, options = {}) => {
     return showToast({
       type: 'warning',
-      title: options.title || 'Warning',
+      title: options.title || t('toastWarning'),
       message,
       ...options
     });
-  }, [showToast]);
+  }, [showToast, t]);
 
   const info = useCallback((message, options = {}) => {
     return showToast({
       type: 'info',
-      title: options.title || 'Information',
+      title: options.title || t('toastInfo'),
       message,
       ...options
     });
-  }, [showToast]);
+  }, [showToast, t]);
 
   // Field-specific toast methods
   const fieldSuccess = useCallback((field, message, options = {}) => {
     return success(message, {
       field,
-      title: `${field} Updated`,
+      title: t('toastFieldUpdated', { field }),
       ...options
     });
-  }, [success]);
+  }, [success, t]);
 
   const fieldError = useCallback((field, message, options = {}) => {
     return error(message, {
       field,
-      title: `${field} Error`,
+      title: t('toastFieldError', { field }),
       ...options
     });
-  }, [error]);
+  }, [error, t]);
 
   // Action-specific toast methods
   const actionSuccess = useCallback((action, message, options = {}) => {
     return success(message, {
       action,
-      title: `${action} Successful`,
+      title: t('toastActionOk', { action }),
       ...options
     });
-  }, [success]);
+  }, [success, t]);
 
   const actionError = useCallback((action, message, options = {}) => {
     return error(message, {
       action,
-      title: `${action} Failed`,
+      title: t('toastActionFail', { action }),
       ...options
     });
-  }, [error]);
+  }, [error, t]);
 
   const value = {
     showToast,

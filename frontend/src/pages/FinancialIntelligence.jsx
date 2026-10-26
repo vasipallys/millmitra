@@ -12,12 +12,6 @@ import {
   Alert,
   CircularProgress,
   Chip,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   LinearProgress,
   Dialog,
   DialogTitle,
@@ -42,6 +36,9 @@ import {
 } from '@mui/icons-material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
 import DemoBanner from '../components/DemoBanner';
+import { PageHeader, PageShell } from '../components/common/PageChrome';
+import DataTable from '../components/common/DataTable';
+import { formatINR } from '../utils/format';
 import { useI18n } from '../i18n/I18nContext';
 import LookupSelect from '../components/common/LookupSelect';
 import PreviewModeToggle from '../components/PreviewModeToggle';
@@ -104,23 +101,23 @@ const FinancialIntelligence = () => {
     {
       category: 'cash_flow',
       type: 'positive',
-      title: 'Strong Cash Flow Performance',
-      description: 'Cash flow improved by 15% compared to last month',
-      recommendation: 'Consider investing surplus cash for better returns'
+      title: t('insightCashTitle'),
+      description: t('insightCashBody'),
+      recommendation: t('insightRevBody')
     },
     {
       category: 'payment_optimization',
       type: 'warning',
-      title: 'Payment Processing Inefficiency',
-      description: '12 pending payments could be optimized through batching',
-      recommendation: 'Implement batch payment processing to reduce costs'
+      title: t('insightPayTitle'),
+      description: t('insightPayBody'),
+      recommendation: t('insightPayBody')
     },
     {
       category: 'forecast',
       type: 'positive',
-      title: 'Revenue Growth Predicted',
-      description: 'AI forecasts 8% revenue growth in next quarter',
-      recommendation: 'Prepare for increased working capital requirements'
+      title: t('insightRevTitle'),
+      description: t('insightRevBody'),
+      recommendation: t('insightRevBody')
     }
   ];
 
@@ -145,8 +142,8 @@ const FinancialIntelligence = () => {
           {
             type: 'warning',
             category: 'payments',
-            title: 'Overdue Payments',
-            message: '3 payments are overdue',
+            title: t('insightOverdueTitle'),
+            message: t('insightOverdueBody', { count: 3 }),
             action_required: true
           }
         ]);
@@ -187,8 +184,11 @@ const FinancialIntelligence = () => {
             ? [{
                 type: 'warning',
                 category: 'payments',
-                title: 'Overdue invoices',
-                message: `${receivables.overdue_count} invoice(s) overdue totaling ₹${Number(receivables.total_overdue || 0).toLocaleString('en-IN')}`,
+                title: t('insightOverdueInvoices'),
+                message: t('insightOverdueInvoicesBody', {
+                  count: receivables.overdue_count,
+                  amount: `₹${Number(receivables.total_overdue || 0).toLocaleString('en-IN')}`,
+                }),
                 action_required: true
               }]
             : []
@@ -246,7 +246,7 @@ const FinancialIntelligence = () => {
       setPaymentForm({ farmer_id: '', amount: '', payment_type: 'procurement' });
       setPageMessage({
         severity: 'info',
-        text: `Sample schedule of ₹${amount.toLocaleString('en-IN')} stays on this preview only.`,
+        text: t('sampleScheduleNote', { amount: `₹${amount.toLocaleString('en-IN')}` }),
       });
       return;
     }
@@ -305,25 +305,19 @@ const FinancialIntelligence = () => {
   }
 
   return (
-    <Box>
+    <PageShell>
       <DemoBanner title={t('financialIntelligence')} mode={mode} />
       {pageMessage && (
         <Alert severity={pageMessage.severity} sx={{ mb: 2 }} onClose={() => setPageMessage(null)}>
           {pageMessage.text}
         </Alert>
       )}
-      {/* Header */}
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
-        <Box>
-          <Typography variant="h4" component="h1" fontWeight="bold">
-            Financial Intelligence
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Invoices, payments, aging, and cash flow from Finance. Sample figures are opt-in.
-          </Typography>
-        </Box>
-        <PreviewModeToggle mode={mode} onChange={setMode} />
-      </Box>
+      <PageHeader
+        title={t('financialIntelligence')}
+        subtitle={t('fiSubtitle')}
+        pageKey="financialIntelligence"
+        actions={<PreviewModeToggle mode={mode} onChange={setMode} />}
+      />
 
       {/* Alerts */}
       {alerts.length > 0 && (
@@ -408,7 +402,7 @@ const FinancialIntelligence = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
                     <Typography color="textSecondary" gutterBottom variant="body2">
-                      Profit Margin
+                      {t('profitMargin')}
                     </Typography>
                     <Typography variant="h4" component="div" color="info.main">
                       {dashboardData?.summary?.profit_margin?.toFixed(1)}%
@@ -498,6 +492,7 @@ const FinancialIntelligence = () => {
                       variant="determinate" 
                       value={value} 
                       sx={{ height: 6, borderRadius: 3 }}
+                      aria-label={`${key.replace('_', ' ')} ${value} percent`}
                     />
                   </Box>
                 ))}
@@ -573,6 +568,7 @@ const FinancialIntelligence = () => {
                       value={value} 
                       sx={{ height: 8, borderRadius: 4 }}
                       color={value >= 80 ? 'success' : value >= 60 ? 'warning' : 'error'}
+                      aria-label={`${key.replace('_', ' ')} ${value} percent`}
                     />
                   </Box>
                 ))}
@@ -700,30 +696,19 @@ const FinancialIntelligence = () => {
                 <Typography variant="h6" gutterBottom>
                   Saved payment schedules
                 </Typography>
-                {scheduledPayments.length === 0 ? (
-                  <Typography color="text.secondary">No records yet</Typography>
-                ) : (
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Schedule</TableCell>
-                        <TableCell>Farmer</TableCell>
-                        <TableCell>Amount</TableCell>
-                        <TableCell>Type</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {scheduledPayments.map((row) => (
-                        <TableRow key={row.id || row.schedule_id}>
-                          <TableCell>{row.schedule_id || row.id}</TableCell>
-                          <TableCell>{row.farmer_id || '—'}</TableCell>
-                          <TableCell>₹{Number(row.amount || 0).toLocaleString('en-IN')}</TableCell>
-                          <TableCell>{row.payment_type || '—'}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
+                <DataTable
+                  testId="fi-schedules"
+                  rows={scheduledPayments}
+                  searchKeys={['schedule_id', 'farmer_id', 'payment_type']}
+                  emptyTitle={t('noRecordsYet')}
+                  getRowId={(row) => row.id || row.schedule_id}
+                  columns={[
+                    { field: 'schedule_id', label: t('scheduleCol'), render: (row) => row.schedule_id || row.id },
+                    { field: 'farmer_id', label: t('farmers'), render: (row) => row.farmer_id || '—' },
+                    { field: 'amount', label: t('amount'), render: (row) => formatINR(row.amount) },
+                    { field: 'payment_type', label: t('movementType'), render: (row) => row.payment_type || '—' },
+                  ]}
+                />
                 <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
                   Payment Optimization Benefits
                 </Typography>
@@ -800,7 +785,7 @@ const FinancialIntelligence = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </PageShell>
   );
 };
 

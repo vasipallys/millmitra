@@ -190,7 +190,7 @@ const SmartWidget = ({ widget }) => {
       <CardHeader
         title={widget.title}
         action={
-          <IconButton onClick={handleMenuOpen}>
+          <IconButton onClick={handleMenuOpen} aria-label={`${widget.title || 'Widget'} actions`}>
             <MoreVert />
           </IconButton>
         }

@@ -19,6 +19,7 @@ import {
 } from '@mui/material';
 import {
   Menu as MenuIcon,
+  Search as SearchIcon,
   Notifications as NotificationsIcon,
   AccountCircle,
   Logout,
@@ -51,7 +52,7 @@ const focusFirstIn = (node, selector) => {
   }
 };
 
-const Navbar = ({ onMenuClick, onLogout, user, onUserChange }) => {
+const Navbar = ({ onMenuClick, onLogout, user, onUserChange, onOpenSearch }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [tenantAnchor, setTenantAnchor] = useState(null);
   const [tenants, setTenants] = useState([]);
@@ -149,32 +150,56 @@ const Navbar = ({ onMenuClick, onLogout, user, onUserChange }) => {
         borderColor: 'divider'
       }}
     >
-      <Toolbar>
+      <Toolbar sx={{ minWidth: 0, px: { xs: 1, sm: 2 }, gap: { xs: 0.25, sm: 0.5 } }}>
         {/* Menu Button */}
         <IconButton
           edge="start"
           color="inherit"
           aria-label="menu"
           onClick={onMenuClick}
-          sx={{ me: 2 }}
+          sx={{ me: { xs: 0.5, sm: 2 }, minWidth: 44, minHeight: 44 }}
         >
           <MenuIcon />
         </IconButton>
 
-        {/* Title */}
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+        {/* Title — short name on phones so the bar does not overflow */}
+        <Typography
+          variant="h6"
+          component="div"
+          noWrap
+          sx={{ flexGrow: 1, minWidth: 0, display: { xs: 'none', sm: 'block' } }}
+        >
           {t('appTitle')}
         </Typography>
+        <Typography
+          variant="subtitle1"
+          component="div"
+          noWrap
+          sx={{ flexGrow: 1, minWidth: 0, display: { xs: 'block', sm: 'none' }, fontWeight: 600 }}
+        >
+          {t('appName')}
+        </Typography>
+        {onOpenSearch && (
+          <Tooltip title={`${t('commandPalette')} (Ctrl+K)`}>
+            <IconButton
+              color="inherit"
+              onClick={onOpenSearch}
+              aria-label={`${t('commandPalette')} (Ctrl+K)`}
+              sx={{ me: { xs: 0, sm: 1 }, minWidth: 44, minHeight: 44 }}
+            >
+              <SearchIcon />
+            </IconButton>
+          </Tooltip>
+        )}
 
         {user?.tenant?.name && (
           <Chip
             label={user.tenant.name}
             size="small"
-            variant="outlined"
-            color="secondary"
-            sx={{ me: 1, cursor: tenants.length > 1 ? 'pointer' : 'default' }}
+            color="primary"
+            sx={{ me: 1, display: { xs: 'none', md: 'inline-flex' }, cursor: tenants.length > 1 ? 'pointer' : 'default' }}
             onClick={tenants.length > 1 ? (event) => setTenantAnchor(event.currentTarget) : undefined}
-            aria-label={t('millName')}
+            aria-label={`${t('millName')} ${user.tenant.name}`}
           />
         )}
         <Menu
@@ -214,7 +239,7 @@ const Navbar = ({ onMenuClick, onLogout, user, onUserChange }) => {
           size="small"
           color="primary"
           variant="outlined"
-          sx={{ me: 1 }}
+          sx={{ me: 1, display: { xs: 'none', sm: 'inline-flex' } }}
         />
         <LanguageSwitcher />
 
@@ -247,9 +272,9 @@ const Navbar = ({ onMenuClick, onLogout, user, onUserChange }) => {
             color="inherit"
             onClick={handleNotificationMenuOpen}
             sx={{ mr: 1 }}
-            aria-label={t('notifications')}
+            aria-label={`${unreadCount} ${t('notifications')}`}
           >
-            <Badge badgeContent={unreadCount} color="error">
+            <Badge badgeContent={unreadCount} color="error" showZero={false} invisible={unreadCount < 1}>
               <NotificationsIcon />
             </Badge>
           </IconButton>
@@ -261,7 +286,7 @@ const Navbar = ({ onMenuClick, onLogout, user, onUserChange }) => {
             edge="end"
             color="inherit"
             onClick={handleProfileMenuOpen}
-            aria-label="Account menu"
+            aria-label={`Account menu ${accountInitial(user)}`}
           >
             <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
               {accountInitial(user)}

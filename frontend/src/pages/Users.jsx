@@ -2,22 +2,19 @@ import { useState } from 'react';
 import {
   Alert,
   Button,
-  Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   MenuItem,
   Select,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
   TextField,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { PageHeader, PageLoading, PageShell } from '../components/common/PageChrome';
+import DataTable from '../components/common/DataTable';
+import StatusChip from '../components/common/StatusChip';
+import ConfirmDialog from '../components/common/ConfirmDialog';
 import { userAdminService } from '../services/userAdminService';
 import { getApiErrorMessage } from '../utils/apiError';
 import { useI18n } from '../i18n/I18nContext';
@@ -30,6 +27,7 @@ export default function Users({ currentUser }) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ username: '', password: '', role: 'operator' });
   const [error, setError] = useState('');
+  const [confirmUser, setConfirmUser] = useState(null);
 
   const usersQuery = useQuery('admin-users', () => userAdminService.listUsers(), { retry: false });
   const users = usersQuery.data?.users || [];
@@ -61,54 +59,62 @@ export default function Users({ currentUser }) {
       <PageHeader
         title={t('usersTitle')}
         subtitle={t('usersSubtitle')}
+        pageKey="users"
         actions={(
           <Button variant="contained" onClick={() => setOpen(true)}>{t('createUser')}</Button>
         )}
       />
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell>{t('username')}</TableCell>
-            <TableCell>{t('role')}</TableCell>
-            <TableCell>{t('active')}</TableCell>
-            <TableCell />
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {users.map((user) => (
-            <TableRow key={user.id}>
-              <TableCell>{user.username}{user.first_name ? ` · ${user.first_name}` : ''}</TableCell>
-              <TableCell>
-                <Select
-                  size="small"
-                  value={user.role}
-                  onChange={(event) => patchMutation.mutate({ id: user.id, payload: { role: event.target.value } })}
-                >
-                  {ROLES.map((role) => (
-                    <MenuItem key={role} value={role}>{roleLabel(role)}</MenuItem>
-                  ))}
-                </Select>
-              </TableCell>
-              <TableCell>
-                <Chip size="small" label={user.is_active ? t('active') : t('inactive')} color={user.is_active ? 'success' : 'default'} />
-              </TableCell>
-              <TableCell>
-                <Button
-                  size="small"
-                  disabled={user.id === currentUser?.id && user.is_active}
-                  onClick={() => patchMutation.mutate({
-                    id: user.id,
-                    payload: { is_active: !user.is_active },
-                  })}
-                >
-                  {user.is_active ? t('deactivate') : t('activate')}
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <DataTable
+        rows={users}
+        searchKeys={['username', 'first_name', 'role']}
+        emptyTitle={t('noRows')}
+        columns={[
+          { field: 'username', label: t('username'), render: (user) => `${user.username}${user.first_name ? ` · ${user.first_name}` : ''}` },
+          {
+            field: 'role',
+            label: t('role'),
+            render: (user) => (
+              <Select
+                size="small"
+                value={user.role}
+                inputProps={{ 'aria-label': `${t('role')} ${user.username}` }}
+                onChange={(event) => patchMutation.mutate({ id: user.id, payload: { role: event.target.value } })}
+              >
+                {ROLES.map((role) => (
+                  <MenuItem key={role} value={role}>{roleLabel(role)}</MenuItem>
+                ))}
+              </Select>
+            ),
+          },
+          {
+            field: 'is_active',
+            label: t('active'),
+            render: (user) => <StatusChip status={user.is_active ? 'active' : 'inactive'} />,
+          },
+        ]}
+        rowActions={[
+          {
+            label: (row) => (row?.is_active ? t('deactivate') : t('activate')),
+            disabled: (row) => row?.id === currentUser?.id && row?.is_active,
+            onClick: (row) => setConfirmUser(row),
+          },
+        ]}
+      />
+      <ConfirmDialog
+        open={Boolean(confirmUser)}
+        title={t('pleaseConfirm')}
+        message={confirmUser?.is_active ? t('confirmDeactivateUser') : t('confirmActivateUser')}
+        danger={Boolean(confirmUser?.is_active)}
+        onCancel={() => setConfirmUser(null)}
+        onConfirm={() => {
+          patchMutation.mutate({
+            id: confirmUser.id,
+            payload: { is_active: !confirmUser.is_active },
+          });
+          setConfirmUser(null);
+        }}
+      />
 
       <Dialog open={open} onClose={() => setOpen(false)}>
         <DialogTitle>{t('createUser')}</DialogTitle>

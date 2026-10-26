@@ -14,12 +14,6 @@ import {
   Alert,
   CircularProgress,
   Chip,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   TextField,
   Tabs,
   Tab,
@@ -38,6 +32,10 @@ import {
 } from '@mui/icons-material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import DemoBanner from '../components/DemoBanner';
+import { PageHeader, PageShell } from '../components/common/PageChrome';
+import DataTable from '../components/common/DataTable';
+import StatusChip from '../components/common/StatusChip';
+import { formatDate } from '../utils/format';
 import { useI18n } from '../i18n/I18nContext';
 import PreviewModeToggle from '../components/PreviewModeToggle';
 import { usePreviewMode } from '../hooks/usePreviewMode';
@@ -282,25 +280,19 @@ const QualityControl = () => {
   );
 
   return (
-    <Box>
+    <PageShell>
       <DemoBanner title={t('qualityControl')} mode={mode} />
       {pageMessage && (
         <Alert severity={pageMessage.severity} sx={{ mb: 2 }} onClose={() => setPageMessage(null)}>
           {pageMessage.text}
         </Alert>
       )}
-      {/* Header */}
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
-        <Box>
-          <Typography variant="h4" component="h1" fontWeight="bold">
-            Quality Control
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Live quality tests from Production. Camera grading is optional and does not overwrite mill tests.
-          </Typography>
-        </Box>
-        <PreviewModeToggle mode={mode} onChange={setMode} />
-      </Box>
+      <PageHeader
+        title={t('qualityControl')}
+        subtitle={t('qualitySubtitle')}
+        pageKey="quality"
+        actions={<PreviewModeToggle mode={mode} onChange={setMode} />}
+      />
 
       {/* Quality Control Tabs */}
       <Paper sx={{ mb: 3 }}>
@@ -611,78 +603,44 @@ const QualityControl = () => {
               Recent Quality Tests
             </Typography>
             {testsLoading && <LinearProgress sx={{ mb: 2 }} />}
-            {!recentTests.length && !testsLoading && (
-              <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
-                No quality tests on Production yet. Camera previews stay on the Live Analysis tab and do not create mill tests.
-              </Typography>
-            )}
             {isActual && previewTests.length > 0 && (
               <Alert severity="info" sx={{ mb: 2 }}>
                 {previewTests.length} camera preview(s) on this session only — not saved as mill tests.
               </Alert>
             )}
-            <TableContainer component={Paper} elevation={0}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Test ID</TableCell>
-                    <TableCell>Batch ID</TableCell>
-                    <TableCell>Variety</TableCell>
-                    <TableCell>Grade</TableCell>
-                    <TableCell>Score</TableCell>
-                    <TableCell>Date</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {recentTests.map((test) => (
-                    <TableRow key={test.id}>
-                      <TableCell>{test.id}</TableCell>
-                      <TableCell>{test.batch_id}</TableCell>
-                      <TableCell>{test.variety}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={test.grade}
-                          color={getGradeColor(test.grade)}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>{test.score}</TableCell>
-                      <TableCell>{test.date}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={test.status}
-                          color={test.status === 'verified' ? 'success' : 'default'}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Button size="small" startIcon={<Visibility />} onClick={() => setViewTest(test)}>
-                          View
-                        </Button>
-                        <Button
-                          size="small"
-                          startIcon={<GetApp />}
-                          onClick={() => {
-                            const blob = new Blob([JSON.stringify(test, null, 2)], { type: 'application/json' });
-                            const url = URL.createObjectURL(blob);
-                            const link = document.createElement('a');
-                            link.href = url;
-                            link.download = `${test.id}.json`;
-                            link.click();
-                            URL.revokeObjectURL(url);
-                            setPageMessage({ severity: 'success', text: `Downloaded ${test.id}` });
-                          }}
-                        >
-                          Export
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            <DataTable
+              testId="quality-tests"
+              rows={recentTests}
+              loading={testsLoading}
+              searchKeys={['id', 'batch_id', 'variety', 'grade', 'status']}
+              emptyTitle={t('noQualityTests')}
+              emptyDescription={t('noQualityTestsHint')}
+              columns={[
+                { field: 'id', label: t('testId') },
+                { field: 'batch_id', label: t('batchId') },
+                { field: 'variety', label: t('variety') },
+                { field: 'grade', label: t('grade'), render: (test) => <StatusChip status={test.grade} /> },
+                { field: 'score', label: t('score') },
+                { field: 'date', label: t('date'), render: (test) => formatDate(test.date) || test.date },
+                { field: 'status', label: t('status'), render: (test) => <StatusChip status={test.status} /> },
+              ]}
+              rowActions={[
+                { label: t('view'), onClick: (test) => setViewTest(test) },
+                {
+                  label: t('exportFile'),
+                  onClick: (test) => {
+                    const blob = new Blob([JSON.stringify(test, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `${test.id}.json`;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                    setPageMessage({ severity: 'success', text: t('downloadedItem', { id: test.id }) });
+                  },
+                },
+              ]}
+            />
           </CardContent>
         </Card>
       </TabPanel>
@@ -756,7 +714,7 @@ const QualityControl = () => {
           <Button onClick={() => setViewTest(null)}>{t('close')}</Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </PageShell>
   );
 };
 

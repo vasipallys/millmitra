@@ -2,22 +2,18 @@ import { useMemo, useState } from 'react';
 import {
   Alert,
   Button,
-  Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   MenuItem,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
   TextField,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { PageHeader, PageLoading, PageShell } from '../components/common/PageChrome';
+import DataTable from '../components/common/DataTable';
+import StatusChip from '../components/common/StatusChip';
 import { lookupService, optionLabel } from '../services/lookupService';
 import { getApiErrorMessage } from '../utils/apiError';
 import { useI18n } from '../i18n/I18nContext';
@@ -134,6 +130,7 @@ export default function Lookups() {
       <PageHeader
         title={t('lookupsTitle')}
         subtitle={t('lookupsSubtitle')}
+        pageKey="lookups"
         actions={(
           <Button variant="contained" onClick={openCreate} disabled={groupLocked}>
             {t('lookupAdd')}
@@ -150,7 +147,7 @@ export default function Lookups() {
         label={t('lookupGroup')}
         value={group}
         onChange={(event) => setGroup(event.target.value)}
-        sx={{ mb: 2, minWidth: 280 }}
+        sx={{ mb: 2, minWidth: { xs: '100%', sm: 280 }, maxWidth: '100%' }}
       >
         {groups.map((item) => (
           <MenuItem key={item.key} value={item.key}>
@@ -158,47 +155,34 @@ export default function Lookups() {
           </MenuItem>
         ))}
       </TextField>
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell>{t('lookupLabel')}</TableCell>
-            <TableCell>{t('lookupValue')}</TableCell>
-            <TableCell>{t('active')}</TableCell>
-            <TableCell>{t('lookupSort')}</TableCell>
-            <TableCell />
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {rows.map((row) => (
-            <TableRow key={row.id}>
-              <TableCell>{optionLabel(row, locale)}</TableCell>
-              <TableCell>{row.value}</TableCell>
-              <TableCell>
-                <Chip
-                  size="small"
-                  color={row.is_active ? 'success' : 'default'}
-                  label={row.is_active ? t('active') : t('lookupInactive')}
-                />
-                {row.is_locked ? <Chip size="small" sx={{ ml: 1 }} label={t('lookupLocked')} /> : null}
-              </TableCell>
-              <TableCell>{row.sort_order}</TableCell>
-              <TableCell>
-                <Stack direction="row" spacing={1}>
-                  <Button size="small" onClick={() => openEdit(row)}>{t('lookupEdit')}</Button>
-                  {!row.is_locked && (
-                    <Button
-                      size="small"
-                      onClick={() => toggleMutation.mutate({ id: row.id, active: !row.is_active })}
-                    >
-                      {row.is_active ? t('lookupDeactivate') : t('lookupActivate')}
-                    </Button>
-                  )}
-                </Stack>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <DataTable
+        rows={rows}
+        searchKeys={['value', 'label_en', 'label_hi', 'label_te']}
+        emptyTitle={t('noRows')}
+        columns={[
+          { field: 'label', label: t('lookupLabel'), render: (row) => optionLabel(row, locale) },
+          { field: 'value', label: t('lookupValue') },
+          {
+            field: 'is_active',
+            label: t('active'),
+            render: (row) => (
+              <Stack direction="row" spacing={1} alignItems="center">
+                <StatusChip status={row.is_active ? 'active' : 'inactive'} />
+                {row.is_locked ? <StatusChip status="locked" label={t('lookupLocked')} /> : null}
+              </Stack>
+            ),
+          },
+          { field: 'sort_order', label: t('lookupSort') },
+        ]}
+        rowActions={[
+          { label: t('lookupEdit'), onClick: (row) => openEdit(row) },
+          {
+            label: (row) => (row?.is_active ? t('lookupDeactivate') : t('lookupActivate')),
+            disabled: (row) => Boolean(row?.is_locked),
+            onClick: (row) => toggleMutation.mutate({ id: row.id, active: !row.is_active }),
+          },
+        ]}
+      />
       <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle>{editing ? t('lookupEdit') : t('lookupAdd')}</DialogTitle>
         <DialogContent>

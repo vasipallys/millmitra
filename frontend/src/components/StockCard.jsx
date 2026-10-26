@@ -138,9 +138,13 @@ const StockCard = ({
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Chip 
                   label={stockStatus.label} 
-                  color={stockStatus.color}
                   size="small"
                   icon={stockStatus.status === 'low' ? <Warning /> : <CheckCircle />}
+                  sx={stockStatus.color === 'warning'
+                    ? { bgcolor: '#fff7ed', color: '#9a3412', '& .MuiChip-icon': { color: '#9a3412' } }
+                    : stockStatus.color === 'error'
+                      ? { bgcolor: '#fee2e2', color: '#991b1b', '& .MuiChip-icon': { color: '#991b1b' } }
+                      : { bgcolor: '#e8f5e9', color: '#1b5e20', '& .MuiChip-icon': { color: '#1b5e20' } }}
                 />
               </Box>
             </Box>
@@ -156,7 +160,7 @@ const StockCard = ({
             <Typography variant="body2" color="text.secondary">
               Current Stock
             </Typography>
-            <Typography variant="h6" fontWeight="bold" color={stockStatus.color + '.main'}>
+            <Typography variant="h6" fontWeight="bold" sx={{ color: stockStatus.color === 'warning' ? '#9a3412' : stockStatus.color === 'error' ? '#991b1b' : '#1b5e20' }}>
               {(stock?.current_stock || 0).toLocaleString()} {stock?.unit || 'kg'}
             </Typography>
           </Box>
@@ -166,6 +170,7 @@ const StockCard = ({
             value={stockPercentage} 
             sx={{ height: 8, borderRadius: 4, mb: 1 }}
             color={stockStatus.color}
+            aria-label={`${stock?.product_name || 'Stock'} ${Math.round(stockPercentage)}%`}
           />
           
           <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>

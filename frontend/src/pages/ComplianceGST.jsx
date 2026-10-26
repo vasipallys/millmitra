@@ -12,12 +12,6 @@ import {
   Alert,
   CircularProgress,
   Chip,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   LinearProgress,
   Dialog,
   DialogTitle,
@@ -40,6 +34,10 @@ import {
 } from '@mui/icons-material';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import DemoBanner from '../components/DemoBanner';
+import { PageHeader, PageShell } from '../components/common/PageChrome';
+import DataTable from '../components/common/DataTable';
+import StatusChip from '../components/common/StatusChip';
+import { formatINR } from '../utils/format';
 import { useI18n } from '../i18n/I18nContext';
 import LookupSelect from '../components/common/LookupSelect';
 import PreviewModeToggle from '../components/PreviewModeToggle';
@@ -397,19 +395,14 @@ const ComplianceGST = () => {
   }
 
   return (
-    <Box>
+    <PageShell>
       <DemoBanner title={t('complianceGst')} mode={mode} />
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
-        <Box>
-          <Typography variant="h4" component="h1" fontWeight="bold">
-            Compliance & GST Management
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            GST totals from Finance invoices at preview rates. MillMitra does not file GST.
-          </Typography>
-        </Box>
-        <PreviewModeToggle mode={mode} onChange={setMode} />
-      </Box>
+      <PageHeader
+        title={t('complianceGst')}
+        subtitle={t('gstPageSubtitle')}
+        pageKey="complianceGst"
+        actions={<PreviewModeToggle mode={mode} onChange={setMode} />}
+      />
 
       {pageMessage && (
         <Alert severity={pageMessage.severity} sx={{ mb: 2 }} onClose={() => setPageMessage(null)} role="status">
@@ -466,8 +459,7 @@ const ComplianceGST = () => {
                   </Typography>
                   <Chip
                     label={(complianceStatus?.overall_status || 'preview').toUpperCase()}
-                    color={complianceStatus?.compliance_score != null ? getComplianceColor(complianceStatus.compliance_score) : 'info'}
-                    sx={{ mt: 1 }}
+                    sx={{ mt: 1, bgcolor: '#e3f2fd', color: '#0d47a1' }}
                   />
                 </Box>
               </CardContent>
@@ -479,13 +471,13 @@ const ComplianceGST = () => {
               <CardContent>
                 <Typography variant="h6" gutterBottom>Monthly GST Summary</Typography>
                 <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" color="text.secondary">Total Sales</Typography>
+                  <Typography variant="body2" sx={{ color: '#424242' }}>Total Sales</Typography>
                   <Typography variant="h5">
                     ₹{dashboardData?.monthly_summary?.total_sales?.toLocaleString()}
                   </Typography>
                 </Box>
                 <Box>
-                  <Typography variant="body2" color="text.secondary">GST Collected</Typography>
+                  <Typography variant="body2" sx={{ color: '#424242' }}>GST Collected</Typography>
                   <Typography variant="h5" color="success.main">
                     ₹{dashboardData?.monthly_summary?.total_gst_collected?.toLocaleString()}
                   </Typography>
@@ -536,7 +528,7 @@ const ComplianceGST = () => {
                     />
                     )}
                     {check.issues?.length > 0 && (
-                      <Typography variant="body2" color="warning.main" sx={{ mt: 0.5 }}>
+                      <Typography variant="body2" sx={{ mt: 0.5, color: '#9a3412' }}>
                         Issues: {check.issues.join(', ')}
                       </Typography>
                     )}
@@ -644,44 +636,23 @@ const ComplianceGST = () => {
           <Grid item xs={12}>
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom>Recent GST Activities</Typography>
-                <TableContainer>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Date</TableCell>
-                        <TableCell>Activity</TableCell>
-                        <TableCell>Status</TableCell>
-                        <TableCell>Amount</TableCell>
-                        <TableCell>Actions</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {!activityRows.length && (
-                        <TableRow>
-                          <TableCell colSpan={5}>
-                            <Typography variant="body2" color="text.secondary">No invoice GST activity yet.</Typography>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                      {activityRows.map((row, index) => (
-                        <TableRow key={`${row.form}-${row.activity}-${index}`}>
-                          <TableCell>{row.date}</TableCell>
-                          <TableCell>{row.activity}</TableCell>
-                          <TableCell>
-                            <Chip label={row.status} color="success" size="small" />
-                          </TableCell>
-                          <TableCell>{formatInr(row.amount)}</TableCell>
-                          <TableCell>
-                            <Button size="small" startIcon={<GetApp />} onClick={() => downloadActivity(row)}>
-                              Download
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+                <Typography variant="h6" gutterBottom>{t('recentGst')}</Typography>
+                <DataTable
+                  testId="gst-activity"
+                  rows={activityRows}
+                  searchKeys={['activity', 'status', 'form']}
+                  emptyTitle={t('noGstActivity')}
+                  getRowId={(row, index) => `${row.form}-${row.activity}-${index}`}
+                  columns={[
+                    { field: 'date', label: t('date') },
+                    { field: 'activity', label: t('activity') },
+                    { field: 'status', label: t('status'), render: (row) => <StatusChip status={row.status} /> },
+                    { field: 'amount', label: t('amount'), render: (row) => formatINR(row.amount) },
+                  ]}
+                  rowActions={[
+                    { label: t('download'), onClick: (row) => downloadActivity(row) },
+                  ]}
+                />
               </CardContent>
             </Card>
           </Grid>
@@ -739,47 +710,23 @@ const ComplianceGST = () => {
       <TabPanel value={activeTab} index={3}>
         <Card>
           <CardContent>
-            <Typography variant="h6" gutterBottom>Compliance Calendar</Typography>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Due Date</TableCell>
-                    <TableCell>Task</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Priority</TableCell>
-                    <TableCell>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {calendarRows.map((item) => (
-                    <TableRow key={item.task}>
-                      <TableCell>{item.date}</TableCell>
-                      <TableCell>{item.task}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={item.status}
-                          color={item.status === 'pending' ? 'warning' : 'info'}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={item.priority}
-                          color={item.priority === 'high' ? 'error' : 'warning'}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Button size="small" variant="outlined" onClick={() => setCalendarItem(item)}>
-                          {t('viewDetails')}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            <Typography variant="h6" gutterBottom>{t('complianceCalendar')}</Typography>
+            <DataTable
+              testId="gst-calendar"
+              rows={calendarRows}
+              searchKeys={['task', 'status', 'priority']}
+              emptyTitle={t('noRecordsYet')}
+              getRowId={(row) => row.task}
+              columns={[
+                { field: 'date', label: t('dueDate') },
+                { field: 'task', label: t('task') },
+                { field: 'status', label: t('status'), render: (row) => <StatusChip status={row.status} /> },
+                { field: 'priority', label: t('priority'), render: (row) => <StatusChip status={row.priority} /> },
+              ]}
+              rowActions={[
+                { label: t('viewDetails'), onClick: (row) => setCalendarItem(row) },
+              ]}
+            />
           </CardContent>
         </Card>
       </TabPanel>
@@ -1099,7 +1046,7 @@ const ComplianceGST = () => {
           <Button onClick={generateGSTInvoice} variant="contained">{t('generateInvoice')}</Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </PageShell>
   );
 };
 

@@ -7,6 +7,7 @@ import {
 } from '@mui/material';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { useI18n } from '../../i18n/I18nContext';
+import HelpTips from './HelpTips';
 
 export function PageShell({ children }) {
   return (
@@ -24,7 +25,7 @@ export function PageShell({ children }) {
   );
 }
 
-export function PageHeader({ title, subtitle, actions }) {
+export function PageHeader({ title, subtitle, actions, pageKey }) {
   return (
     <Box
       sx={{
@@ -46,22 +47,22 @@ export function PageHeader({ title, subtitle, actions }) {
           </Typography>
         )}
       </Box>
-      {actions && (
-        <Box
-          sx={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 1,
-            width: { xs: '100%', sm: 'auto' },
-            '& .MuiButton-root': {
-              flex: { xs: '1 1 auto', sm: '0 0 auto' },
-              minHeight: 40,
-            },
-          }}
-        >
-          {actions}
-        </Box>
-      )}
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 1,
+          alignItems: 'center',
+          width: { xs: '100%', sm: 'auto' },
+          '& .MuiButton-root': {
+            flex: { xs: '1 1 auto', sm: '0 0 auto' },
+            minHeight: 44,
+          },
+        }}
+      >
+        {pageKey && <HelpTips pageKey={pageKey} />}
+        {actions}
+      </Box>
     </Box>
   );
 }

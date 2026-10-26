@@ -76,7 +76,7 @@ export default function DashboardBuilder() {
 
   return (
     <PageShell>
-      <PageHeader title={t('dashboardBuilder')} subtitle={t('dashboardBuilderSubtitle')} />
+      <PageHeader title={t('dashboardBuilder')} subtitle={t('dashboardBuilderSubtitle')} pageKey="dashboard" />
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {loading && <Typography sx={{ mb: 2 }}>{t('loading')}</Typography>}
       {!loading && !widgets.length && (

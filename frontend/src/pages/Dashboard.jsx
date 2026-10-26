@@ -23,6 +23,8 @@ import { getApiErrorMessage } from '../utils/apiError';
 import { useI18n } from '../i18n/I18nContext';
 import { can, storedUser } from '../utils/permissions';
 import { suggestMillStep, unwrapList } from '../utils/millFlowSuggestion';
+import GettingStarted from '../components/GettingStarted';
+import { formatINR, formatQty } from '../utils/format';
 
 const DEFAULT_WIDGETS = [
   { id: 'production', label: 'Production snapshot' },
@@ -194,6 +196,7 @@ const Dashboard = () => {
       <PageHeader
         title={t('dashboardTitle')}
         subtitle={t('dashboardSubtitle')}
+        pageKey="dashboard"
         actions={
           <>
             <Button variant="outlined" startIcon={<Refresh />} onClick={handleRefresh} sx={{ minHeight: 40 }}>
@@ -217,12 +220,14 @@ const Dashboard = () => {
             variant="contained"
             size="large"
             onClick={() => navigate(nextAction.path)}
-            sx={{ minHeight: 44, minWidth: 200 }}
+            sx={{ minHeight: 44, minWidth: { xs: '100%', sm: 200 } }}
           >
             {nextAction.label}
           </Button>
         </CardContent>
       </Card>
+
+      <GettingStarted />
 
       {/* AI Insights Banner */}
       {insights?.insights?.length > 0 && (
@@ -246,7 +251,7 @@ const Dashboard = () => {
         <Grid item xs={12} sm={6} md={4} lg={2.4}>
           <MetricCard
             title={t('dashProduction')}
-            value={`${overview?.summary?.total_production?.toFixed(0) || 0} kg`}
+            value={formatQty(overview?.summary?.total_production || 0)}
             trend={overview?.trends?.production}
             icon={<TrendingUp />}
             color="primary"
@@ -264,7 +269,7 @@ const Dashboard = () => {
         <Grid item xs={12} sm={6} md={4} lg={2.4}>
           <MetricCard
             title={t('dashInventoryValue')}
-            value={`₹${(overview?.summary?.inventory_value || 0).toLocaleString()}`}
+            value={formatINR(overview?.summary?.inventory_value || 0)}
             trend={overview?.trends?.inventory}
             icon={<TrendingUp />}
             color="info"

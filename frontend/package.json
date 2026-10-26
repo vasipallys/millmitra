@@ -40,6 +40,7 @@
     "yup": "^1.6.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@playwright/test": "^1.63.0",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",

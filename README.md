@@ -195,6 +195,8 @@ Sidebar **IIoT** (`/iiot`) is for device readings and manual entry. **Form build
 
 Language **اردو** sets `document.dir=rtl` and switches the MUI Emotion RTL cache so Sidebar/Navbar mirror. Optional Kafka: set `KAFKA_BOOTSTRAP_SERVERS` (lazy `kafka-python-ng`; app starts without it).
 
+UX: grouped sidebar, Ctrl+K find-a-page, Getting started on the Dashboard, Comfort mode in Settings, shared tables/status/formatters. See [docs/UX_GUIDELINES.md](docs/UX_GUIDELINES.md).
+
 Optional telemetry simulator (HTTP ingest, no Mosquitto required):
 
 ```powershell
