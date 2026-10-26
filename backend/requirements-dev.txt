@@ -1,0 +1,12 @@
+# Dev / test extras. Core mill ERP does not need these to run.
+#   pip install -r requirements.txt
+#   pip install -r requirements-dev.txt
+#
+# Mill tests are unittest (`python -m unittest discover -s tests -p "test_*.py"`).
+# pytest is included for anyone using pytest-flask helpers.
+
+-r requirements.txt
+
+pytest==8.3.3
+pytest-flask==1.3.0
+pytest-cov==6.0.0

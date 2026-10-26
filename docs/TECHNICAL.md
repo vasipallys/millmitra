@@ -12,7 +12,7 @@ Related: [User Guide](USER_GUIDE.md), [Business document](BUSINESS.md), [SaaS ar
 | --- | --- |
 | Frontend | React 18, Vite 4, Material UI 5, React Router 6, React Query 3, Axios |
 | Backend | Python 3.13 (supported), Flask 3.0.3, Flask-SQLAlchemy, Flask-JWT-Extended, Flask-CORS, Flask-Migrate |
-| Database | SQLite file `rice_mill_erp.db` by default; PostgreSQL via `DATABASE_URL` and `psycopg[binary]` |
+| Database | SQLite file `rice_mill_erp.db` by default; PostgreSQL via `DATABASE_URL` and `psycopg[binary]` from `requirements-optional.txt` |
 | Cache / sessions | Redis optional; login and sessions fall back to the database |
 | Auth | JWT access token (`identity` is `str(user.id)`); password via Werkzeug hashes |
 
@@ -32,8 +32,9 @@ millmitra/
 │   ├── extensions.py          # db, jwt, migrate
 │   ├── utils.py               # current_user / current_user_id
 │   ├── migrate_db.py          # create_all + default users
-│   ├── requirements.txt       # core ERP (3.13 / Windows)
-│   ├── requirements-ml.txt    # optional extras
+│   ├── requirements.txt           # core ERP, pinned for Python 3.13
+│   ├── requirements-optional.txt  # Redis, MQTT, OCR, Postgres; Kafka/Phoenix/ML commented
+│   ├── requirements-dev.txt       # pytest extras
 │   ├── models/                # package used at runtime
 │   ├── models.py              # legacy re-export file (do not treat as source of truth)
 │   ├── routes/                # Flask blueprints
@@ -50,8 +51,11 @@ millmitra/
 │   ├── USER_GUIDE.md
 │   ├── BUSINESS.md
 │   ├── TECHNICAL.md
+│   ├── UX_GUIDELINES.md / UX_AUDIT.md
+│   ├── COMPOSABLE_ERP_PHASE*.md
 │   └── SAAS_ARCHITECTURE.md   # tenant design; how-to is USER_GUIDE §4.6
-├── ai-services/               # optional; not needed for core ERP
+├── ai-services/               # optional FastAPI sidecar; own requirements.txt
+├── toberemoved/               # leftover agent requirement lists; not installed
 └── README.md
 ```
 
@@ -59,17 +63,30 @@ millmitra/
 
 ## 3. How to run
 
-Use **this** repo’s venv. A common mistake is activating `D:\GenAi\ricemill\backend\venv` while the cwd is millmitra.
+Use **this** repo’s venv. A common mistake is activating `D:\GenAi\ricemill\backend\venv` while the cwd is millmitra. Full env-var table, troubleshooting, and Unix commands: [README.md](../README.md#setup-install-and-run).
+
+### Dependencies
+
+| File | Purpose |
+| --- | --- |
+| `backend/requirements.txt` | Core mill ERP. SQLAlchemy **2.0.36** (OTEL SQLAlchemy instrumentor 0.66b0 does not hook 2.1.x), OTEL API/SDK **1.45.0**, Flask/SQLAlchemy instrumentors **0.66b0**, `protobuf==5.29.6`. |
+| `backend/requirements-optional.txt` | Redis, MQTT (`paho-mqtt`), OCR (`pytesseract`), Postgres (`psycopg[binary]`). Kafka, Phoenix, ML/TensorFlow groups are commented. |
+| `backend/requirements-dev.txt` | `pytest` / `pytest-flask` / `pytest-cov` (unittest is the mill suite). |
+| `ai-services/requirements.txt` | Optional FastAPI sidecar (port 8000). **Not** part of mill ERP install. |
+| `toberemoved/requirements-*.txt` | Leftover agent lists. **Not** part of mill ERP install. |
+| `frontend/package.json` + `package-lock.json` | React 18 / Vite 4 / MUI 5. Scripts: `dev`, `build`, `preview`, `lint`, `test:e2e`. Use `npm ci`, then `npx playwright install chromium`. |
+
+`numpy`, `pandas`, and `Pillow` are **core** (`routes/quality.py` → `ai.quality_ai`; quality_control / financial_intelligence). `scikit-learn`, Redis, MQTT, Kafka, `pytesseract`, `psycopg`, and `arize-phoenix` are optional. TensorFlow is not imported.
 
 ### Backend (Windows)
 
 ```powershell
 cd D:\GenAi\millmitra\backend
-python -m venv venv
+py -3.13 -m venv venv
 .\venv\Scripts\python.exe -m pip install -r requirements.txt
-# Optional vision/NLP extras only:
-# .\venv\Scripts\python.exe -m pip install -r requirements-ml.txt
-copy .env.example .env
+.\venv\Scripts\python.exe -m pip install -r requirements-optional.txt  # Redis/MQTT/OCR/Postgres
+.\venv\Scripts\python.exe -m pip install -r requirements-dev.txt       # tests
+Copy-Item .env.example .env
 .\venv\Scripts\python.exe migrate_db.py
 .\venv\Scripts\python.exe app.py
 ```
@@ -78,7 +95,7 @@ Server: `http://localhost:5000`. Liveness: `GET /api/health`. Readiness: `GET /a
 
 Do **not** bind port 5000 with system Python (`C:\Python313\python.exe app.py`). That process keeps stale modules. After role/dashboard/login changes, stop Flask and start again with the venv executable.
 
-Default DB: SQLite `sqlite:///rice_mill_erp.db`. Set `DATABASE_URL` for PostgreSQL.
+Default DB: SQLite `sqlite:///rice_mill_erp.db`. Set `DATABASE_URL` for PostgreSQL **only** with real credentials and `psycopg[binary]`.
 
 Demo users are ensured on **startup** (`services/demo_users.py`) if missing — passwords of existing rows are not reset: `admin/admin123`, `manager/manager123`, `operator/operator123`, `quality/quality123`, `sales/sales123`, `accountant/accountant123` (emails `@ricemill.com`). Role defaults live in `services/access_control.py` and table `role_permissions` (per tenant). Startup migrate (`services/tenant_migration.py`) adds `tenant_id` / `is_platform_admin` if missing, creates slug `default`, and gives every existing user a membership. Users are not deleted.
 
@@ -86,15 +103,18 @@ Demo users are ensured on **startup** (`services/demo_users.py`) if missing — 
 
 ```powershell
 cd D:\GenAi\millmitra\frontend
-npm install
+npm ci
+npx playwright install chromium
 npm run dev
 ```
 
-Vite prefers port **3000**. If that port is taken, it binds the next free port and prints the URL. Do not pin HMR to another port. `npm run dev` does **not** register `public/sw.js` (`isDevRuntime()` in `usePWA.js` / `pwaRuntime.js`).
+Vite prefers port **3000**. If that port is taken, it binds the next free port and prints the URL. Do not pin HMR to another port. `npm run dev` does **not** register `public/sw.js` (`isDevRuntime()` in `usePWA.js` / `pwaRuntime.js`). `npm run build` writes `frontend/dist/` and can interrupt a Vite that is watching `dist`.
 
-i18n: React context + `src/i18n/translations.js` (en / hi / te). Locale key `millmitra.language`.
+i18n: React context + `src/i18n/translations.js` (en / hi / te / ur). Locale key `millmitra.language`.
 
 Axios `baseURL` is `import.meta.env.VITE_API_URL` or `http://localhost:5000/api`.
+
+Playwright `test:e2e` needs UI+API already running (`e2e/global-setup.js` hits `:3000` and `:5000/api/health`).
 
 ### Docker
 
@@ -416,15 +436,20 @@ npm run lint    # eslint src
 npm run build   # vite production bundle
 ```
 
-From `backend` (venv activated):
+From `backend` (venv activated; override Postgres leftovers in `.env`):
 
 ```powershell
+$env:DATABASE_URL = "sqlite:///:memory:"
+$env:OTEL_ENABLED = "false"
 python -c "from app import create_app; create_app(); print('ok')"
+.\venv\Scripts\python.exe -m unittest discover -s tests -p "test_*.py"
 ```
 
 There is no reliable `frontend` unit-test script. Many files under `toberemoved/` and `docs/toberemoved/` are not the active suite. `backend/test_models.py` assumes PostgreSQL `information_schema` and is a poor SQLite check.
 
 `.\venv\Scripts\python.exe -m unittest tests.test_telemetry -v` — tracer setup against a closed OTLP port, telemetry proxy without JWT, login still 200.
+
+Playwright: `cd frontend; npm run test:e2e` — global-setup requires live UI+API.
 
 ---
 
@@ -433,12 +458,12 @@ There is no reliable `frontend` unit-test script. Many files under `toberemoved/
 - **`models.py` vs `models/`** — runtime uses the package; the file is a leftover re-export.
 - **Stub routes** — inventory AI, customer campaigns, finance journal, quotations/leads. Safe empties, not features.
 - **Preview screens** — same pages; default to mill records; `View sample` is opt-in (`sessionStorage` `millmitra.previewMode.<page>`).
-- **Optional ML** — `requirements-ml.txt`; `enhanced_nlp` / OpenCV imports are guarded so the app starts without them.
+- **Optional ML** — `requirements-optional.txt` (ML / TensorFlow group, commented). `enhanced_nlp` / OpenCV imports are guarded so the app starts without them.
 - **JSON line items** — hard to query; invoice stock match is stringly typed.
 - **Role UI** — sidebar and route guard hide by permission; server `before_request` enforces the matrix. Farmer verify remains admin/manager. Admin can change the stored matrix.
 - **Partial payment** sets invoice `paid`.
 - **Dual schema names** — routes use `paddy_input_quantity` / `rice_output` / `business_name`; older services used other names. Live routes follow the models.
-- **Kitchen-sink root `requirements.txt`** — do not `pip install` that file on 3.13; use `backend/requirements.txt`.
+- **Install path** — `backend/requirements.txt` only. `ai-services/` and `toberemoved/requirements-*.txt` are not mill ERP.
 - **`migrate_db.py` imports a subset of models** — it creates `User`, farmer/inventory/production/sales/finance tables it imported, and default users. `Invoice` lives in `models/financial.py` and `StockMovement` is not imported there. After a wipe-and-recreate, start the Flask app once (`create_app` imports those models) or add the missing imports before relying on invoices/movements.
 - **GET `/inventory/transactions`** still goes through the older inventory service; the UI uses **GET `/movements`**.
 
@@ -458,9 +483,13 @@ Browser (`frontend/src/telemetry.js`, `service.name=millmitra-web`) starts a spa
 | `VITE_OTEL_ENABLED` | `true` |
 
 ```powershell
-pip install arize-phoenix
-phoenix serve
+# Uncomment arize-phoenix==20.19.0 in requirements-optional.txt for a new venv.
+# millmitra\backend\venv already has 20.19.0 (12.x + FastAPI 0.100 crashes on idp_name).
+.\venv\Scripts\python.exe -m pip install "arize-phoenix==20.19.0"
+.\venv\Scripts\phoenix.exe serve
 ```
+
+Keep `protobuf==5.29.6` and OpenTelemetry API/SDK **1.45.0** (core `requirements.txt`). Do not mix OTEL 1.32.1.
 
 UI: http://127.0.0.1:6006. Restart Flask and Vite, then log in. A login (or Mill flow save) is one trace: browser `HTTP POST /auth/login` parent → Flask `POST /api/auth/login` child. Off: `OTEL_ENABLED=false` and `VITE_OTEL_ENABLED=false`.
 

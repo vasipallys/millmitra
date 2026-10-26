@@ -357,6 +357,7 @@ class RemediationTests(unittest.TestCase):
         from flask_jwt_extended import create_access_token
         from extensions import db
         from models.lookup import LookupOption
+        from models.tenant import TenantMembership
         from models.user import User
         from services.access_control import ensure_role_permissions
         from services.demo_users import ensure_demo_users
@@ -371,6 +372,8 @@ class RemediationTests(unittest.TestCase):
             admin = User.query.filter_by(username='admin').first()
             self.assertIsNotNone(operator)
             self.assertIsNotNone(admin)
+            membership = TenantMembership.query.filter_by(user_id=admin.id).first()
+            tenant_id = membership.tenant_id if membership else None
             op_token = create_access_token(identity=str(operator.id))
             ad_token = create_access_token(identity=str(admin.id))
             row = LookupOption.query.filter_by(
@@ -379,6 +382,7 @@ class RemediationTests(unittest.TestCase):
             ).first()
             if not row:
                 row = LookupOption(
+                    tenant_id=tenant_id,
                     group_key='product_type',
                     value='zz_inactive_test',
                     label_en='Inactive test',
@@ -391,6 +395,8 @@ class RemediationTests(unittest.TestCase):
                 db.session.add(row)
             else:
                 row.is_active = False
+                if tenant_id and not row.tenant_id:
+                    row.tenant_id = tenant_id
             db.session.commit()
 
         forbidden = self.client.post(
