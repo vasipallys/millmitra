@@ -54,4 +54,4 @@ GET form/fields/values/records and PUT values / POST records / dashboard-layout 
 - Live Timescale `create_hypertable`
 - Live Postgres RLS against two DB roles (`check_tenant_db.py` not executed)
 - Per-tenant **Postgres** engines (two **SQLite** URLs are tested)
-- Pixel-identical screenshot archive from before Tailwind existed — MUI font/body probe is in `e2e/dashboard-mui-stable.spec.js`
+- Pixel-identical screenshot archive from before Tailwind existed — MUI font/body probe is in `e2e/dashboard-mui-stable.spec.js` (Roboto + no preflight body reset; passed)

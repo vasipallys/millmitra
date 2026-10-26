@@ -172,7 +172,7 @@ const Navbar = ({ onMenuClick, onLogout, user, onUserChange }) => {
             size="small"
             variant="outlined"
             color="secondary"
-            sx={{ mr: 1, cursor: tenants.length > 1 ? 'pointer' : 'default' }}
+            sx={{ me: 1, cursor: tenants.length > 1 ? 'pointer' : 'default' }}
             onClick={tenants.length > 1 ? (event) => setTenantAnchor(event.currentTarget) : undefined}
             aria-label={t('millName')}
           />
@@ -214,7 +214,7 @@ const Navbar = ({ onMenuClick, onLogout, user, onUserChange }) => {
           size="small"
           color="primary"
           variant="outlined"
-          sx={{ mr: 1 }}
+          sx={{ me: 1 }}
         />
         <LanguageSwitcher />
 

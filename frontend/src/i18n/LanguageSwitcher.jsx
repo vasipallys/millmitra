@@ -4,7 +4,7 @@ import { useI18n } from './I18nContext';
 export default function LanguageSwitcher({ size = 'small', light = false }) {
   const { locale, setLocale, locales, t } = useI18n();
   return (
-    <FormControl size={size} sx={{ minWidth: 120 }}>
+    <FormControl size={size} sx={{ minWidth: 120 }} data-testid="language-switcher">
       <InputLabel
         id="millmitra-language-label"
         sx={light ? { color: 'inherit' } : undefined}

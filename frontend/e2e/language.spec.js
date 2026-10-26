@@ -30,8 +30,10 @@ test.describe('Language', () => {
     if (navBox) {
       expect(navBox.x).toBeGreaterThanOrEqual(0);
     }
-    await page.getByLabel(/Language|زبان/).first().click();
+    await page.getByTestId('language-switcher').getByRole('combobox').click();
     await page.getByRole('option', { name: 'English' }).click();
     await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
+    const ltrBox = await page.getByTestId('sidebar').boundingBox();
+    expect(ltrBox?.x ?? 999).toBeLessThan(80);
   });
 });

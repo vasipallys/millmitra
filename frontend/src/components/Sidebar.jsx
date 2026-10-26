@@ -231,6 +231,7 @@ const Sidebar = ({ open, onClose, user }) => {
         flexShrink: 0,
         transition: 'width 0.3s ease-in-out',
         '& .MuiDrawer-paper': {
+          position: 'relative',
           width: drawerWidth,
           boxSizing: 'border-box',
           borderInlineEnd: '1px solid',
