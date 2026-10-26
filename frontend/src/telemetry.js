@@ -4,13 +4,9 @@ import { W3CTraceContextPropagator } from '@opentelemetry/core';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { Resource } from '@opentelemetry/resources';
 import { BatchSpanProcessor, WebTracerProvider } from '@opentelemetry/sdk-trace-web';
+import { apiBaseUrl } from './services/apiBase';
 
 const TRACER_NAME = 'millmitra-web';
-
-function apiBaseUrl() {
-  const base = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-  return String(base).replace(/\/$/, '');
-}
 
 function tracesUrl() {
   return `${apiBaseUrl()}/telemetry/v1/traces`;

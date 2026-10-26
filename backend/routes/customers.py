@@ -6,6 +6,7 @@ from models import Customer, SalesOrder, User
 # from services.ai_customer_service import AICustomerService
 from extensions import db
 from services.tenant_scope import tq, t_get, t_get_or_404
+from services.customer_analytics import churn_from_orders, lifetime_value_from_orders
 from datetime import datetime, timedelta
 import json
 
@@ -397,35 +398,13 @@ def get_satisfaction_analytics():
 @customers_bp.route('/analytics/lifetime-value', methods=['GET'])
 @jwt_required()
 def get_lifetime_value_analytics():
-    segment_id = request.args.get('segment_id', type=int)
-    
-    # AI customer lifetime value calculation
-    clv_analysis = ai_customer.calculate_customer_lifetime_value(segment_id)
-    
-    # AI value optimization strategies
-    value_optimization = ai_customer.optimize_customer_value(clv_analysis)
-    
-    return jsonify({
-        'clv_analysis': clv_analysis,
-        'value_optimization': value_optimization
-    })
+    return jsonify(lifetime_value_from_orders())
 
 @customers_bp.route('/analytics/churn-prediction', methods=['GET'])
 @jwt_required()
 def get_churn_prediction():
-    segment_id = request.args.get('segment_id', type=int)
     risk_threshold = request.args.get('risk_threshold', 0.7, type=float)
-    
-    # AI churn prediction
-    churn_prediction = ai_customer.predict_customer_churn_batch(segment_id, risk_threshold)
-    
-    # AI retention strategies
-    retention_strategies = ai_customer.recommend_retention_strategies(churn_prediction)
-    
-    return jsonify({
-        'churn_prediction': churn_prediction,
-        'retention_strategies': retention_strategies
-    })
+    return jsonify(churn_from_orders(risk_threshold))
 
 @customers_bp.route('/communication/campaigns', methods=['GET'])
 @jwt_required()

@@ -9,7 +9,7 @@ import time
 import uuid
 from datetime import datetime
 
-from flask import g, jsonify, request
+from flask import g, jsonify, make_response, request
 from sqlalchemy import text
 from werkzeug.exceptions import HTTPException
 
@@ -87,6 +87,8 @@ def init_observability(app):
 
     @app.errorhandler(HTTPException)
     def _http_error(error):
+        if request.method == 'OPTIONS':
+            return make_response('', 204)
         payload = {
             'success': False,
             'message': error.description or error.name,

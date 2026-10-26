@@ -1,5 +1,5 @@
 """Role permission matrix. Stored rows override defaults."""
-from flask import g, jsonify, request
+from flask import g, jsonify, make_response, request
 from flask_jwt_extended import verify_jwt_in_request
 from extensions import db
 from models.user import RolePermission
@@ -262,7 +262,7 @@ def register_access_guard(app):
     @app.before_request
     def _enforce_role_access():
         if request.method == 'OPTIONS':
-            return None
+            return make_response('', 204)
         path = request.path or ''
         if not path.startswith('/api/'):
             return None

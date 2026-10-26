@@ -41,12 +41,12 @@ export const customerService = {
 
   // Order Management
   async getOrders(params = {}) {
-    const response = await api.get('/sales/orders/', { params });
+    const response = await api.get('/sales/orders', { params });
     return response.data;
   },
 
   async createOrder(orderData) {
-    const response = await api.post('/sales/orders/', orderData);
+    const response = await api.post('/sales/orders', orderData);
     return response.data;
   },
 

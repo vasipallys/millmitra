@@ -4,20 +4,20 @@ import { PageHeader, PageShell } from '../components/common/PageChrome';
 import { useI18n } from '../i18n/I18nContext';
 import { dashboardService } from '../services/dashboardService';
 import { metadataService } from '../services/metadataService';
+import { normalizeWidget, normalizeWidgetId, selectValueInOptions } from '../utils/widgetIds';
 import '../composable.css';
 
 export default function DashboardBuilder() {
   const { t } = useI18n();
   const fallbackWidgets = useMemo(() => ([
-    { id: 'production', label: t('widgetProduction'), size: 6 },
-    { id: 'inventory', label: t('widgetInventory'), size: 6 },
-    { id: 'sales', label: t('widgetSales'), size: 6 },
-    { id: 'farmers', label: t('widgetFarmers'), size: 6 },
-    { id: 'quality', label: t('widgetQuality'), size: 6 },
+    { id: 'production_overview', label: t('widgetProduction'), size: 6 },
+    { id: 'inventory_alerts', label: t('widgetInventory'), size: 6 },
+    { id: 'sales_pipeline', label: t('widgetSales'), size: 6 },
+    { id: 'quality_trends', label: t('widgetQuality'), size: 6 },
   ]), [t]);
   const [available, setAvailable] = useState(fallbackWidgets);
   const [widgets, setWidgets] = useState(fallbackWidgets);
-  const [addId, setAddId] = useState('production');
+  const [addId, setAddId] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -28,26 +28,28 @@ export default function DashboardBuilder() {
       dashboardService.getWidgets().catch(() => ({ widgets: [] })),
       metadataService.getDashboardLayout().catch(() => ({ layout: { widgets: [] } })),
     ]).then(([live, saved]) => {
-      const liveList = (live.widgets || []).map((item) => ({
-        id: item.id,
-        label: item.title || item.name || item.id,
-        size: item.size || 6,
-      }));
-      setAvailable(liveList.length ? liveList : fallbackWidgets);
+      const liveList = (live.widgets || []).map((item) => normalizeWidget(item));
+      const nextAvailable = liveList.length ? liveList : fallbackWidgets;
+      setAvailable(nextAvailable);
       const persisted = saved.layout?.widgets || [];
       if (persisted.length) {
-        setWidgets(persisted.map((item) => (
-          typeof item === 'string'
-            ? { id: item, label: item, size: 6 }
-            : { id: item.id, label: item.label || item.id, size: item.size || 6 }
-        )));
+        setWidgets(persisted.map((item) => {
+          const normalized = normalizeWidget(item);
+          const match = nextAvailable.find((opt) => opt.id === normalized.id);
+          return match ? { ...match, size: normalized.size } : normalized;
+        }));
       } else {
         setWidgets(liveList.length ? liveList : fallbackWidgets);
       }
+      setAddId((current) => {
+        const mapped = normalizeWidgetId(current) || nextAvailable[0]?.id || '';
+        return nextAvailable.some((item) => item.id === mapped) ? mapped : (nextAvailable[0]?.id || '');
+      });
     }).catch((err) => {
       setError(err.response?.data?.message || err.message);
       setAvailable(fallbackWidgets);
       setWidgets(fallbackWidgets);
+      setAddId(fallbackWidgets[0]?.id || '');
     }).finally(() => setLoading(false));
   }, [fallbackWidgets]);
 
@@ -73,6 +75,9 @@ export default function DashboardBuilder() {
       setError(err.response?.data?.message || err.message);
     }
   };
+
+  const selectValue = selectValueInOptions(addId, available);
+  const unknownAddId = Boolean(addId) && selectValue === '';
 
   return (
     <PageShell>
@@ -102,16 +107,27 @@ export default function DashboardBuilder() {
               <Button color="error" onClick={() => setWidgets((current) => current.filter((_, i) => i !== index))}>{t('remove')}</Button>
             </Box>
           ))}
-          <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
-            <TextField select size="small" label={t('widget')} value={addId} onChange={(e) => setAddId(e.target.value)} sx={{ minWidth: 200 }}>
+          <Box sx={{ display: 'flex', gap: 1, mt: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+            <TextField
+              select
+              size="small"
+              label={t('widget')}
+              value={selectValue}
+              onChange={(e) => setAddId(e.target.value)}
+              sx={{ minWidth: 200 }}
+            >
+              <MenuItem value="">{t('selectWidget')}</MenuItem>
               {available.map((item) => <MenuItem key={item.id} value={item.id}>{item.label}</MenuItem>)}
             </TextField>
-            <Button variant="outlined" onClick={() => {
-              const found = available.find((item) => item.id === addId) || { id: addId, label: addId, size: 6 };
+            <Button variant="outlined" disabled={!selectValue} onClick={() => {
+              const found = available.find((item) => item.id === selectValue) || { id: selectValue, label: selectValue, size: 6 };
               setWidgets((current) => [...current, found]);
             }}>{t('addWidget')}</Button>
             <Button variant="contained" onClick={save}>{t('save')}</Button>
           </Box>
+          {unknownAddId && (
+            <Alert severity="info" sx={{ mt: 2 }}>{t('unknownWidgetType')}</Alert>
+          )}
           {message && <Typography color="success.main" sx={{ mt: 2 }}>{message}</Typography>}
         </CardContent>
       </Card>

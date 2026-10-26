@@ -1,5 +1,5 @@
 import re
-from flask import Flask
+from flask import Flask, make_response, request
 from flask_cors import CORS
 from extensions import db, jwt, init_extensions
 from config import Config
@@ -52,10 +52,22 @@ def create_app(config_overrides=None):
 
     # Initialize extensions
     init_extensions(app)
+    app.url_map.strict_slashes = False
     CORS(app, origins=[
         re.compile(r'^http://localhost:\d+$'),
         re.compile(r'^http://127\.0\.0\.1:\d+$'),
-    ])
+    ], methods=['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], allow_headers=[
+        'Content-Type',
+        'Authorization',
+        'X-Tenant-ID',
+        'X-Session-Token',
+        'X-Request-ID',
+    ], expose_headers=['X-Request-ID', 'X-User-ID', 'X-User-Role'], max_age=86400)
+
+    @app.before_request
+    def _short_circuit_cors_preflight():
+        if request.method == 'OPTIONS':
+            return make_response('', 204)
 
     # Initialize session middleware
     from middleware.session_middleware import session_middleware

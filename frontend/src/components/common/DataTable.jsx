@@ -102,8 +102,8 @@ export default function DataTable({
             <CardContent>
               {columns.map((col) => (
                 <Box key={col.field || col.label} sx={{ mb: 0.75 }}>
-                  <Typography variant="caption" color="text.secondary">{col.label}</Typography>
-                  <Typography variant="body2">
+                  <Typography component="div" variant="caption" color="text.secondary">{col.label}</Typography>
+                  <Typography component="div" variant="body2">
                     {col.render ? col.render(row) : (row[col.field] ?? '—')}
                   </Typography>
                 </Box>

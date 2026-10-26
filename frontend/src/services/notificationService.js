@@ -5,11 +5,12 @@
  */
 
 import api from './api';
+import { apiBaseUrl } from './apiBase';
 
 const POLL_MS = 15000;
 
 function apiBase() {
-  return import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  return apiBaseUrl();
 }
 
 function authToken() {

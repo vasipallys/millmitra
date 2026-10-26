@@ -1,9 +1,10 @@
 import axios from 'axios';
 import { attachApiTrace, endApiTrace } from '../telemetry';
+import { apiBaseUrl } from './apiBase';
 
 // Create axios instance with default config
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: apiBaseUrl(),
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from models.user import User
 from services.analytics_service import AnalyticsService
 from services.ai_analytics_service import AIAnalyticsService
+from services.customer_analytics import churn_from_orders, lifetime_value_from_orders
 
 analytics_bp = Blueprint('analytics', __name__)
 analytics_service = AnalyticsService()
@@ -157,6 +158,19 @@ def create_data_alert():
             'type': alert.alert_type
         }
     }), 201
+
+@analytics_bp.route('/churn-prediction', methods=['GET'])
+@jwt_required()
+def get_churn_prediction():
+    risk_threshold = request.args.get('risk_threshold', 0.7, type=float)
+    return jsonify(churn_from_orders(risk_threshold))
+
+
+@analytics_bp.route('/lifetime-value', methods=['GET'])
+@jwt_required()
+def get_lifetime_value():
+    return jsonify(lifetime_value_from_orders())
+
 
 @analytics_bp.route('/performance/summary')
 @jwt_required()

@@ -25,13 +25,13 @@ import { can, storedUser } from '../utils/permissions';
 import { suggestMillStep, unwrapList } from '../utils/millFlowSuggestion';
 import GettingStarted from '../components/GettingStarted';
 import { formatINR, formatQty } from '../utils/format';
+import { normalizeWidgetId } from '../utils/widgetIds';
 
 const DEFAULT_WIDGETS = [
-  { id: 'production', label: 'Production snapshot' },
-  { id: 'inventory', label: 'Inventory value' },
-  { id: 'sales', label: 'Pending orders' },
-  { id: 'farmers', label: 'Active farmers' },
-  { id: 'quality', label: 'Quality score' },
+  { id: 'production_overview', label: 'Production snapshot' },
+  { id: 'inventory_alerts', label: 'Inventory value' },
+  { id: 'sales_pipeline', label: 'Pending orders' },
+  { id: 'quality_trends', label: 'Quality score' },
 ];
 
 const Dashboard = () => {
@@ -102,10 +102,12 @@ const Dashboard = () => {
     const live = widgets?.widgets || [];
     const saved = savedLayout?.layout?.widgets || [];
     if (!saved.length) return live;
-    const order = saved.map((item) => (typeof item === 'string' ? item : item.id));
-    const sizes = Object.fromEntries(saved.map((item) => (
-      typeof item === 'string' ? [item, 6] : [item.id, item.size || 6]
-    )));
+    const order = saved.map((item) => normalizeWidgetId(typeof item === 'string' ? item : item.id));
+    const sizes = Object.fromEntries(saved.map((item) => {
+      const raw = typeof item === 'string' ? item : item.id;
+      const id = normalizeWidgetId(raw);
+      return [id, typeof item === 'string' ? 6 : (item.size || 6)];
+    }));
     const filtered = order
       .map((id) => live.find((widget) => widget.id === id))
       .filter(Boolean)
@@ -158,7 +160,9 @@ const Dashboard = () => {
     }));
     const list = fromApi.length ? fromApi : DEFAULT_WIDGETS;
     setAvailableWidgets(list);
-    const savedIds = (savedLayout?.layout?.widgets || []).map((item) => (typeof item === 'string' ? item : item.id));
+    const savedIds = (savedLayout?.layout?.widgets || [])
+      .map((item) => normalizeWidgetId(typeof item === 'string' ? item : item.id))
+      .filter((id) => list.some((widget) => widget.id === id));
     setSelectedWidgets(savedIds.length ? savedIds : list.map((widget) => widget.id));
     setCustomizeError('');
     setCustomizeOpen(true);

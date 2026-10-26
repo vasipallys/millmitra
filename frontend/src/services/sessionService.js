@@ -201,6 +201,10 @@ class SessionService {
    * Check if session is valid
    */
   async validateSession() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return false;
+    }
     try {
       const response = await api.get('/auth/me');
       return response.data.success;
@@ -259,6 +263,10 @@ class SessionService {
    * Initialize session management
    */
   init() {
+    const token = localStorage.getItem('token');
+    if (!token && !this.getSessionToken()) {
+      return;
+    }
     // Setup auto-extend if session exists
     if (this.getSessionToken()) {
       this.setupAutoExtend();
